@@ -1,0 +1,29 @@
+{
+  "routes": [
+    "/",
+    "/areas/",
+    "/areas/brisbane/",
+    "/areas/brisbane/anstead/",
+    "/areas/brisbane/ashgrove/",
+    "/areas/brisbane/auchenflower/",
+    "/areas/ipswich/",
+    "/areas/logan/",
+    "/blog/",
+    "/blog/brisbane/",
+    "/blog/ipswich/",
+    "/blog/logan/",
+    "/gallery/",
+    "/quote/",
+    "/services/bathroom-deep-clean/",
+    "/services/bathroom-deep-clean/booval/",
+    "/services/bathroom-deep-clean/bundamba/",
+    "/services/bond-cleaning/",
+    "/services/bond-cleaning/anstead/",
+    "/services/bond-cleaning/ashgrove/",
+    "/services/spring-cleaning/",
+    "/services/spring-cleaning/anstead/",
+    "/services/spring-cleaning/ashgrove/"
+  ],
+  "pending": [],
+  "changed": []
+}

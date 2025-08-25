@@ -1,0 +1,53 @@
+{
+  "timestamp": "2025-08-24T00:10:06.853Z",
+  "counts": {
+    "generators": 4,
+    "layouts": 1,
+    "components": 6,
+    "pages": 8,
+    "legacy": 4,
+    "tooling": 4,
+    "total": 27
+  },
+  "files": {
+    "generators": [
+      "src/lib/seoSchema.js",
+      "src/utils/schema.js",
+      "src/utils/schemaGraph.js",
+      "src/utils/schemamanager.js"
+    ],
+    "layouts": [
+      "src/layouts/MainLayout.astro"
+    ],
+    "components": [
+      "src/components/FAQ.astro",
+      "src/components/FaqBlock.astro",
+      "src/components/Schema.astro",
+      "src/components/SchemaGraph.astro",
+      "src/components/sections/AboutSection.astro",
+      "src/components/sections/DifferenceSection.astro"
+    ],
+    "pages": [
+      "src/pages/areas/[cluster]/index.astro",
+      "src/pages/areas/index.astro",
+      "src/pages/blog/[cluster]/[slug].astro",
+      "src/pages/blog/[cluster]/category/[category].astro",
+      "src/pages/blog/[cluster]/index.astro",
+      "src/pages/blog/index.astro",
+      "src/pages/bond-cleaning/[suburb]/index.astro",
+      "src/pages/services/[service]/[suburb].astro"
+    ],
+    "legacy": [
+      "src/components/FAQItem.notusing.astro",
+      "src/components/FAQSection.notusing.astro",
+      "src/pages/bond-cleaning/[suburb]/checklist.notusing.astro",
+      "src/pages/bond-cleaning/[suburb]/index.notusing.astro"
+    ],
+    "tooling": [
+      "scripts/assert-ld-health.mjs",
+      "scripts/report-ld-sources.mjs",
+      "scripts/report-ld.mjs",
+      "scripts/validate-schema.js"
+    ]
+  }
+}

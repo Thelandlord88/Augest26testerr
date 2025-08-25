@@ -1,0 +1,13 @@
+---
+import MainLayout from '~/layouts/MainLayout.astro';
+import QuoteForm from '~/components/QuoteForm.astro';
+import { absoluteUrl } from '~/lib/url';
+const canonical = absoluteUrl('/quote/');
+---
+<MainLayout title="Get a Free Quote – One N Done" description="Fast, fixed quotes for bond cleaning, spring cleaning, and bathroom deep clean." canonical={canonical}>
+  <article class="max-w-3xl mx-auto py-12 px-4">
+    <h1 class="text-3xl md:text-4xl font-extrabold text-deep-navy mb-4">Get a Free Quote</h1>
+    <p class="text-slate-700 mb-6">Tell us about your place and we’ll reply fast with a fixed quote.</p>
+    <QuoteForm />
+  </article>
+</MainLayout>

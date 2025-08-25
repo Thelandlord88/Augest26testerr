@@ -1,0 +1,48 @@
+# Redirect canary — 2025-08-17T08:44:36.036Z
+Base: http://localhost:4322
+/blog/ipswich-region/ -> error: fetch failed
+/blog/brisbane-west/category/checklist/ -> error: fetch failed
+/areas/brisbane%20west/forest-lake/ -> error: fetch failed
+/bond-cleaners/springfield/ -> error: fetch failed
+/services/bond-cleaning/brisbane/springfield/ -> error: fetch failed
+
+# Redirect canary — 2025-08-17T08:45:23.386Z
+Base: http://localhost:4322
+/blog/ipswich-region/ -> error: fetch failed
+/blog/brisbane-west/category/checklist/ -> error: fetch failed
+/areas/brisbane%20west/forest-lake/ -> error: fetch failed
+/bond-cleaners/springfield/ -> error: fetch failed
+/services/bond-cleaning/brisbane/springfield/ -> error: fetch failed
+
+# Redirect canary — 2025-08-17T08:45:35.959Z
+Base: http://localhost:4322
+/blog/ipswich-region/ -> error: fetch failed
+/blog/brisbane-west/category/checklist/ -> error: fetch failed
+/areas/brisbane%20west/forest-lake/ -> error: fetch failed
+/bond-cleaners/springfield/ -> error: fetch failed
+/services/bond-cleaning/brisbane/springfield/ -> error: fetch failed
+
+# Redirect canary — 2025-08-17T08:58:08.704Z
+Base: http://localhost:4322
+/blog/ipswich-region/ -> error: fetch failed
+/blog/brisbane-west/category/checklist/ -> error: fetch failed
+/areas/brisbane%20west/forest-lake/ -> error: fetch failed
+/bond-cleaners/springfield/ -> error: fetch failed
+/services/bond-cleaning/brisbane/springfield/ -> error: fetch failed
+
+# Redirect canary — 2025-08-17T08:59:42.870Z
+Base: http://localhost:4322
+/blog/ipswich-region/ -> error: fetch failed
+/blog/brisbane-west/category/checklist/ -> error: fetch failed
+/areas/brisbane%20west/forest-lake/ -> error: fetch failed
+/bond-cleaners/springfield/ -> error: fetch failed
+/services/bond-cleaning/brisbane/springfield/ -> error: fetch failed
+
+# Redirect canary — 2025-08-17T09:00:37.971Z
+Base: https://ondlive3.netlify.app
+/blog/ipswich-region/ -> [200]  ❌ (expected /blog/ipswich/)
+/blog/brisbane-west/category/checklist/ -> [200]  ❌ (expected /blog/brisbane/category/checklist/)
+/areas/brisbane%20west/forest-lake/ -> [301] /areas/brisbane/forest-lake/ ✅
+/bond-cleaners/springfield/ -> [301] /services/bond-cleaning/springfield/ ✅
+/services/bond-cleaning/brisbane/springfield/ -> [301] /services/bond-cleaning/springfield ✅
+

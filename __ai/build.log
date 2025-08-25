@@ -1,0 +1,273 @@
+Wrote src/data/serviceCoverage.json with 187 total entries.
+No route collisions.
+✅ Built /workspaces/July22/src/data/faqs.compiled.json
+01:06:35 [@astrojs/netlify] Enabling sessions with Netlify Blobs
+01:06:35 [content] Syncing content
+01:06:35 [content] Synced content
+01:06:35 [types] Generated 42ms
+01:06:35 [build] output: "static"
+01:06:35 [build] mode: "server"
+01:06:35 [build] directory: /workspaces/July22/dist/
+01:06:35 [build] adapter: @astrojs/netlify
+01:06:35 [build] Collecting build info...
+01:06:35 [build] ✓ Completed in 103ms.
+01:06:35 [build] Building server entrypoints...
+01:06:37 [vite] ✓ built in 2.34s
+01:06:37 [build] ✓ Completed in 2.38s.
+
+ building client (vite) 
+01:06:37 [vite] transforming...
+01:06:37 [vite] ✓ 5 modules transformed.
+01:06:37 [vite] rendering chunks...
+01:06:37 [vite] ✓ built in 31ms
+
+ prerendering static routes 
+01:06:37 ▶ src/pages/areas/[cluster]/[suburb]/index.astro
+01:06:37   ├─ /areas/ipswich/augustine-heights/index.html (+19ms) 
+01:06:37   ├─ /areas/ipswich/bellbird-park/index.html (+4ms) 
+01:06:37   ├─ /areas/ipswich/booval/index.html (+7ms) 
+01:06:37   ├─ /areas/ipswich/brassall/index.html (+4ms) 
+01:06:37   ├─ /areas/ipswich/brookwater/index.html (+4ms) 
+01:06:37   ├─ /areas/ipswich/bundamba/index.html (+4ms) 
+01:06:37   ├─ /areas/ipswich/camira/index.html (+5ms) 
+01:06:37   ├─ /areas/ipswich/collingwood-park/index.html (+3ms) 
+01:06:37   ├─ /areas/ipswich/deebing-heights/index.html (+5ms) 
+01:06:37   ├─ /areas/ipswich/dinmore/index.html (+3ms) 
+01:06:37   ├─ /areas/ipswich/east-ipswich/index.html (+3ms) 
+01:06:37   ├─ /areas/ipswich/eastern-heights/index.html (+4ms) 
+01:06:37   ├─ /areas/ipswich/flinders-view/index.html (+4ms) 
+01:06:37   ├─ /areas/ipswich/goodna/index.html (+2ms) 
+01:06:37   ├─ /areas/ipswich/ipswich/index.html (+2ms) 
+01:06:37   ├─ /areas/ipswich/newtown/index.html (+3ms) 
+01:06:37   ├─ /areas/ipswich/north-booval/index.html (+3ms) 
+01:06:37   ├─ /areas/ipswich/one-mile/index.html (+3ms) 
+01:06:37   ├─ /areas/ipswich/raceview/index.html (+3ms) 
+01:06:37   ├─ /areas/ipswich/redbank/index.html (+3ms) 
+01:06:37   ├─ /areas/ipswich/redbank-plains/index.html (+5ms) 
+01:06:37   ├─ /areas/ipswich/ripley/index.html (+3ms) 
+01:06:37   ├─ /areas/ipswich/riverview/index.html (+2ms) 
+01:06:37   ├─ /areas/ipswich/sadliers-crossing/index.html (+2ms) 
+01:06:37   ├─ /areas/ipswich/silkstone/index.html (+2ms) 
+01:06:37   ├─ /areas/ipswich/springfield/index.html (+2ms) 
+01:06:37   ├─ /areas/ipswich/springfield-lakes/index.html (+4ms) 
+01:06:37   ├─ /areas/ipswich/west-ipswich/index.html (+3ms) 
+01:06:37   ├─ /areas/ipswich/woodend/index.html (+2ms) 
+01:06:37   ├─ /areas/ipswich/yamanto/index.html (+2ms) 
+01:06:37   ├─ /areas/brisbane/anstead/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/ashgrove/index.html (+5ms) 
+01:06:37   ├─ /areas/brisbane/auchenflower/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/bardon/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/bellbowrie/index.html (+2ms) 
+01:06:37   ├─ /areas/brisbane/brookfield/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/chapel-hill/index.html (+2ms) 
+01:06:37   ├─ /areas/brisbane/chelmer/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/darra/index.html (+5ms) 
+01:06:37   ├─ /areas/brisbane/doolandella/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/durack/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/ellen-grove/index.html (+2ms) 
+01:06:37   ├─ /areas/brisbane/fig-tree-pocket/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/forest-lake/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/graceville/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/inala/index.html (+2ms) 
+01:06:37   ├─ /areas/brisbane/indooroopilly/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/jamboree-heights/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/jindalee/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/karana-downs/index.html (+7ms) 
+01:06:37   ├─ /areas/brisbane/kenmore/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/kenmore-hills/index.html (+2ms) 
+01:06:37   ├─ /areas/brisbane/kholo/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/lake-manchester/index.html (+2ms) 
+01:06:37   ├─ /areas/brisbane/middle-park/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/milton/index.html (+8ms) 
+01:06:37   ├─ /areas/brisbane/moggill/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/mount-crosby/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/mount-ommaney/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/oxley/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/paddington/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/pinjarra-hills/index.html (+2ms) 
+01:06:37   ├─ /areas/brisbane/pullenvale/index.html (+2ms) 
+01:06:37   ├─ /areas/brisbane/red-hill/index.html (+2ms) 
+01:06:37   ├─ /areas/brisbane/richlands/index.html (+2ms) 
+01:06:37   ├─ /areas/brisbane/riverhills/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/seventeen-mile-rocks/index.html (+2ms) 
+01:06:37   ├─ /areas/brisbane/sherwood/index.html (+2ms) 
+01:06:37   ├─ /areas/brisbane/sinnamon-park/index.html (+2ms) 
+01:06:37   ├─ /areas/brisbane/st-lucia/index.html (+2ms) 
+01:06:37   ├─ /areas/brisbane/sumner/index.html (+2ms) 
+01:06:37   ├─ /areas/brisbane/taringa/index.html (+2ms) 
+01:06:37   ├─ /areas/brisbane/the-gap/index.html (+2ms) 
+01:06:37   ├─ /areas/brisbane/toowong/index.html (+4ms) 
+01:06:37   ├─ /areas/brisbane/upper-brookfield/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/upper-kedron/index.html (+2ms) 
+01:06:37   ├─ /areas/brisbane/wacol/index.html (+3ms) 
+01:06:37   ├─ /areas/brisbane/westlake/index.html (+2ms) 
+01:06:37   ├─ /areas/logan/bahrs-scrub/index.html (+3ms) 
+01:06:37   ├─ /areas/logan/bannockburn/index.html (+2ms) 
+01:06:37   ├─ /areas/logan/beenleigh/index.html (+2ms) 
+01:06:37   ├─ /areas/logan/belivah/index.html (+2ms) 
+01:06:37   ├─ /areas/logan/bethania/index.html (+3ms) 
+01:06:37   ├─ /areas/logan/boronia-heights/index.html (+2ms) 
+01:06:37   ├─ /areas/logan/browns-plains/index.html (+2ms) 
+01:06:37   ├─ /areas/logan/cedar-creek/index.html (+3ms) 
+01:06:37   ├─ /areas/logan/crestmead/index.html (+2ms) 
+01:06:37   ├─ /areas/logan/daisy-hill/index.html (+3ms) 
+01:06:37   ├─ /areas/logan/eagleby/index.html (+2ms) 
+01:06:37   ├─ /areas/logan/edens-landing/index.html (+4ms) 
+01:06:37   ├─ /areas/logan/greenbank/index.html (+2ms) 
+01:06:37   ├─ /areas/logan/heritage-park/index.html (+3ms) 
+01:06:37   ├─ /areas/logan/hillcrest/index.html (+2ms) 
+01:06:37   ├─ /areas/logan/holmview/index.html (+3ms) 
+01:06:37   ├─ /areas/logan/kingston/index.html (+2ms) 
+01:06:37   ├─ /areas/logan/logan-central/index.html (+3ms) 
+01:06:37   ├─ /areas/logan/logan-reserve/index.html (+2ms) 
+01:06:37   ├─ /areas/logan/logan-village/index.html (+2ms) 
+01:06:37   ├─ /areas/logan/loganholme/index.html (+3ms) 
+01:06:37   ├─ /areas/logan/loganlea/index.html (+2ms) 
+01:06:37   ├─ /areas/logan/marsden/index.html (+3ms) 
+01:06:37   ├─ /areas/logan/meadowbrook/index.html (+2ms) 
+01:06:37   ├─ /areas/logan/mount-warren-park/index.html (+3ms) 
+01:06:37   ├─ /areas/logan/park-ridge/index.html (+3ms) 
+01:06:37   ├─ /areas/logan/park-ridge-south/index.html (+4ms) 
+01:06:38   ├─ /areas/logan/regents-park/index.html (+2ms) 
+01:06:38   ├─ /areas/logan/rochedale-south/index.html (+2ms) 
+01:06:38   ├─ /areas/logan/shailer-park/index.html (+2ms) 
+01:06:38   ├─ /areas/logan/slacks-creek/index.html (+2ms) 
+01:06:38   ├─ /areas/logan/springwood/index.html (+2ms) 
+01:06:38   ├─ /areas/logan/tamborine/index.html (+3ms) 
+01:06:38   ├─ /areas/logan/tanah-merah/index.html (+2ms) 
+01:06:38   ├─ /areas/logan/underwood/index.html (+2ms) 
+01:06:38   ├─ /areas/logan/veresdale/index.html (+3ms) 
+01:06:38   ├─ /areas/logan/veresdale-scrub/index.html (+3ms) 
+01:06:38   ├─ /areas/logan/waterford/index.html (+3ms) 
+01:06:38   ├─ /areas/logan/waterford-west/index.html (+3ms) 
+01:06:38   ├─ /areas/logan/windaroo/index.html (+3ms) 
+01:06:38   ├─ /areas/logan/wolffdene/index.html (+2ms) 
+01:06:38   ├─ /areas/logan/woodridge/index.html (+4ms) 
+01:06:38   └─ /areas/logan/yarrabilba/index.html (+3ms) 
+01:06:38 ▶ src/pages/areas/[cluster]/index.astro
+01:06:38   ├─ /areas/ipswich/index.html (+2ms) 
+01:06:38   ├─ /areas/brisbane/index.html (+2ms) 
+01:06:38   └─ /areas/logan/index.html (+2ms) 
+01:06:38 ▶ src/pages/areas/index.astro
+01:06:38   └─ /areas/index.html (+1ms) 
+01:06:38 ▶ src/pages/blog/[cluster]/category/[category].astro
+01:06:38   ├─ /blog/ipswich/category/checklist/index.html (+3ms) 
+01:06:38   ├─ /blog/ipswich/category/local/index.html (+1ms) 
+01:06:38   ├─ /blog/ipswich/category/usp/index.html (+1ms) 
+01:06:38   ├─ /blog/ipswich/category/story/index.html (+2ms) 
+01:06:38   ├─ /blog/ipswich/category/suburb/index.html (+2ms) 
+01:06:38   ├─ /blog/brisbane/category/checklist/index.html (+2ms) 
+01:06:38   ├─ /blog/brisbane/category/local/index.html (+1ms) 
+01:06:38   ├─ /blog/brisbane/category/usp/index.html (+1ms) 
+01:06:38   ├─ /blog/brisbane/category/story/index.html (+1ms) 
+01:06:38   ├─ /blog/brisbane/category/suburb/index.html (+1ms) 
+01:06:38   ├─ /blog/logan/category/checklist/index.html (+2ms) 
+01:06:38   ├─ /blog/logan/category/local/index.html (+1ms) 
+01:06:38   ├─ /blog/logan/category/usp/index.html (+2ms) 
+01:06:38   ├─ /blog/logan/category/story/index.html (+1ms) 
+01:06:38   └─ /blog/logan/category/suburb/index.html (+2ms) 
+01:06:38 ▶ src/pages/blog/[cluster]/[slug].astro
+01:06:38   ├─ /blog/ipswich/bond-cleaning-checklist/index.html (+2ms) 
+01:06:38   ├─ /blog/ipswich/what-agents-want/index.html (+2ms) 
+01:06:38   ├─ /blog/ipswich/eco-bond-cleaning/index.html (+1ms) 
+01:06:38   ├─ /blog/ipswich/client-stories/index.html (+1ms) 
+01:06:38   ├─ /blog/ipswich/redbank-plains/index.html (+1ms) 
+01:06:38   ├─ /blog/ipswich/springfield-lakes/index.html (+1ms) 
+01:06:38   ├─ /blog/ipswich/brookwater/index.html (+1ms) 
+01:06:38   ├─ /blog/ipswich/forest-lake/index.html (+1ms) 
+01:06:38   ├─ /blog/ipswich/indooroopilly/index.html (+2ms) 
+01:06:38   ├─ /blog/ipswich/kenmore/index.html (+2ms) 
+01:06:38   ├─ /blog/ipswich/springwood/index.html (+2ms) 
+01:06:38   ├─ /blog/ipswich/browns-plains/index.html (+4ms) 
+01:06:38   ├─ /blog/brisbane/bond-cleaning-checklist/index.html (+3ms) 
+01:06:38   ├─ /blog/brisbane/what-agents-want/index.html (+2ms) 
+01:06:38   ├─ /blog/brisbane/eco-bond-cleaning/index.html (+1ms) 
+01:06:38   ├─ /blog/brisbane/client-stories/index.html (+1ms) 
+01:06:38   ├─ /blog/brisbane/redbank-plains/index.html (+2ms) 
+01:06:38   ├─ /blog/brisbane/springfield-lakes/index.html (+2ms) 
+01:06:38   ├─ /blog/brisbane/brookwater/index.html (+2ms) 
+01:06:38   ├─ /blog/brisbane/forest-lake/index.html (+2ms) 
+01:06:38   ├─ /blog/brisbane/indooroopilly/index.html (+2ms) 
+01:06:38   ├─ /blog/brisbane/kenmore/index.html (+2ms) 
+01:06:38   ├─ /blog/brisbane/springwood/index.html (+2ms) 
+01:06:38   ├─ /blog/brisbane/browns-plains/index.html (+2ms) 
+01:06:38   ├─ /blog/logan/bond-cleaning-checklist/index.html (+2ms) 
+01:06:38   ├─ /blog/logan/what-agents-want/index.html (+1ms) 
+01:06:38   ├─ /blog/logan/eco-bond-cleaning/index.html (+2ms) 
+01:06:38   ├─ /blog/logan/client-stories/index.html (+1ms) 
+01:06:38   ├─ /blog/logan/redbank-plains/index.html (+1ms) 
+01:06:38   ├─ /blog/logan/springfield-lakes/index.html (+1ms) 
+01:06:38   ├─ /blog/logan/brookwater/index.html (+1ms) 
+01:06:38   ├─ /blog/logan/forest-lake/index.html (+1ms) 
+01:06:38   ├─ /blog/logan/indooroopilly/index.html (+1ms) 
+01:06:38   ├─ /blog/logan/kenmore/index.html (+1ms) 
+01:06:38   ├─ /blog/logan/springwood/index.html (+2ms) 
+01:06:38   └─ /blog/logan/browns-plains/index.html (+1ms) 
+01:06:38 ▶ src/pages/blog/[cluster]/index.astro
+01:06:38   ├─ /blog/ipswich/index.html (+2ms) 
+01:06:38   ├─ /blog/brisbane/index.html (+2ms) 
+01:06:38   └─ /blog/logan/index.html (+2ms) 
+01:06:38 ▶ src/pages/blog/index.astro
+01:06:38   └─ /blog/index.html (+1ms) 
+01:06:38 ▶ src/pages/bond-cleaning/[suburb]/checklist.astro
+01:06:38 ▶ src/pages/bond-cleaning/[suburb]/index.astro
+01:06:38 ▶ src/pages/gallery.astro
+01:06:38   └─ /gallery/index.html (+1ms) 
+01:06:38 ▶ src/pages/privacy.astro
+01:06:38   └─ /privacy/index.html (+1ms) 
+01:06:38 ▶ src/pages/quote.astro
+01:06:38   └─ /quote/index.html (+2ms) 
+01:06:38 ▶ src/pages/services/[service]/[suburb].astro
+01:06:38   ├─ /services/bond-cleaning/brookwater/index.html (+7ms) 
+01:06:38   ├─ /services/bond-cleaning/browns-plains/index.html (+5ms) 
+01:06:38   ├─ /services/bond-cleaning/forest-lake/index.html (+6ms) 
+01:06:38   ├─ /services/bond-cleaning/indooroopilly/index.html (+6ms) 
+01:06:38   ├─ /services/bond-cleaning/kenmore/index.html (+6ms) 
+01:06:38   ├─ /services/bond-cleaning/redbank-plains/index.html (+4ms) 
+01:06:38   ├─ /services/bond-cleaning/springfield-lakes/index.html (+4ms) 
+01:06:38   ├─ /services/bond-cleaning/springwood/index.html (+5ms) 
+01:06:38   ├─ /services/spring-cleaning/forest-lake/index.html (+5ms) 
+01:06:38   ├─ /services/spring-cleaning/indooroopilly/index.html (+4ms) 
+01:06:38   ├─ /services/spring-cleaning/kenmore/index.html (+3ms) 
+01:06:38   ├─ /services/spring-cleaning/redbank-plains/index.html (+4ms) 
+01:06:38   ├─ /services/spring-cleaning/springfield-lakes/index.html (+4ms) 
+01:06:38   ├─ /services/bathroom-deep-clean/redbank-plains/index.html (+3ms) 
+01:06:38   └─ /services/bathroom-deep-clean/springfield-lakes/index.html (+4ms) 
+01:06:38 ▶ src/pages/services/[service]/index.astro
+01:06:38   ├─ /services/bond-cleaning/index.html (+4ms) 
+01:06:38   ├─ /services/spring-cleaning/index.html (+4ms) 
+01:06:38   └─ /services/bathroom-deep-clean/index.html (+4ms) 
+01:06:38 λ src/pages/sitemap.xml.ts
+01:06:38   └─ /sitemap.xml (+1ms) 
+01:06:38 ▶ src/pages/terms.astro
+01:06:38   └─ /terms/index.html (+2ms) 
+01:06:38 ▶ src/pages/ui.astro
+01:06:38   └─ /ui/index.html (+4ms) 
+01:06:38 ▶ src/pages/index.astro
+01:06:38   └─ /index.html (+12ms) 
+01:06:38 ✓ Completed in 626ms.
+
+01:06:38 [build] Rearranging server assets...
+01:06:38 [@astrojs/netlify] Emitted _redirects
+01:06:38 [@astrojs/netlify] Bundling function ../../../build/entry.mjs
+01:06:39 [@astrojs/netlify] Generated SSR Function
+01:06:39 [build] Server built in 4.31s
+01:06:39 [build] Complete!
+consolidate-ld: pages with multi-scripts=204, pages updated=204
+✅ Related links audit passed
+🛡️  Starting schema validation...
+✅  Generic homepage schema is valid.
+🎉 All schema generated successfully and are valid. Build can proceed.
+✅ All 210 internal links resolve to files.
+✅ Related links audit passed
+✅ No alias-built pages in dist/
+🧾 JSON-LD report: 204 page(s) with JSON-LD, 0 with multiples
+✅ Wrote __ai/ld-sources.txt and __ai/ld-sources.json
+✅ No pages with multiple JSON-LD blocks.
+ℹ️  Schema sources — generators:4, layouts:2, components:16, pages:7, legacy:4, tooling:4, total:37
+🔎 LD_MUST_HAVE coverage:
+
+🔍 Schema health check:
+- Total pages with JSON-LD: 204 (min required: 5)
+
+✅ Schema health check passed

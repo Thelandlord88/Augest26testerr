@@ -1,0 +1,47 @@
+# Refactor scan — brittle literals found
+
+- src/components/Footer.astro
+  - [alias_cluster_ipswich_region] line 41: const curatedCluster = 'Ipswich Region'; // Display name
+  - [blog_base_literal] line 78: href: `/blog/${slugify(curatedCluster)}/${t.slug}`,
+- src/data/blog-reviews.json
+  - [alias_cluster_ipswich_region] line 8: "cluster": "Ipswich Region"
+  - [alias_cluster_ipswich_region] line 16: "cluster": "Ipswich Region"
+  - [alias_cluster_ipswich_region] line 24: "cluster": "Ipswich Region"
+  - [alias_cluster_brisbane_west] line 32: "cluster": "Brisbane West"
+  - [alias_cluster_brisbane_west] line 40: "cluster": "Brisbane West"
+  - [alias_cluster_brisbane_west] line 48: "cluster": "Brisbane West"
+- src/data/geoClusters.json
+  - [alias_cluster_ipswich_region] line 2: "Ipswich Region": ["Redbank Plains", "Springfield Lakes", "Brookwater", "Goodna", "Camira"],
+  - [alias_cluster_brisbane_west] line 3: "Brisbane West": ["Forest Lake", "Indooroopilly", "Kenmore"],
+- src/data/topics.json
+  - [alias_cluster_ipswich_region] line 4: "title": "Bond Cleaning Checklist – Ipswich Region",
+- src/middleware.js
+  - [blog_base_literal] line 33: const toPath = `/blog/${canonical}/${rest ? rest + '/' : ''}`;
+- src/middleware.ts
+  - [blog_base_literal] line 35: const toPath = `/blog/${canonical}/${rest ? rest + '/' : ''}`;
+- src/pages/blog/[cluster]/[slug].astro
+  - [blog_base_literal] line 23: return Astro.redirect(`/blog/${canonicalCluster}/${slug}/`, 301);
+  - [blog_base_literal] line 34: const pageUrl  = new URL(`/blog/${clusterSlug}/${slug}/`, siteUrl).toString();
+  - [blog_base_literal] line 64: { '@type': 'ListItem', position: 2, name: clusterName, item: new URL(`/blog/${clusterSlug}`, siteUrl).toString() },
+  - [blog_base_literal] line 82: <li><a href={`/blog/${clusterSlug}`} class="hover:underline">{clusterName}</a></li>
+  - [blog_base_literal] line 235: <a href={`/blog/${clusterSlug}/${t.slug}`} class="text-sky-600 hover:underline">
+  - [blog_base_literal] line 285: {"@type": "ListItem", "position": 2, "name": clusterName, "item": new URL(`/blog/${clusterSlug}`, siteUrl).toString()},
+- src/pages/blog/[cluster]/category/[category].astro
+  - [blog_base_literal] line 24: return Astro.redirect(`/blog/${canonical}/category/${category}/`, 301);
+  - [blog_base_literal] line 30: const pageUrl = new URL(`/blog/${clusterSlug}/category/${category}/`, siteUrl).toString();
+  - [blog_base_literal] line 39: <li><a href={`/blog/${clusterSlug}`} class="hover:underline">{clusterName}</a></li>
+  - [blog_base_literal] line 52: <a class="text-sky-700 font-semibold hover:underline" href={`/blog/${clusterSlug}/${t.slug}`}>{t.title}</a>
+  - [blog_base_literal] line 64: {"@type": "ListItem", "position": 2, "name": clusterName, "item": new URL(`/blog/${clusterSlug}`, siteUrl).toString()},
+- src/pages/blog/[cluster]/index.astro
+  - [blog_base_literal] line 17: return Astro.redirect(`/blog/${canonical}/`, 301);
+  - [blog_base_literal] line 37: <Layout title={`Blog – ${normalizedLabel}`} description={`Guides and checklists for renters in ${normalizedLabel}.`} canonical={new URL(`/blog/${clusterSlug}`, Astro.site?.toString() || 'https://onend
+  - [blog_base_literal] line 53: <li><a class="px-3 py-1 rounded-full bg-slate-100 hover:bg-slate-200" href={`/blog/${clusterSlug}/category/${cat}`}>{cat}</a></li>
+  - [blog_base_literal] line 63: <a class="text-sky-700 font-semibold hover:underline" href={`/blog/${clusterSlug}/${t.slug}`}>{t.title}</a>
+- src/pages/blog/index.astro
+  - [blog_base_literal] line 19: <a class="text-sky-700 font-semibold hover:underline" href={`/blog/${slugify(slug)}/`}>{name}</a>
+- src/pages/index.astro
+  - [alias_cluster_ipswich_region] line 45: a: "Absolutely. While we are based in the Ipswich region, we proudly service many surrounding areas, including Springfield Lakes, Brisbane's western suburbs, and more. Check our service area list or c
+- src/pages/sitemap.xml.ts
+  - [blog_base_literal] line 11: '/blog/',
+- src/utils/internalLinks.js
+  - [alias_cluster_brisbane_west] line 18: import nBrisWest from '~/data/geo.neighbors.brisbane-west.json';
