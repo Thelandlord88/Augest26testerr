@@ -1,0 +1,11 @@
+{
+  "routes": [
+  { "glob": "/services/bathroom-deep-clean/**", "must": ["bathroom", "tiles", "shower screen", "grout", "mould", "soap scum"], "forbid": ["bond clean", "bond back", "end of lease"] },
+  { "glob": "/services/bond-cleaning/**", "must": ["bond clean", "bond back", "australian", "quality"], "forbid": ["spring clean", "bathroom-only"] },
+  { "glob": "/services/spring-cleaning/**", "must": ["spring clean"], "forbid": ["bond clean", "bond back", "end of lease"] }
+  ],
+  "lexicon": {
+  "australian": ["bond clean", "end of lease", "real estate agent", "entry/exit report", "inspection"],
+  "quality": ["7-day re-clean", "police-checked", "insured", "agent-ready checklist"]
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "extends": "./src/components/tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["src/*"]
+    },
+  "types": ["@playwright/test"],
+  "moduleResolution": "Bundler",
+  "resolveJsonModule": true,
+  "allowJs": true
+  },
+  "include": [
+    "src",
+    "tests",
+    "scripts",
+    "js"
+  ]
+}

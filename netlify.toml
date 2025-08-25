@@ -1,0 +1,47 @@
+# This is the main build configuration for Netlify.
+[build]
+  # This command tells Netlify to run the "build" script from your package.json.
+  command = "npm run build"
+  # This is the directory that Netlify will deploy. Astro builds to "dist" by default.
+  publish = "dist/"
+
+# --- Recommended additions for build stability ---
+[build.environment]
+  # Pin Node.js to avoid Netlify default changes causing build failures.
+  NODE_VERSION = "20"
+  # JSON-LD health defaults (can be overridden in Netlify UI)
+  MIN_PAGES_WITH_LD = "5"
+  LD_MUST_HAVE = "/index.html,/services/bond-cleaning/index.html,/blog/index.html,/blog/brisbane/index.html,/blog/ipswich/index.html,/blog/*/category/*/index.html"
+  # Fail if a glob matches zero pages (typo guard)
+  LD_MUST_HAVE_FAIL_ON_ZERO = "1"
+  LD_ENFORCE_TYPES = "1"
+  LD_REQUIRED_TYPES_JSON = "scripts/ld-required-types.json"
+  # Reviews pipeline (requested runtime settings)
+  REVIEWS_MODE = "seed+live"
+  LIVE_REVIEWS_PATH = "src/data/reviews.json"
+  RECEIPTS_PATH = "src/data/review-receipts.json"
+  MIN_REVIEWS_FOR_AGG = "5"
+  ALLOW_LOCALBUSINESS_RATINGS = "1"
+
+[[redirects]]
+  from = "/blog/Ipswich%20Region/*"
+  to = "/blog/ipswich-region/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/blog/Brisbane%20West/*"
+  to = "/blog/brisbane-west/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/blog/Logan/*"
+  to = "/blog/logan/:splat"
+  status = 301
+
+# Canonicalize legacy service paths that include cluster to suburb-only structure
+[[redirects]]
+  from = "/services/:service/:cluster/:suburb/*"
+  to = "/services/:service/:suburb/"
+  status = 301
+  force = true
+
