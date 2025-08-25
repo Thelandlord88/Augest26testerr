@@ -1,0 +1,324 @@
+Awesome—since you’re already standardizing the blog architecture, here’s a **production-grade CI audit** that scans your **built HTML** for any **alias blog cluster slugs** (e.g. `ipswich-region`, `brisbane-west`, etc.), checks **canonical link tags**, and enforces **trailing slashes**. It writes a human-readable report and **fails CI** if it finds problems.
+
+Below is everything you need: the script, npm wiring, and what/why notes.
+
+---
+
+# 1) Script — `scripts/assert-blog-canonicals.mjs`
+
+```js
+#!/usr/bin/env node
+/**
+ * Assert Blog Canonicals & Alias-Free Links
+ *
+ * What this does:
+ * - Scans built HTML (default: dist/) for any /blog/:cluster/... URLs using alias slugs.
+ * - Verifies <link rel="canonical"> for blog pages uses canonical slugs + trailing slash.
+ * - Flags anchors with alias clusters (ipswich-region, brisbane-west, brisbane_west, brisbane%20west).
+ * - Writes a detailed report to __ai/blog-alias-audit.txt and exits 1 on problems.
+ *
+ * Config (env or args):
+ *   --root=./app-root              Change repo root (default: .)
+ *   --dist=dist                    Change output dir (default: dist)
+ *   BLOG_ALIAS_SLUGS="a,b,c"      Override alias list
+ *   BLOG_CANON_MAP="alias1:canon1,alias2:canon2"
+ *   REQUIRE_TRAILING_SLASH=1      Also flag blog canonicals/anchors missing trailing slash
+ */
+
+import fs from "node:fs";
+import fsp from "node:fs/promises";
+import path from "node:path";
+
+const arg = (k, d = null) => {
+  const m = process.argv.find(a => a.startsWith(k + "="));
+  return m ? m.split("=")[1] : d;
+};
+
+const ROOT = path.resolve(process.cwd(), arg("--root", "."));
+const DIST = path.resolve(ROOT, arg("--dist", "dist"));
+const OUT_DIR = path.join(ROOT, "__ai");
+const OUT = path.join(OUT_DIR, "blog-alias-audit.txt");
+
+const DEFAULT_ALIASES = [
+  "ipswich-region",
+  "brisbane-west",
+  "brisbane_west",
+  "brisbane%20west",
+];
+const aliasCsv = process.env.BLOG_ALIAS_SLUGS || "";
+const ALIASES = (aliasCsv ? aliasCsv.split(",") : DEFAULT_ALIASES)
+  .map(s => String(s || "").trim()).filter(Boolean);
+
+const mapCsv = process.env.BLOG_CANON_MAP || "ipswich-region:ipswich,brisbane-west:brisbane,brisbane_west:brisbane,brisbane%20west:brisbane";
+const CANON = new Map(
+  mapCsv.split(",").map(pair => {
+    const [a, c] = pair.split(":");
+    return [String(a || "").trim(), String(c || "").trim()];
+  })
+);
+
+const REQUIRE_TRAILING = String(process.env.REQUIRE_TRAILING_SLASH || "1") === "1";
+
+function* walk(dir) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) yield* walk(full);
+    else if (entry.isFile() && entry.name.toLowerCase().endsWith(".html")) yield full;
+  }
+}
+
+function read(p) {
+  try { return fs.readFileSync(p, "utf8"); } catch { return ""; }
+}
+
+function normalizePath(p = "") {
+  try {
+    // We only care about the pathname portion for checks
+    const u = new URL(p, "https://x.example");
+    let pathname = u.pathname || "/";
+    if (!pathname.endsWith("/") && !/\.[a-z0-9]+$/i.test(pathname)) {
+      pathname += "/";
+    }
+    return pathname;
+  } catch {
+    return String(p || "");
+  }
+}
+
+function findCanonicalHref(html) {
+  // <link rel="canonical" href="...">
+  const linkRe = /<link\b[^>]*rel=["']canonical["'][^>]*>/ig;
+  const hrefRe = /href=["']([^"']+)["']/i;
+  let m;
+  while ((m = linkRe.exec(html))) {
+    const tag = m[0];
+    const h = tag.match(hrefRe);
+    if (h && h[1]) return h[1];
+  }
+  return null;
+}
+
+function linesWithMatches(text, rx) {
+  const out = [];
+  const lines = text.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    if (rx.test(lines[i])) out.push({ line: i + 1, text: lines[i].trim().slice(0, 200) });
+  }
+  return out.slice(0, 5); // keep it readable
+}
+
+function buildAliasRx() {
+  // /blog/(alias1|alias2|...)(/|$)
+  const a = ALIASES.map(s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+  return new RegExp(String.raw`/blog/(?:${a})(?:/|$)`, "ig");
+}
+
+function isBlogPath(p) {
+  return /^\/blog\//.test(p);
+}
+
+async function main() {
+  if (!fs.existsSync(DIST)) {
+    console.error(`Dist directory not found: ${DIST}`);
+    process.exit(1);
+  }
+
+  const files = [...walk(DIST)];
+  const aliasRx = buildAliasRx();
+
+  const issues = {
+    aliasAnchors: [],      // hrefs or JSON-LD values containing alias slugs
+    badCanonical: [],      // canonical uses alias slug
+    missingSlash: [],      // canonical/blog-anchor missing trailing slash (if enforced)
+  };
+
+  for (const f of files) {
+    const html = read(f);
+
+    // 1) Canonical check (only for blog pages)
+    const canonicalHref = findCanonicalHref(html);
+    if (canonicalHref && isBlogPath(normalizePath(canonicalHref))) {
+      const n = normalizePath(canonicalHref);
+      if (aliasRx.test(n)) {
+        issues.badCanonical.push({
+          file: path.relative(ROOT, f),
+          canonical: canonicalHref,
+          suggestion: n.replace(aliasRx, (m) => {
+            // m is like "/blog/ipswich-region/"
+            const segs = m.split("/");
+            const alias = segs[2]; // blog / {alias} / ...
+            const canon = CANON.get(alias) || alias;
+            segs[2] = canon;
+            return segs.join("/");
+          })
+        });
+      } else if (REQUIRE_TRAILING && !n.endsWith("/") && !/\.[a-z0-9]+$/i.test(n)) {
+        issues.missingSlash.push({
+          file: path.relative(ROOT, f),
+          location: "canonical",
+          value: canonicalHref,
+          suggestion: n + "/"
+        });
+      }
+    }
+
+    // 2) Any alias occurrences anywhere (anchors, JSON-LD, text)
+    if (aliasRx.test(html)) {
+      issues.aliasAnchors.push({
+        file: path.relative(ROOT, f),
+        samples: linesWithMatches(html, aliasRx)
+      });
+    }
+
+    // 3) Optional: check blog anchors for trailing slash
+    if (REQUIRE_TRAILING) {
+      // Find href attributes with /blog/... (exclude files like .xml)
+      const hrefRe = /href\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))/ig;
+      let m;
+      while ((m = hrefRe.exec(html))) {
+        const href = m[1] || m[2] || m[3] || "";
+        if (!href) continue;
+        let n = normalizePath(href);
+        if (isBlogPath(n) && !n.endsWith("/") && !/\.[a-z0-9]+$/i.test(n)) {
+          issues.missingSlash.push({
+            file: path.relative(ROOT, f),
+            location: "href",
+            value: href,
+            suggestion: n + "/"
+          });
+        }
+      }
+    }
+  }
+
+  // Report
+  await fsp.mkdir(OUT_DIR, { recursive: true });
+  const out = [];
+  out.push(`# Blog Canonicals & Alias Audit — ${new Date().toISOString()}`);
+  out.push(`Root: ${ROOT}`);
+  out.push(`Dist: ${DIST}`);
+  out.push("");
+  out.push(`Aliases checked: ${ALIASES.join(", ")}`);
+  out.push("");
+
+  const totalIssues =
+    issues.aliasAnchors.length +
+    issues.badCanonical.length +
+    (REQUIRE_TRAILING ? issues.missingSlash.length : 0);
+
+  if (issues.badCanonical.length) {
+    out.push(`❌ Canonical tags using alias slugs: ${issues.badCanonical.length}`);
+    for (const x of issues.badCanonical.slice(0, 25)) {
+      out.push(`- ${x.file}`);
+      out.push(`  canonical:  ${x.canonical}`);
+      out.push(`  suggestion: ${x.suggestion}`);
+    }
+    out.push("");
+  }
+
+  if (issues.aliasAnchors.length) {
+    out.push(`❌ Alias blog paths found in content (anchors/JSON-LD/text): ${issues.aliasAnchors.length}`);
+    for (const x of issues.aliasAnchors.slice(0, 25)) {
+      out.push(`- ${x.file}`);
+      for (const s of x.samples) out.push(`  L${s.line}: ${s.text}`);
+    }
+    out.push("");
+  }
+
+  if (REQUIRE_TRAILING && issues.missingSlash.length) {
+    out.push(`❌ Missing trailing slashes on blog URLs: ${issues.missingSlash.length}`);
+    for (const x of issues.missingSlash.slice(0, 25)) {
+      out.push(`- ${x.file} (${x.location})`);
+      out.push(`  value:      ${x.value}`);
+      out.push(`  suggestion: ${x.suggestion}`);
+    }
+    out.push("");
+  }
+
+  if (!totalIssues) {
+    out.push("✅ No alias blog slugs detected. Canonicals look good. Trailing slashes OK.");
+  } else {
+    out.push(`❌ Audit FAILED with ${totalIssues} issue(s).`);
+  }
+
+  await fsp.writeFile(OUT, out.join("\n") + "\n", "utf8");
+  console.log(`Wrote ${path.relative(ROOT, OUT)}`);
+
+  if (totalIssues) process.exit(1);
+}
+
+main().catch(err => {
+  console.error(err);
+  process.exit(1);
+});
+```
+
+---
+
+# 2) Add npm scripts
+
+```json
+{
+  "scripts": {
+    "ai:blog:alias-audit": "node scripts/assert-blog-canonicals.mjs",
+    "ai:blog:alias-audit:dist": "node scripts/assert-blog-canonicals.mjs --dist=dist",
+    "postbuild": "… && node scripts/assert-blog-canonicals.mjs"
+  }
+}
+```
+
+> If you don’t want it to fail local builds by default, omit it from `postbuild` and run it in CI only.
+
+---
+
+# 3) What it catches (now)
+
+* **Any alias segments** inside built HTML:
+
+  * Anchors like `href="/blog/ipswich-region/..."`.
+  * Canonicals like `<link rel="canonical" href="/blog/brisbane-west/…">`.
+  * Aliases embedded in **JSON-LD** (the script searches the whole HTML).
+
+* **Trailing slash drift** (optional, default on):
+
+  * Canonical or `<a href="/blog/foo/bar">` without trailing slash → flagged with a suggested fix.
+
+---
+
+# 4) Why this matters
+
+* Keeps your site aligned with your **canonical-first** policy.
+* Prevents **duplicate content** caused by mixed cluster slugs.
+* Enforces **consistency** with your redirects and middleware.
+* Protects your **structured data**: no alias URLs sneaking into `@id`, `item`, `url`.
+
+---
+
+# 5) How to run
+
+* Manually after a local build:
+
+  ```bash
+  npm run build
+  npm run ai:blog:alias-audit
+  ```
+* In CI (recommended):
+
+  ```bash
+  npm ci
+  npm run build
+  npm run ai:blog:alias-audit
+  ```
+
+You’ll get a file at `__ai/blog-alias-audit.txt`. If any issues are found, the script prints the path and a suggested canonical replacement and **exits 1** to fail the job.
+
+---
+
+# 6) Easy improvements (optional)
+
+* **SARIF output**: mirror the text report to SARIF (like your other linters) for PR annotations.
+* **Fix mode**: add a `--write` that rewrites canonicals/anchors in `dist/` (use carefully).
+* **More aliases**: extend `BLOG_ALIAS_SLUGS` / `BLOG_CANON_MAP` if new variants turn up.
+* **Source preflight**: add a `--mode=src` variant that scans Astro source for alias patterns (pre-build safety net).
+
+If you’d like, I can also add a SARIF writer so the CI will annotate exact lines in the PR when a contributor reintroduces an alias.

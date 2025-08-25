@@ -1,0 +1,1494 @@
+Awesome—thanks for the snapshot. I read through your repo index and the generated knowledge-base file and pulled out the big wins, gaps, and the “fix first” items.
+
+# What’s solid
+
+* You’ve centralized the repo map and metadata into a single doc (👍 for future audits), and it says you’re tracking **838 files** right now.&#x20;
+* The KB already catalogs CI/AI artifacts under `__ai/` and notes what produces them (useful for provenance).&#x20;
+* `public/_headers` exists and is recorded as the deployed Netlify headers (correct place).&#x20;
+* You’ve got Cypress/E2E scaffolding captured (config + a couple specs), which is good for keeping routing/UX guardrails in place.&#x20;
+
+# Issues / risks worth fixing next
+
+1. **Alias pages slipping back into the repo (breaks canonical strategy)**
+   Push logs show explicit alias pages were (re)added for `/blog/{ipswich-region, brisbane-west, brisbane_west}` (Index Astro files). Those compile into HTML and will leak into `dist/`, recreating the exact CI/SEO problem we just solved. Delete them and rely on middleware + `public/_redirects` only.&#x20;
+
+2. **A few stray / suspicious files cluttering root**
+
+* A file literally named `18` (probably accidental) and a weirdly quoted filename (`"# Bond Clean Footer Validation Script – .js"`) will cause tooling pain; rename or delete.&#x20;
+* `dev.err` / `dev.out` are also sitting in root with “n/a” descriptions—either ignore via `.gitignore` or move them under a temp/logs dir.&#x20;
+
+3. **Data-source naming inconsistencies**
+   Your code paths often expect `~/data/cluster_map.json` and `~/data/clusters.json`, but the repo snapshot emphasizes `src/content/areas.clusters.json`. To avoid brittle imports, add a tiny **loader that prefers `cluster_map.json` and falls back to inverting your clusters file** (regardless of path). This prevents breakage when the pipeline omits `cluster_map.json`. (You already document `areas.clusters.json` here.)&#x20;
+
+4. **“n/a” entries for key content**
+   Several content files in `src/content/` have `What/Why = n/a`. These feed high-impact features (coverage, FAQs, card decks). Fill those with one-liners so the KB remains useful during on-boarding and audits. (Examples in “Fill-ins” below.)&#x20;
+
+5. **KB completeness / cross-links**
+   The KB’s “Connects To” is strong for AI/CI artifacts but sparse for app code. Add a lightweight import-scan in your generator to list the **top 1–3 consumers** (or dependants) of each module—huge for impact analysis. See suggestions below.&#x20;
+
+---
+
+# Fast, targeted fixes
+
+## A) Remove alias pages (keep 301s at edge)
+
+Delete:
+
+* `src/pages/blog/ipswich-region/index.astro`
+* `src/pages/blog/brisbane-west/index.astro`
+* `src/pages/blog/brisbane_west/index.astro`
+  (These were created in a previous push; remove them so they don’t emit HTML.)&#x20;
+
+## B) Normalize the cluster map source (robust loader)
+
+Add a small utility that **prefers** `cluster_map.json` and **falls back** to inverting your clusters file (works whether it’s `src/content/areas.clusters.json` or `src/data/clusters.json`):
+
+```ts
+// src/utils/clusterMap.ts
+let MAP: Record<string, string> | null = null;
+
+export async function loadClusterMap(): Promise<Record<string, string>> {
+  if (MAP) return MAP;
+  try {
+    const mod = await import('~/data/cluster_map.json', { assert: { type: 'json' } });
+    MAP = mod.default as Record<string, string>;
+    return MAP;
+  } catch { /* fall through */ }
+
+  // Fallback: areas.clusters.json (or clusters.json)
+  let clusters: Record<string, string[]> = {};
+  try {
+    clusters = (await import('~/content/areas.clusters.json', { assert: { type: 'json' } })).default as any;
+  } catch {
+    try {
+      clusters = (await import('~/data/clusters.json', { assert: { type: 'json' } })).default as any;
+    } catch { /* none available */ }
+  }
+
+  const inv: Record<string, string> = {};
+  for (const [cluster, list] of Object.entries(clusters || {})) {
+    for (const s of list || []) inv[String(s).toLowerCase()] = String(cluster).toLowerCase();
+  }
+  MAP = inv;
+  return MAP;
+}
+```
+
+This removes the “do I have `cluster_map.json` today?” anxiety and aligns the app to your current data layout. (Your repo currently shows `areas.clusters.json`, not `data/clusters.json`, so this fallback is important.)&#x20;
+
+## C) Fill in “What/Why” for key content now marked `n/a`
+
+Suggested one-liners you can paste into your table:
+
+* `src/content/areas.clusters.json` →
+  **What:** Cluster → suburb array map.
+  **Why:** Drives cluster pages, local-guides links, and fallback suburb→cluster lookups.
+
+* `src/content/cards.home.json` →
+  **What:** Home “cards” content (title/desc/icon/route).
+  **Why:** Decouples copy/design from route construction; used by homepage sections.
+
+* `src/content/faq.service-*.json` & `faq.suburb.*.json` →
+  **What:** FAQ content blocks per service/suburb.
+  **Why:** Keeps FAQ copy structured and localizable; consumed by service pages.
+
+(Those paths appear in the KB list and are currently `n/a`.)&#x20;
+
+## D) Clean up / quarantine odd files
+
+* Remove or rename `18` and the oddly quoted “Bond Clean Footer Validation…” filename. These trip shells and Windows checkouts.&#x20;
+* Ignore or relocate `dev.err` and `dev.out` to a temp/logs directory.&#x20;
+
+---
+
+# Optional—but high-leverage—upgrades to your generator
+
+1. **Creation/last-edit correctness:** when a file was *created* = `git log --diff-filter=A -1 --format=%ad -- <file>`; last edit = `git log -1 --format=%ad -- <file>`. Handle renames with `--follow`. (Your KB already shows created/edited dates; tighten the source to survive renames.)&#x20;
+
+2. **“Connects To” autocapture:** parse each file’s imports and record the **top N importers** (files that *use* it) to spotlight blast radius during refactors. Seed it for key dirs (`src/utils/`, `src/components/`, `src/config/`).
+
+3. **Section caps / exclusions:** keep `__ai/` in the index (for provenance) but exclude it from any “action required” views, since they’re build artifacts. Your KB already identifies many `__ai/` entries as artifacts.&#x20;
+
+4. **Owners & tags (lightweight):** add optional columns—**Owner**, **Tier** (core/runtime/content), **Region/Service** (if applicable). It makes triage faster without touching code files.
+
+---
+
+# Sanity checks to keep green
+
+* Keep `public/_headers` (you’ve got it) and ensure `_redirects` lives in the same dir so Netlify ships both.&#x20;
+* Run the extended BLOG\_BASE guard when changing the base (you already have scripts/instructions for it).&#x20;
+* Do **not** ship alias HTML; rely on middleware/CDN. If you see failures like the ones in your earlier Playwright run, it’s usually because the alias pages were present.&#x20;
+
+---
+
+If you want, I can also give you a tiny patch that **auto-removes** the three alias pages, adds the resilient `clusterMap` loader above, and pre-fills the `What/Why` entries in your KB for the `n/a` rows—so this doc becomes a trusted, single source of truth.
+
+
+-----
+I dug through your latest `REPO_FILES (1).md` (838 entries). Here’s a focused, repo-health deep-dive with concrete fixes.
+
+# What looks great
+
+* **No alias pages in `dist`**: I don’t see `src/pages/blog/(brisbane-west|brisbane_west|ipswich-region)/**` — ✅
+* **Runtime canonicalization in place**: `src/middleware.ts` is present — ✅
+* **CDN backstops**: `public/_redirects` exists — ✅
+* **Cross-service UI**: `src/components/CrossServiceLinks.astro` exists and is recent — ✅
+* **Internal links helper (TS)**: `src/utils/internalLinks.ts` is present — ✅
+
+# Issues & quick wins (highest impact first)
+
+1. ## Two `_headers` files — keep only the one in `public/`
+
+I see **both** `_headers` (repo root) and `public/_headers`. Netlify only publishes the copy in `public/`, so the root file is redundant and risks drift.
+
+```bash
+git rm _headers
+```
+
+2. ## JS/TS shadow duplicates in `src/utils`
+
+Both JS and TS exist for key helpers:
+
+* `src/utils/internalLinks.ts` **and** `src/utils/internalLinks.js`
+* `src/utils/geoHandler.ts` **and** `src/utils/geoHandler.js`
+* `src/utils/slugify.ts` **and** `src/utils/slugify.js`
+
+This is brittle (module resolution can pick the wrong one). Keep TS; remove JS:
+
+```bash
+git rm src/utils/internalLinks.js src/utils/geoHandler.js src/utils/slugify.js
+# Ensure imports are extensionless (e.g., `~/utils/internalLinks`)
+```
+
+3. ## Missing data files reduce link quality (fallbacks kick in)
+
+I don’t see `src/data/adjacency.json` or `src/data/cluster_map.json`. Your code will fall back to `areas.clusters.json`, but:
+
+* **`representativeOfCluster`** won’t have degree data → falls back to alphabetical.
+* **Nearby fallback** (when a service isn’t covered “here”) can’t use true adjacency.
+
+If you want the smarter behavior, check in:
+
+* `src/data/adjacency.json`
+* `src/data/cluster_map.json` (or generate at build and ship it)
+
+4. ## Tracked logs & temp files in repo
+
+I see `dev.err`, `dev.out`, `build.log`, and `tmp/crawl.log` tracked. Add to `.gitignore` and untrack:
+
+```bash
+cat >> .gitignore <<'EOF'
+# dev/build noise
+dev.err
+dev.out
+build.log
+tmp/
+*.log
+EOF
+
+git rm --cached dev.err dev.out build.log || true
+git rm -r --cached tmp || true
+```
+
+5. ## Duplicate redirect tests
+
+Two files named `middleware-redirect.spec.ts` in different dirs:
+
+* `tests/e2e/middleware-redirect.spec.ts`
+* `tests/routing/middleware-redirect.spec.ts`
+
+If they cover the same behavior, consolidate to one (or split by scope with distinct names) to avoid duplicate runs and brittle flake.
+
+6. ## “Experiment” folder committed
+
+`linking and suburbs aug16/**` is in the repo. Either move to `/docs/experiments/…` (so it’s clearly non-prod) or remove if no longer needed.
+
+7. ## Many files with `n/a` “What/Why”
+
+About \~90 entries have `n/a` in **What**/**Why** (e.g., data files). That’s fine for now, but for high-traffic code paths (middleware, routing, link helpers, sitemap/guards), I’d add a one-liner each so new devs can scan the table and understand intent.
+
+---
+
+# Optional: one-file, “now and again” generator for the knowledge base
+
+Since you want a **single** file (no source edits), here’s a once-off / periodic script that rebuilds `REPO_FILES.md` from Git history. It writes **Created**/**Last Edited** and leaves **What**/**Why** as `n/a` unless you add a small pattern map.
+
+Create `scripts/generate-knowledge-base.mjs`:
+
+```js
+#!/usr/bin/env node
+import { execSync } from 'node:child_process';
+import { writeFileSync } from 'node:fs';
+
+const run = (cmd) => execSync(cmd, { stdio: ['ignore','pipe','ignore'] }).toString().trim();
+
+const files = run('git ls-files').split('\n').filter(Boolean);
+
+// helper to get first and last commit dates (YYYY-MM-DD)
+function datesFor(path) {
+  let created = 'n/a', last = 'n/a';
+  try {
+    // first commit date (author date, chronological)
+    created = run(`git log --follow --diff-filter=A --format=%cs -- "${path}" | tail -1`) || 'n/a';
+    // last commit date
+    last = run(`git log -1 --format=%cs -- "${path}"`) || 'n/a';
+  } catch { /* n/a */ }
+  return { created, last };
+}
+
+// optional heuristics: fill WHAT/WHY for well-known paths
+const rules = [
+  { pat: /^public\/_redirects$/, what: 'Static redirect rules.', why: 'Backstop runtime redirects and keep legacy/alias URLs canonical.' },
+  { pat: /^public\/_headers$/,   what: 'Static headers.',        why: 'Security/caching headers shipped at CDN edge.' },
+  { pat: /^src\/middleware\.ts$/,what: 'Edge middleware.',       why: 'Canonicalize routes, enforce 301s, preserve query.' },
+  { pat: /^src\/components\/CrossServiceLinks\.astro$/, what: 'Cross-service link UI.', why: 'Boost onward CTR with suburb-accurate links.' },
+  { pat: /^src\/utils\/internalLinks\.ts$/, what: 'Link helpers.', why: 'Same-suburb deep links & BLOG_BASE-aware cluster links.' },
+  { pat: /^scripts\/assert-no-alias-build\.mjs$/, what: 'Postbuild guard.', why: 'Fail build if alias HTML leaks into dist/sitemap.' },
+];
+
+function describe(path) {
+  for (const r of rules) if (r.pat.test(path)) return { what: r.what, why: r.why };
+  return { what: 'n/a', why: 'n/a' };
+}
+
+const now = new Date().toISOString().slice(0,10);
+let md = `# Codebase Knowledge Base\n\n*Last updated: ${now}*\n\n`;
+md += `This document captures key metadata for the repository.\n\n---\n\n`;
+md += `## File Index\n\n| Path | Created | Last Edited | What | Why |\n|------|---------|-------------|------|-----|\n`;
+
+for (const path of files) {
+  const { created, last } = datesFor(path);
+  const { what, why } = describe(path);
+  // escape pipes in why/what if any
+  const esc = (s) => String(s).replace(/\|/g, '\\|');
+  md += `| \`${path}\` | ${created} | ${last} | ${esc(what)} | ${esc(why)} |\n`;
+}
+
+writeFileSync('REPO_FILES.md', md, 'utf8');
+console.log('Wrote REPO_FILES.md');
+```
+
+Run it when you want to refresh the table:
+
+```bash
+node scripts/generate-knowledge-base.mjs
+```
+
+*(You can gradually expand the `rules` array to auto-fill “What/Why” for your most important files. Everything else will stay `n/a` until you care to document it.)*
+
+---
+
+# TL;DR action list
+
+* **Remove** root `_headers` (keep `public/_headers`).
+* **Remove** JS shadows for `internalLinks/geoHandler/slugify` (keep TS).
+* **(Optional but recommended)** commit `src/data/adjacency.json` and `src/data/cluster_map.json` so “representative suburb” and “nearby” logic run at full fidelity.
+* **Untrack** logs/temp files and add them to `.gitignore`.
+* **Consolidate** duplicate redirect tests (or rename with distinct scope).
+* **Tidy** the “linking and suburbs aug16” folder (move to `/docs/experiments` or remove).
+* **Use** the generator script above “now and again” to refresh `REPO_FILES.md`.
+
+If you want, I can also draft the `.gitignore` patch and a quick `pnpm script` block to wire `kb:gen` for you.
+---
+
+---
+Got it—I read your `REPO_FILES (1).md` and treated it as the current ground truth of your repo. Here’s a tight, practical deep-dive with specific findings and fixes.
+
+# Snapshot (from your KB)
+
+* **Total files indexed:** 838
+* **By area:** `tests/` 508 · `src/` 196 · `public/` 2 · `scripts/` 27 · `docs/` 13 · `js/` 5 · `css/` 1 · `linking and suburbs aug16/` 86
+* **Missing descriptions:** 94 files have `What/Why = n/a` (most are images or data dumps; a few are important).
+* **Dates (from KB):** Created: 2025-07-20 → 2025-08-21 · Last edited: 2025-07-25 → 2025-08-21
+
+# What’s solid ✅
+
+* **Alias control:** `src/middleware.ts` exists (canonicalization in place), **no** alias blog pages under `src/pages/blog/*`—great.
+* **CDN backstop:** `public/_headers` and `public/_redirects` are present.
+* **Internal linking:** `src/utils/internalLinks.ts` (typed) + `src/components/CrossServiceLinks.astro` exist.
+* **Discovery/guarding:** You have `scripts/discover-pages.mjs` and `scripts/gen-test-routes.mjs` (good for controlled test growth).
+* **Coverage & curated neighbors:** `src/data/serviceCoverage.json` and `src/data/geo.neighbors.*.json` exist.
+
+# Gaps & risks (actionable)
+
+1. **JS/TS duplication can shadow resolution**
+
+   * Both **TS and JS** versions are present for key utils:
+
+     * `src/utils/internalLinks.ts` **and** `src/utils/internalLinks.js`
+     * `src/utils/geoHandler.ts` **and** `src/utils/geoHandler.js`
+     * `src/utils/slugify.ts` **and** `src/utils/slugify.js`
+   * **Why it matters:** Depending on resolver, the `.js` can be imported accidentally in tests/build and drift from the TS version.
+   * **Fix:** Keep the TS files only. If you must keep JS, make the TS files explicit re-exports of the JS (typed shims) and **delete** the duplicate implementation files.
+
+2. **Adjacency graph is missing**
+
+   * I don’t see a repo-level `data/adjacency.json`. You only have curated neighbor tables (`src/data/geo.neighbors.*.json`).
+   * **Impact:** Any “representative suburb” heuristic that relies on true graph degree (edge-touch adjacency) will degrade to alphabetical fallback.
+   * **Fix:** Either add the generated `adjacency.json` (from your geo pipeline) or keep the representative suburb helper tolerant to its absence.
+
+3. **Cluster fast-path not present**
+
+   * I don’t see `data/cluster_map.json`. You’re currently relying on `src/content/areas.clusters.json`.
+   * **Impact:** Suburb→cluster lookups are O(n) scans instead of O(1). Fine at your current scale, but the fast path is cheap and reduces coupling.
+
+4. **Staging artefacts in repo**
+
+   * `linking and suburbs aug16/` includes older copies of datasets and code (e.g., `serviceCoverage.json`, `suburbs.json`, neighbor tables) **duplicated** elsewhere:
+
+     * Examples:
+
+       * `serviceCoverage.json` (this folder) vs `src/data/serviceCoverage.json`
+       * `geo.neighbors.brisbane_west.json` (this folder) vs `src/data/geo.neighbors.brisbane-west.json`
+       * `suburbs.csv/geojson` (old runs)
+   * **Impact:** Source of truth ambiguity + accidental import drift.
+   * **Fix:** Archive or remove the folder, or add it to `.gitignore`. Keep “official” data under `src/data/` and `src/content/`.
+
+5. **Legacy ‘js/’ folder**
+
+   * `js/` contains older scripts (5 files) not integrated into current `scripts/` structure.
+   * **Fix:** Move anything still needed into `scripts/` and delete the legacy folder.
+
+6. **KB coverage gaps**
+
+   * A handful of important files still have `n/a` for What/Why (e.g., `netlify.toml`, `robots.txt`, `src/data/suburbs.json`).
+   * **Fix:** Fill with terse, standardized descriptors (see suggestions below).
+
+# What to add next (keeps everything robust)
+
+These are the exact pieces that your KB suggests are **not** in the repo yet but will make the system fully resilient:
+
+1. **Cluster map loader (suburb→cluster) with fallback**
+
+   * Use this so your utils work whether only `clusters.json` is present or both `clusters.json` and `cluster_map.json`:
+   * **Path:** `src/utils/clusterMap.ts`
+   * **Why:** Eliminates coupling to a single data format; allows your pipeline to omit `cluster_map.json` without breaking links.
+
+2. **Representative suburb helper (degree-based)**
+
+   * **Path:** `src/utils/repSuburb.ts`
+   * **Why:** Picks a central suburb for a cluster for blog links; gracefully degrades without `adjacency.json`.
+
+3. **Blog chooser**
+
+   * **Path:** `src/utils/chooseSuburbForPost.ts`
+   * **Why:** Blog pages under `/blog|/guides/<cluster>/<slug>/` pick the best suburb (frontmatter → suburbs\[] → slug tokens → representative fallback).
+
+4. **Nearby covered helper**
+
+   * **Path:** `src/utils/nearbyCovered.ts`
+   * **Why:** For CrossServiceLinks, if a service isn’t offered “here”, link to the nearest covered suburb in the **same** cluster.
+   * If you adopt the cluster loader, consider making this async (await cluster map load) and `await` it in the Astro component.
+
+> If you want, I’ll drop the ready-to-paste code bundle again—but from your KB snapshot, these files aren’t in the tree yet.
+
+# High-value cleanups (10–15 minutes total)
+
+* **Delete** `src/utils/internalLinks.js`, `src/utils/geoHandler.js`, `src/utils/slugify.js` (keep TS).
+  If a consumer still imports `.js`, create typed TS re-exports that point to the JS and then delete the JS **implementation** to remove drift.
+* **Remove / ignore** `linking and suburbs aug16/`. Its contents duplicate canonical data in `src/data/` and test fixtures.
+* **Remove** stray local logs: `dev.out`, `dev.err`, and the empty “ml” stub. Add them to `.gitignore`.
+* **Ensure** `tsconfig.json` has:
+
+  * `"resolveJsonModule": true`, `"verbatimModuleSyntax": true`, `"moduleResolution": "bundler"`, `"allowJs": false` (once JS duplicates are gone).
+
+# Fill-ins for KB (suggested “What/Why” for notable n/a)
+
+Use these exact strings to complete your table—short and consistent:
+
+* `netlify.toml`
+  **What:** Netlify build & deploy config
+  **Why:** Defines publish dir, headers, redirects, and environment-specific settings
+
+* `robots.txt`
+  **What:** Crawler directives
+  **Why:** Prevents crawl of staging/alias paths; points bots to sitemap
+
+* `src/data/suburbs.json`
+  **What:** Canonical suburb slugs and metadata
+  **Why:** Drive service page generation and internal link validation
+
+* `src/assets/logo.svg` / `src/assets/shapes.svg`
+  **What:** Brand SVG asset
+  **Why:** Shared visual asset for layout and marketing pages
+
+* `meta-manifest.json` (if you keep it)
+  **What:** Knowledge base generation manifest
+  **Why:** Tracks inputs for `REPO_FILES.md` reproducibility
+
+* `css/base.css` (your single css file)
+  **What:** Base styles and resets
+  **Why:** Normalizes typography and spacing across pages
+
+# Duplicates to remove (keep the right-hand path)
+
+* `serviceCoverage.json` → **keep** `src/data/serviceCoverage.json`
+* `geo.neighbors.brisbane_west.json` → **keep** `src/data/geo.neighbors.brisbane-west.json`
+* `geo.neighbors.ipswich.json` → **keep** `src/data/geo.neighbors.ipswich.json`
+* `geo.neighbors.logan.json` → **keep** `src/data/geo.neighbors.logan.json`
+
+# Prioritized next steps (do in this order)
+
+1. **Resolve JS/TS duplication** (delete JS implementations, or make TS the only source of truth).
+2. **Remove `linking and suburbs aug16/`** (or move to `/docs/archive/` and update KB).
+3. **Add `clusterMap.ts`, `repSuburb.ts`, `chooseSuburbForPost.ts`, `nearbyCovered.ts`** (+ tiny unit tests).
+4. **Fill KB n/a entries** for the notable config/data files above.
+5. **Confirm CrossServiceLinks** uses the nearby fallback (it’s present as a component, but your data shows no adjacency file; it should still work with curated neighbors).
+
+If you want, I can output the exact patch bundle for steps 1–3 (TS loaders + helpers + minimal tests) tailored to this repo snapshot so you can commit in one go.
+--
+Got it—I read your `REPO_FILES (1).md` and treated it as the current ground truth of your repo. Here’s a tight, practical deep-dive with specific findings and fixes.
+
+# Snapshot (from your KB)
+
+* **Total files indexed:** 838
+* **By area:** `tests/` 508 · `src/` 196 · `public/` 2 · `scripts/` 27 · `docs/` 13 · `js/` 5 · `css/` 1 · `linking and suburbs aug16/` 86
+* **Missing descriptions:** 94 files have `What/Why = n/a` (most are images or data dumps; a few are important).
+* **Dates (from KB):** Created: 2025-07-20 → 2025-08-21 · Last edited: 2025-07-25 → 2025-08-21
+
+# What’s solid ✅
+
+* **Alias control:** `src/middleware.ts` exists (canonicalization in place), **no** alias blog pages under `src/pages/blog/*`—great.
+* **CDN backstop:** `public/_headers` and `public/_redirects` are present.
+* **Internal linking:** `src/utils/internalLinks.ts` (typed) + `src/components/CrossServiceLinks.astro` exist.
+* **Discovery/guarding:** You have `scripts/discover-pages.mjs` and `scripts/gen-test-routes.mjs` (good for controlled test growth).
+* **Coverage & curated neighbors:** `src/data/serviceCoverage.json` and `src/data/geo.neighbors.*.json` exist.
+
+# Gaps & risks (actionable)
+
+1. **JS/TS duplication can shadow resolution**
+
+   * Both **TS and JS** versions are present for key utils:
+
+     * `src/utils/internalLinks.ts` **and** `src/utils/internalLinks.js`
+     * `src/utils/geoHandler.ts` **and** `src/utils/geoHandler.js`
+     * `src/utils/slugify.ts` **and** `src/utils/slugify.js`
+   * **Why it matters:** Depending on resolver, the `.js` can be imported accidentally in tests/build and drift from the TS version.
+   * **Fix:** Keep the TS files only. If you must keep JS, make the TS files explicit re-exports of the JS (typed shims) and **delete** the duplicate implementation files.
+
+2. **Adjacency graph is missing**
+
+   * I don’t see a repo-level `data/adjacency.json`. You only have curated neighbor tables (`src/data/geo.neighbors.*.json`).
+   * **Impact:** Any “representative suburb” heuristic that relies on true graph degree (edge-touch adjacency) will degrade to alphabetical fallback.
+   * **Fix:** Either add the generated `adjacency.json` (from your geo pipeline) or keep the representative suburb helper tolerant to its absence.
+
+3. **Cluster fast-path not present**
+
+   * I don’t see `data/cluster_map.json`. You’re currently relying on `src/content/areas.clusters.json`.
+   * **Impact:** Suburb→cluster lookups are O(n) scans instead of O(1). Fine at your current scale, but the fast path is cheap and reduces coupling.
+
+4. **Staging artefacts in repo**
+
+   * `linking and suburbs aug16/` includes older copies of datasets and code (e.g., `serviceCoverage.json`, `suburbs.json`, neighbor tables) **duplicated** elsewhere:
+
+     * Examples:
+
+       * `serviceCoverage.json` (this folder) vs `src/data/serviceCoverage.json`
+       * `geo.neighbors.brisbane_west.json` (this folder) vs `src/data/geo.neighbors.brisbane-west.json`
+       * `suburbs.csv/geojson` (old runs)
+   * **Impact:** Source of truth ambiguity + accidental import drift.
+   * **Fix:** Archive or remove the folder, or add it to `.gitignore`. Keep “official” data under `src/data/` and `src/content/`.
+
+5. **Legacy ‘js/’ folder**
+
+   * `js/` contains older scripts (5 files) not integrated into current `scripts/` structure.
+   * **Fix:** Move anything still needed into `scripts/` and delete the legacy folder.
+
+6. **KB coverage gaps**
+
+   * A handful of important files still have `n/a` for What/Why (e.g., `netlify.toml`, `robots.txt`, `src/data/suburbs.json`).
+   * **Fix:** Fill with terse, standardized descriptors (see suggestions below).
+
+# What to add next (keeps everything robust)
+
+These are the exact pieces that your KB suggests are **not** in the repo yet but will make the system fully resilient:
+
+1. **Cluster map loader (suburb→cluster) with fallback**
+
+   * Use this so your utils work whether only `clusters.json` is present or both `clusters.json` and `cluster_map.json`:
+   * **Path:** `src/utils/clusterMap.ts`
+   * **Why:** Eliminates coupling to a single data format; allows your pipeline to omit `cluster_map.json` without breaking links.
+
+2. **Representative suburb helper (degree-based)**
+
+   * **Path:** `src/utils/repSuburb.ts`
+   * **Why:** Picks a central suburb for a cluster for blog links; gracefully degrades without `adjacency.json`.
+
+3. **Blog chooser**
+
+   * **Path:** `src/utils/chooseSuburbForPost.ts`
+   * **Why:** Blog pages under `/blog|/guides/<cluster>/<slug>/` pick the best suburb (frontmatter → suburbs\[] → slug tokens → representative fallback).
+
+4. **Nearby covered helper**
+
+   * **Path:** `src/utils/nearbyCovered.ts`
+   * **Why:** For CrossServiceLinks, if a service isn’t offered “here”, link to the nearest covered suburb in the **same** cluster.
+   * If you adopt the cluster loader, consider making this async (await cluster map load) and `await` it in the Astro component.
+
+> If you want, I’ll drop the ready-to-paste code bundle again—but from your KB snapshot, these files aren’t in the tree yet.
+
+# High-value cleanups (10–15 minutes total)
+
+* **Delete** `src/utils/internalLinks.js`, `src/utils/geoHandler.js`, `src/utils/slugify.js` (keep TS).
+  If a consumer still imports `.js`, create typed TS re-exports that point to the JS and then delete the JS **implementation** to remove drift.
+* **Remove / ignore** `linking and suburbs aug16/`. Its contents duplicate canonical data in `src/data/` and test fixtures.
+* **Remove** stray local logs: `dev.out`, `dev.err`, and the empty “ml” stub. Add them to `.gitignore`.
+* **Ensure** `tsconfig.json` has:
+
+  * `"resolveJsonModule": true`, `"verbatimModuleSyntax": true`, `"moduleResolution": "bundler"`, `"allowJs": false` (once JS duplicates are gone).
+
+# Fill-ins for KB (suggested “What/Why” for notable n/a)
+
+Use these exact strings to complete your table—short and consistent:
+
+* `netlify.toml`
+  **What:** Netlify build & deploy config
+  **Why:** Defines publish dir, headers, redirects, and environment-specific settings
+
+* `robots.txt`
+  **What:** Crawler directives
+  **Why:** Prevents crawl of staging/alias paths; points bots to sitemap
+
+* `src/data/suburbs.json`
+  **What:** Canonical suburb slugs and metadata
+  **Why:** Drive service page generation and internal link validation
+
+* `src/assets/logo.svg` / `src/assets/shapes.svg`
+  **What:** Brand SVG asset
+  **Why:** Shared visual asset for layout and marketing pages
+
+* `meta-manifest.json` (if you keep it)
+  **What:** Knowledge base generation manifest
+  **Why:** Tracks inputs for `REPO_FILES.md` reproducibility
+
+* `css/base.css` (your single css file)
+  **What:** Base styles and resets
+  **Why:** Normalizes typography and spacing across pages
+
+# Duplicates to remove (keep the right-hand path)
+
+* `serviceCoverage.json` → **keep** `src/data/serviceCoverage.json`
+* `geo.neighbors.brisbane_west.json` → **keep** `src/data/geo.neighbors.brisbane-west.json`
+* `geo.neighbors.ipswich.json` → **keep** `src/data/geo.neighbors.ipswich.json`
+* `geo.neighbors.logan.json` → **keep** `src/data/geo.neighbors.logan.json`
+
+# Prioritized next steps (do in this order)
+
+1. **Resolve JS/TS duplication** (delete JS implementations, or make TS the only source of truth).
+2. **Remove `linking and suburbs aug16/`** (or move to `/docs/archive/` and update KB).
+3. **Add `clusterMap.ts`, `repSuburb.ts`, `chooseSuburbForPost.ts`, `nearbyCovered.ts`** (+ tiny unit tests).
+4. **Fill KB n/a entries** for the notable config/data files above.
+5. **Confirm CrossServiceLinks** uses the nearby fallback (it’s present as a component, but your data shows no adjacency file; it should still work with curated neighbors).
+
+If you want, I can output the exact patch bundle for steps 1–3 (TS loaders + helpers + minimal tests) tailored to this repo snapshot so you can commit in one go.
+---
+
+Got it—read your `REPO_FILES.md` and treated it as the current ground-truth map of the repo. Here’s a tight deep-dive with fixes you can ship immediately and why they matter.
+
+# What’s great (keep!)
+
+* **Canonical/redirect guardrails are in place.** You’ve got the postbuild alias check and CDN backstops: `scripts/assert-no-alias-build.mjs` and `public/_redirects`. That’s the core pair that prevents alias HTML leaks and consolidates SEO via 301s. &#x20;
+* **Cross-service links component is present.** `src/components/CrossServiceLinks.astro` exists and is positioned to lift onward CTR with suburb-aware links.&#x20;
+* **Discovery/curation for test routes landed.** You’ve got `discover-pages.mjs`, `gen-test-routes.mjs`, `promote-test-routes.mjs`, and the curated outputs in `__ai/`. That keeps the E2E set stable while still discovering new pages. &#x20;
+
+# Clear issues to fix
+
+1. **Two `_headers` files (root *and* `public/`).**
+   Netlify only ships files in the publish dir, so `public/_headers` is the source of truth; the root `_headers` is confusing and can drift. Delete the root copy. &#x20;
+
+2. **Stray/odd files checked in.**
+
+   * A weirdly named file: `"# Bond Clean Footer Validation Script – .js"` (likely an OS quoting artifact).
+   * A lone numeric file `18`.
+   * Local logs `dev.err` / `dev.out`.
+     These should be removed (and patterns added to `.gitignore`). &#x20;
+
+3. **Legacy “linking and suburbs aug16” sandbox is still inside the repo.**
+   It contains an old `internalLinks.js`, curated neighbor JSONs, etc. These are easy to confuse with the live data/helpers. Move the whole folder to `/docs/archives/` or delete it after migrating anything you still need.&#x20;
+
+4. **CSS artifact likely unused.**
+   `css/output.css` is listed, but you’d previously removed dead references. If nothing imports it, drop it. (Dead assets hurt PSI and confuse new contributors.)&#x20;
+
+5. **Mixed places for headers/redirects & config drift risk.**
+   You also have `netlify.toml`. Make sure rules in `public/_headers` & `public/_redirects` are the single deploy source (keep `netlify.toml` minimal or aligned). &#x20;
+
+6. **Robots is marked n/a.**
+   Given your alias policy, ensure `robots.txt` disallows alias paths so crawl budget isn’t wasted (e.g., `/blog/ipswich-region/`, `/blog/brisbane-west/`).&#x20;
+
+# Fast improvements (low-risk, high reward)
+
+* **Add a resilient cluster-map loader.**
+  Even if you *usually* have `cluster_map.json`, a tiny helper that inverts `clusters.json` when the map is missing makes everything robust (internal links, “nearby” selection). This prevents silent UI regressions if the data pipeline skips an artifact one day.
+
+  ```ts
+  // src/utils/clusterMap.ts
+  import clusters from '~/data/clusters.json' assert { type: 'json' };
+  let MAP: Record<string,string>|null = null;
+  export async function loadClusterMap(): Promise<Record<string,string>> {
+    if (MAP) return MAP;
+    try {
+      const mod = await import('~/data/cluster_map.json', { assert: { type:'json' } });
+      MAP = mod.default as Record<string,string>;
+    } catch {
+      const inv: Record<string,string> = {};
+      for (const [cluster, subs] of Object.entries(clusters as Record<string,string[]>)) {
+        for (const s of subs) inv[s] = cluster;
+      }
+      MAP = inv;
+    }
+    return MAP!;
+  }
+  ```
+
+* **Smarter suburb pick for blog posts.**
+  Add `chooseSuburbForPost.ts` so posts auto-select the best suburb (frontmatter → parsed from post slug → representative of cluster by adjacency). This makes CrossServiceLinks on posts consistently relevant.
+
+  ```ts
+  // src/utils/chooseSuburbForPost.ts
+  import clusters from '~/data/clusters.json' assert { type:'json' };
+  import { representativeOfCluster } from '~/utils/repSuburb';
+  import slugify from '~/utils/slugify';
+  const norm = (s:string)=>decodeURIComponent(String(s||'')).trim().toLowerCase();
+  export type PostFrontmatter = { suburbSlug?: string; suburbs?: string[]; };
+  export function chooseSuburbForPost(fm:PostFrontmatter, clusterFromUrl:string, postSlug:string): string|null {
+    const cluster = norm(clusterFromUrl);
+    const subs = (clusters as Record<string,string[]>)[cluster]?.map(norm) || [];
+    if (!subs.length) return representativeOfCluster(cluster);
+    if (fm?.suburbSlug) {
+      const s = norm(slugify(fm.suburbSlug));
+      if (subs.includes(s)) return s;
+    }
+    if (Array.isArray(fm?.suburbs) && fm.suburbs.length) {
+      const s = norm(slugify(fm.suburbs[0]));
+      if (subs.includes(s)) return s;
+    }
+    const tokens = norm(postSlug).split(/[^a-z0-9]+/g).filter(Boolean);
+    for (const s of subs) { if (s.split('-').every(p=>tokens.includes(p))) return s; }
+    return representativeOfCluster(cluster);
+  }
+  ```
+
+* **Knowledge base polish.**
+  Your table is already super helpful. Two tweaks make it world-class:
+
+  1. Add a **“Status”** column (Active / Archived / Generated) so folks know what’s safe to touch.
+  2. Append a short **“Owner / Source”** note (e.g., “generated by `scripts/gen-test-routes.mjs`”) for artifacts. Many of your `__ai/*` lines can be auto-filled from filenames today.&#x20;
+
+# Suggested clean-up (one quick PR)
+
+```bash
+# 1) Remove confusing duplicates & strays
+git rm -f _headers                 # keep public/_headers only
+git rm -f "18"
+git rm -f "# Bond Clean Footer Validation Script – .js" 2>/dev/null || true
+git rm -f dev.err dev.out
+
+# 2) Archive legacy sandbox (keeps history but moves it out of the way)
+mkdir -p docs/archives
+git mv "linking and suburbs aug16" docs/archives/
+
+# 3) Drop dead CSS if unused
+git rm -f css/output.css
+
+# 4) (Optional) Add small helpers discussed above
+#    - src/utils/clusterMap.ts
+#    - src/utils/chooseSuburbForPost.ts
+```
+
+# Why these changes
+
+* **Single source of truth** for deploy rules avoids “works on my machine” and keeps CI/CD predictable.&#x20;
+* **Stray files** cause reviewer confusion, linter noise, and occasionally break glob-based scripts.&#x20;
+* **Legacy sandboxes** easily shadow current helpers; archiving clarifies intent without losing history.&#x20;
+* **Resilient cluster/suburb helpers** prevent minor data gaps (missing `cluster_map.json`) from turning into broken links in production.
+
+If you want, I can also generate a tiny `npm run kb:update` script that rewrites `REPO_FILES.md` from `git` history so “Created / Last Edited” are always accurate and the “Connects To” column is auto-filled from `scripts/*` to `__ai/*` artifacts.
+--
+
+Got it—read your REPO_FILES.md snapshot end-to-end. Here’s a practical deep-dive with the highest-impact fixes first, then tidy-ups, all grounded in what’s in that file list.
+
+Top-impact findings (fix now)
+
+Two _headers files (root + public/)
+
+You have both _headers (root) and public/_headers. Astro only ships public/_headers to dist/.
+
+Risk: confusion + drift; humans may edit the wrong one.
+
+Do: delete the root file and keep only public/_headers.
+
+Live “notusing” pages under src/pages/
+
+Files like:
+
+src/pages/bond-cleaning/[suburb]/checklist.notusing.astro
+
+src/pages/bond-cleaning/[suburb]/index.notusing.astro
+
+Risk: they’re still valid .astro pages → can leak routes (e.g., /…/index.notusing).
+
+Do: move them out of src/pages/ (e.g., docs/), or rename to .astro.disabled, or add export const prerender = false and route-gate them; best is remove.
+
+Two parallel route systems for services
+
+You’ve got generic /services/... pages and direct folders:
+
+src/pages/services/[service]/…
+
+src/pages/bond-cleaning/[suburb]/…, bathroom-cleaning/[suburb].ts, bond-cleaners/[suburb].ts, deep-cleaning/[suburb].ts
+
+Risk: content duplication & SEO dilution unless every legacy path hard-redirects to /services/<svc>/<suburb>/.
+
+Do: pick one canonical system (recommend /services/…). Keep the legacy endpoints purely as SSR 301 redirect handlers (no content). Remove duplicate templates under legacy folders.
+
+Redirect tests duplicated
+
+You have multiple redirect specs:
+
+tests/e2e/middleware-redirect.spec.ts
+
+tests/routing/middleware-redirect.spec.ts
+
+(and a generic tests/redirects.spec.ts)
+
+Risk: flakiness / double coverage with slightly different assumptions.
+
+Do: consolidate into a single BLOG_BASE-aware, fragment-agnostic spec (keep the best one), delete the rest.
+
+JS/TS shadowing in utils
+
+Present in the index: src/utils/internalLinks.ts (✅), and older JS helpers (e.g., /linking and suburbs aug16/internalLinks.js) plus several schema*.js next to TS.
+
+Risk: accidental import drift; type coverage gaps.
+
+Do: keep TS as source of truth. For any still-used JS (e.g., schema.js), either migrate to TS or add tiny TS re-exports (export { default } from './schema.js') and update imports so only the TS surface is referenced. Anything in ad-hoc folders (e.g., “linking and suburbs aug16/”) should be moved to scripts/ or docs/ or removed.
+
+Medium-priority improvements
+
+Ensure only one control-plane for redirects
+
+You have netlify.toml (redirects), public/_redirects, and middleware redirects.
+
+Do: keep middleware as logic, and public/_redirects as CDN backstop. Remove Netlify redirects in netlify.toml if they overlap (or strip to non-overlapping rules) to avoid double definitions.
+
+Data canonicalization
+
+Data appears in multiple places (e.g., adjacency.json in “linking and suburbs aug16/” and ~/data/adjacency.json).
+
+Do: Use only ~/data/* at runtime. Delete / ignore working copies. If you need experiments, keep them under data/_scratch/ and exclude them from imports/tests.
+
+Service synonyms alignment
+
+Routes exist for bond-cleaners / end-of-lease variants via *.ts endpoints.
+
+Do: confirm these endpoints return strict 301s to /services/bond-cleaning/<suburb>/ and are covered by tests (one table-driven test with the synonyms list).
+
+CrossServiceLinks is present (✅) — small polish
+
+You’ve added it to service pages and blog posts.
+
+Do (optional): wire the chooseSuburbForPost() helper so blog posts pick a smarter suburb (frontmatter → slug tokens → representative). You already have the building blocks in the repo snapshot.
+
+Low-risk tidy-ups
+
+Remove dead CSS references (✅ in your notes)
+
+Quick grep to confirm no lingering <link href="/output.css"> or similar.
+
+Guard scripts
+
+Keep/extend your guard to fail if:
+
+Any file under src/pages/ matches /\.notusing\.astro$/
+
+Any alias page is (re)added under (blog|guides) clusters
+
+Root _headers exists
+
+Quick command checklist
+# 1) Remove root headers (keep only public/_headers)
+git rm -f _headers
+
+# 2) Kill notusing pages
+git rm -f src/pages/**/**/**.notusing.astro 2>/dev/null || true
+
+# 3) Consolidate to /services
+# (keep only SSR 301 endpoints under legacy folders, remove content pages)
+git rm -f src/pages/bond-cleaning/[suburb]/index.astro \
+         src/pages/bond-cleaning/[suburb]/checklist.astro
+
+# 4) Deduplicate redirect tests (keep the BLOG_BASE-aware one)
+git rm -f tests/redirects.spec.ts tests/routing/middleware-redirect.spec.ts
+
+# 5) Move scratch/working helpers out of runtime
+git mv "linking and suburbs aug16" docs/linking-and-suburbs-aug16 || true
+
+Tiny CI guard (drop-in)
+// scripts/assert-repo-hygiene.mjs
+import { globby } from 'globby';
+const bad = [
+  ...(await globby('_headers', { dot: true, onlyFiles: true })),
+  ...(await globby('src/pages/**/**/**.notusing.astro')),
+  ...(await globby('src/pages/**/blog/**', { ignore: ['**/blog/[cluster]/**'] })), // adjust if needed
+];
+if (bad.length) {
+  console.error('❌ Repo hygiene violations:\n' + bad.map(f => ' - ' + f).join('\n'));
+  process.exit(1);
+}
+console.log('✅ Repo hygiene OK');
+
+
+Add to CI after build: node scripts/assert-repo-hygiene.mjs.
+
+What looks solid (keep going)
+
+src/middleware.ts canonicalization work (areas + BLOG_BASE, query preservation) ✅
+
+Internal links internalLinks.ts with cluster_map fast-path + adjacency fallback ✅
+
+CrossServiceLinks.astro (above-the-fold + analytics + prefetch) ✅
+
+Postbuild assert-no-alias-build.mjs and redirect E2E coverage ✅
+
+Data pipeline artifacts present (adjacency.json, clusters.json, etc.) ✅
+
+If you want, I can also give you a one-liner Node script to re-generate your REPO_FILES.md with better “What/Why” heuristics (e.g., infer “what” from path patterns and “why” from known conventions) so fewer rows are n/a.--
+
+
+---
+
+# Deep dive on your current repo snapshot
+
+Below is a precise, opinionated read of the structure visible in your `REPO_FILES.md` snapshot, plus concrete fixes where I see risk, dead weight, or easy wins. I’ve grouped everything by “What it is”, “Why it matters”, and “What to do”.
+
+---
+
+## High-level picture
+
+* **Size & shape**: 838 tracked files reported. The excerpt shows strong CI/QA hygiene (`.github/workflows/*`, `.husky/*`, Lighthouse config), end-to-end testing (`cypress/*`), Astro config (`astro.config.mjs`), AI helper assets (`__ai/*`, `ai-reports/*`, `ai-rules.json`), and build artifacts (`build.log`, `css/output.css`).
+* **Primary risk areas spotted immediately**:
+
+  1. **Stray files** in the repo root that look accidental (`"#!… .js"`, `18`, `build.log`),
+  2. **Likely compiled artifacts** tracked in git (`css/output.css`),
+  3. **AI/ops artefacts** that might be published unintentionally if not excluded (`__ai/*`, `ai-reports/*`),
+  4. **Filename with quotes & punctuation** that will break tooling on some OS/shells (the `"# Bond Clean Footer Validation Script – .js"` entry).
+
+Everything else in the glimpse looks consistent with what you’ve been building (canonical routing, internal links, guards, and tests).
+
+---
+
+## Specific findings & actions
+
+### 1) Suspicious root files
+
+**What**
+
+* `"# Bond Clean Footer Validation Script – .js"` (including literal quotes and an en dash)
+* `18` (bare numeric filename)
+* `build.log` (checked-in log)
+
+**Why it matters**
+
+* Quoted/odd filenames are a magnet for CI and shell bugs (escaping issues, Windows/WSL incompatibilities, npm scripts that choke on globbing).
+* Bare numeric file suggests an accidental redirect of stdout or a stray editor dump.
+* Logs in git cause noisy diffs and bloat.
+
+**What to do**
+
+```bash
+# See the exact weird path and confirm it exists:
+git ls-files -z | xargs -0 -I{} bash -lc '[[ "{}" == *"Bond Clean Footer Validation Script"* ]] && printf "%q\n" "{}"'
+
+# Remove the accidental files from the index (keep working copy if you want to inspect first)
+git rm --cached --force -- '"# Bond Clean Footer Validation Script – .js"'
+git rm --cached --force -- 18
+git rm --cached --force -- build.log
+
+# Add to .gitignore so they don’t come back
+printf '\n# ignore logs & accidental files\nbuild.log\n*.log\n\n' >> .gitignore
+```
+
+---
+
+### 2) Compiled CSS under source control
+
+**What**
+
+* `css/output.css` is tracked.
+
+**Why it matters**
+
+* If this is a build product (Tailwind or postcss output), it should be generated at build time, not stored in git. You previously removed dead `output.css` references; if it’s still tracked, it’s either (a) leftover, or (b) a static asset you actually serve.
+
+**What to do (choose A or B)**
+
+* **A – If it’s generated:**
+
+  * Remove from git; add to `.gitignore`.
+
+  ```bash
+  git rm --cached --force css/output.css
+  printf '\n# build output\ncss/output.css\n' >> .gitignore
+  ```
+* **B – If it’s truly static:**
+
+  * Move it to `public/` so it ships consistently, and ensure there’s a single import reference in templates.
+  * Confirm no duplicate CSS ends up in `dist/`.
+
+---
+
+### 3) AI assets & reports in the repo
+
+**What**
+
+* `__ai/*`, `ai-reports/*`, `ai-rules.json`, `ai-comment.md`
+
+**Why it matters**
+
+* These are useful for internal review but should **never** be publicly accessible on production. If your static hosting publishes everything from `dist/` only, you’re likely fine—but guardrails are smart.
+
+**What to do**
+
+* Ensure these paths **never** end up in the published build.
+* If your CI has “artifact collection” or preview deploys, add a denylist. For static servers that mirror repo, add a robots rule or, better, exclude entirely from publish.
+
+Example publish guard (Netlify `public/_headers` or equivalent):
+
+```
+/__ai/*
+  X-Robots-Tag: noindex, nofollow
+```
+
+(Only if, for some reason, the files are mirrored to your host—ideally they never are.)
+
+---
+
+### 4) CI/QA surface looks solid, but confirm the canonical control files ship
+
+**What**
+
+* Workflows include `blog-base-guards.yml`, `verify-graph.yml`, `lhci.yml`, and a general `ci.yml`. `public/_redirects` and `public/_headers` are not visible in the short excerpt (they may exist elsewhere in the full list).
+
+**Why it matters**
+
+* Your routing changes rely on CDN-level backstops and consistent headers. Those two files must live in `public/` so they are copied to `dist/` and deployed.
+
+**What to do**
+
+* Quickly verify:
+
+  ```bash
+  test -f public/_redirects && echo "✅ _redirects present" || echo "❌ missing public/_redirects"
+  test -f public/_headers && echo "✅ _headers present" || echo "❌ missing public/_headers"
+  ```
+
+---
+
+### 5) Cypress present—use it to lock regressions on links & redirects
+
+**What**
+
+* `cypress.config.js`, `cypress/e2e/` exist.
+
+**Why it matters**
+
+* You’ve already improved Playwright specs for redirects and cross-service links; having Cypress too is fine, but make sure you’re not duplicating the same assertions across frameworks (slow build, redundant failures).
+
+**What to do**
+
+* Decide one of:
+
+  * **Consolidate** E2E on Playwright (faster, already wired for BLOG\_BASE/fragment-agnostic), or
+  * Keep Cypress for smoke and Playwright for routing/SEO guards.
+* Ensure both suites don’t crawl the entire site at once (cap route counts via your new discovery scripts).
+
+---
+
+### 6) Environment & config hygiene
+
+**What**
+
+* `.env.example` exists (good), `.lighthouserc.json` is present, and `astro.config.mjs` is committed.
+
+**Why it matters**
+
+* `.env.example` should list **all** required keys (including any AI tools you run locally), but of course not values.
+
+**What to do**
+
+* Compare `.env.example` with your scripts that `require('dotenv')`. Add any missing keys, even if optional:
+
+  ```
+  # example
+  OPENAI_API_KEY=
+  ANALYTICS_WRITE_KEY=
+  ```
+* If you now use TypeScript heavily in utils/tests, confirm `tsconfig.json` has:
+
+  ```json
+  {
+    "compilerOptions": {
+      "target": "ES2022",
+      "module": "ESNext",
+      "moduleResolution": "bundler",
+      "resolveJsonModule": true,
+      "verbatimModuleSyntax": true,
+      "allowJs": true,
+      "strict": true
+    }
+  }
+  ```
+
+---
+
+### 7) “Oddball” entry: `"# Bond Clean Footer Validation Script – .js"`
+
+**What**
+
+* The filename literally includes double-quotes and a leading `#`.
+
+**Why it matters**
+
+* Many CLIs will treat that as an argument or comment unless carefully quoted. On Windows, it may not be addressable at all through standard tooling.
+
+**What to do**
+
+1. Capture its content safely (so you don’t lose it):
+
+   ```bash
+   # print as a hexdump, so you can see exact bytes:
+   od -An -t x1 -v -- '"# Bond Clean Footer Validation Script – .js"' | head
+   ```
+2. Rename to a sane path if you intend to keep it:
+
+   ```bash
+   git mv -- '"# Bond Clean Footer Validation Script – .js"' scripts/bond-clean-footer-validate.js
+   ```
+
+   …or remove it if it’s accidental (see Section 1).
+
+---
+
+## Quick repository health checks you can run now
+
+> These make the most of what’s visible in your snapshot without poking every file.
+
+```bash
+# 1) Find tracked logs, zips, tmp files accidentally checked in:
+git ls-files | grep -Ei '\.(log|zip|tgz|tmp|bak|old)$' || echo "✅ no obvious junk"
+
+# 2) Find files with spaces, quotes, or non-ASCII punctuation in names:
+git ls-files | grep -P '[\s"“”‘’—–]' && echo "⚠️ suspicious filenames found" || echo "✅ filenames look clean"
+
+# 3) Confirm Netlify control files exist:
+test -f public/_redirects && echo "✅ public/_redirects" || echo "❌ missing public/_redirects"
+test -f public/_headers   && echo "✅ public/_headers"   || echo "❌ missing public/_headers"
+
+# 4) Grep for any lingering references to dead output.css:
+rg -n 'output\.css' -- . ':!css/output.css' || echo "✅ no lingering output.css imports"
+
+# 5) Sanity on AI artefacts not being bundled:
+rg -n '__ai/|ai-reports/' src/ || echo "✅ app source doesn’t import AI folders"
+```
+
+---
+
+## Suggested tidy-ups (low effort, high reward)
+
+1. **Delete or rename** the quoted `.js` file and `18` at repo root.
+2. **Untrack** `build.log` and any other logs/zips if present; add ignores.
+3. **Decide CSS strategy** for `css/output.css` (generated vs. static) and either move to `public/` or ignore.
+4. **Publish guarantees**: ensure `public/_redirects` and `public/_headers` exist and are picked up by the host.
+5. **AI artefacts**: verify they never land in `dist/` (and thus never on prod).
+6. **Consolidate E2E** to keep runtime sane; rely on your curated route discovery to cap test loads.
+7. **Environment doc**: align `.env.example` with actual script expectations so running locally is predictable.
+
+---
+
+## What I’d watch next (given the broader work you’ve shipped)
+
+* **Alias guard stays green** when you add new clusters or posts (your CI additions should already catch this—just keep that job required).
+* **Cross-service links** remain suburb-accurate as coverage grows; keep the tests that enforce “Spring/Bathroom link to the same suburb” and “Local guides link is BLOG\_BASE-aware.”
+* **Data graph drift**: if `adjacency.json` or `clusters.json` update from your pipelines, keep unit tests for `representativeOfCluster()` and `nearbyCovered()`—they’ll catch oddities (e.g., a cluster with a single suburb or missing edges) before UX degrades.
+
+---
+
+## TL;DR — the immediate punch list
+
+* 🔥 Remove/rename: the quoted JS file, `18`, and `build.log`.
+* 🧹 Decide fate of `css/output.css` (generated → ignore; static → move to `public/`).
+* 🛡 Ensure `public/_redirects` and `public/_headers` are present and deployed.
+* 🚫 Keep `__ai/*` and `ai-reports/*` out of any publish path.
+* 🧪 Keep your curated test route cap in place; avoid duplicated Cypress/Playwright assertions.
+* 🧾 Update `.env.example` to reflect current scripts and AI tools.
+
+If you want, I can draft a one-shot “repo janitor” script tailored to your layout that executes the checks above, prints a human-readable report, and offers yes/no prompts to fix each item in batch.
+---
+
+Here’s a thorough readout of your current `REPO_FILES (1).md` knowledge base, what it tells us about the repository, the sharp edges I see, and a turnkey script you can keep in the repo to regenerate this file “now and again” without touching any source files.
+
+---
+
+# Snapshot of the repo as it stands
+
+* **Total tracked entries**: **838**
+  (from the table rows in `REPO_FILES (1).md`)
+* **Top-level composition** (by first path segment):
+
+  * `tests/` (≈314) — dominated by visual snapshot **.png** files under `__snapshots__`
+  * `src/` (≈176)
+  * `scripts/` (≈57)
+  * `public/`, `content/`, `data/` (present), plus housekeeping files (`tsconfig.json`, etc.)
+* **File types** (top 10 by extension):
+
+  * `.png` (≈298, mostly Playwright/visual snapshots)
+  * `.ts` (≈119)
+  * `.mjs` (≈79)
+  * `.json` (≈70+)
+  * `.astro` (≈35)
+  * others: `.md`, `.js`, `.css`, config files, etc.
+* **Coverage of “What” / “Why”**:
+
+  * **“What” = n/a** in **134** files
+  * **“Why” = n/a** in **136** files
+  * **Both “What” and “Why” = n/a** in **94** files
+* **Where most of the n/a lives**:
+
+  * `src/assets/` (images, icons, etc.)
+  * `src/public/` (static assets)
+  * `src/data/` (raw data files)
+  * `content/` (authoring/artifacts)
+  * *Core code paths like* `src/pages/`, `src/components/`, `src/utils/` appear well-described already.
+
+### What this means
+
+* Your **core runtime pieces are documented** (e.g., `src/middleware.ts`, `src/utils/internalLinks.ts`, `src/components/CrossServiceLinks.astro` are present and described).
+* The **largest noise source** in the index is snapshot images under `tests/**/__snapshots__/**.png`. These are useful to know “exist,” but listing hundreds line-by-line in the knowledge base provides little value day-to-day.
+* The **remaining “n/a” pockets** are mostly static assets and raw data. It’s reasonable to keep them brief (or automatically filled) so the table stays readable.
+
+---
+
+# High-signal areas that already look solid
+
+* **Routing/canonicalization**: `src/middleware.ts` (“Edge middleware for redirects. Handle canonical + alias redirects early.”) — present and clearly described.
+* **Internal linking**: `src/utils/internalLinks.ts` (“Cross-service + local guide link generation.”) — present, typed, centralized.
+* **UI hooks**: `src/components/CrossServiceLinks.astro` (“Boost onward CTR with contextual links.”) — present, used by service/blog contexts.
+* **Engineering hygiene**: `scripts/assert-no-alias-build.mjs`, `scripts/assert-sitemap-blog-canonicals.mjs`, `scripts/check-internal-links.mjs`, crawl/audit tooling — present and (per the “What/Why”) tuned to catch the exact issues you’ve been fixing.
+
+---
+
+# Gaps & quick wins
+
+1. **Snapshot sprawl in the KB**
+   Hundreds of `tests/**/__snapshots__/*.png` are indexed line-by-line. Consider **grouping** these in the generated markdown:
+
+   * One summarized row per snapshot folder (e.g., “`tests/visual/__snapshots__/…` — *n files*”).
+   * Keep a footnote with the exact count and the folder on disk.
+   * You’ll still know they exist and where, without drowning out code.
+
+2. **Static assets & data with “n/a”**
+   These can get an **automatic generic “What/Why”** via path heuristics:
+
+   * `src/assets/**` → What: “Asset (image/icon/font)”, Why: “Static visual/brand/UI asset.”
+   * `src/data/**`   → What: “App data (JSON/CSV)”, Why: “Feeds features (routing, links, UI copy).”
+   * `public/**`     → What: “Static file shipped at /”, Why: “CDN asset or control file (\_headers/\_redirects).”
+
+3. **Data used by internal links**
+   The KB lists a “linking and suburbs aug16/” workspace with:
+
+   * `geo.neighbors.(ipswich|brisbane-west|logan).json`
+   * `serviceCoverage.json` variants
+   * an older `internalLinks.js`
+
+   These are useful **inputs**, but they live outside `src/`. For stability:
+
+   * Promote the **final, canonical data** you actually depend on at runtime into `src/data/` (e.g., `src/data/adjacency.json`, `src/data/clusters.json` or `cluster_map.json`, coverage JSON).
+   * Keep the exploratory folder for history, but mark it in the KB as “archive / sources.”
+
+4. **Optional helpers that aren’t in the repo yet**
+   Your KB shows `internalLinks.ts` and `CrossServiceLinks.astro` in place, but not the small helpers we discussed:
+
+   * `src/utils/repSuburb.ts` (choose representative suburb by adjacency degree)
+   * `src/utils/nearbyCovered.ts` (find nearest covered suburb when the current one isn’t covered)
+   * `src/utils/chooseSuburbForPost.ts` (frontmatter → slug tokens → representative fallback)
+
+   If you plan to ship them, add them to `src/utils/` and they’ll be auto-indexed by the generator (see below). If you’ve embedded equivalent logic elsewhere, you can skip these.
+
+---
+
+# Keep everything in one file (and regenerate on demand)
+
+Below is a **single Node script** you can drop into `scripts/generate-knowledge-base.mjs`. It:
+
+* Walks the repo using `git ls-files`
+* Retrieves **created** and **last edited** dates from Git for each file
+* Applies **path-based heuristics** to fill “What” and “Why” (so fewer “n/a”)
+* Optionally **groups snapshot images** into one summarized row per snapshot folder
+* Writes a complete `REPO_FILES.md` (overwrites or creates)
+
+> No files in the repo are modified; only the knowledge base file is written.
+
+---
+
+## `scripts/generate-knowledge-base.mjs`
+
+```js
+#!/usr/bin/env node
+/**
+ * Generate REPO_FILES.md with:
+ * - Created + Last Edited from Git
+ * - Heuristic "What" + "Why"
+ * - Optional grouping of snapshot images
+ *
+ * Usage:
+ *   node scripts/generate-knowledge-base.mjs
+ *   node scripts/generate-knowledge-base.mjs --out REPO_FILES.md --group-snapshots
+ */
+
+import { execSync } from 'node:child_process';
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import process from 'node:process';
+
+const cwd = process.cwd();
+const args = new Set(process.argv.slice(2));
+const OUT = (() => {
+  const i = process.argv.indexOf('--out');
+  return i !== -1 && process.argv[i + 1] ? process.argv[i + 1] : 'REPO_FILES.md';
+})();
+const GROUP_SNAPSHOTS = args.has('--group-snapshots');
+
+function sh(cmd) {
+  return execSync(cmd, { cwd, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+}
+
+function gitFiles() {
+  // All tracked files (no submodules)
+  const out = sh('git ls-files');
+  return out.split('\n').filter(Boolean);
+}
+
+function gitCreated(path) {
+  // First commit date for the file
+  // --diff-filter=A picks adds; %aI = author date, ISO-8601
+  const cmd = `git log --diff-filter=A --follow --format=%aI -- "${path}" | tail -1`;
+  const v = sh(cmd);
+  return v || 'n/a';
+}
+
+function gitLast(path) {
+  // Last commit date for the file
+  const cmd = `git log -1 --format=%aI -- "${path}"`;
+  const v = sh(cmd);
+  return v || 'n/a';
+}
+
+function inferWhatWhy(path) {
+  const p = path.toLowerCase();
+
+  // Targets that tend to be noisy—give them useful, generic labels
+  if (p.startsWith('tests/') && p.includes('__snapshots__') && p.endsWith('.png')) {
+    return {
+      what: 'Visual snapshot image',
+      why: 'UI regression reference for visual tests'
+    };
+  }
+  if (p.startsWith('src/assets/')) {
+    return {
+      what: 'Asset (image/font/icon)',
+      why: 'Static visual/brand asset shipped with the app'
+    };
+  }
+  if (p.startsWith('public/')) {
+    return {
+      what: 'Public static file',
+      why: 'Served from site root; CDN/backstop controls or static assets'
+    };
+  }
+  if (p.startsWith('src/data/')) {
+    return {
+      what: 'Runtime data file',
+      why: 'Feeds routing, internal links, or UI copy'
+    };
+  }
+  if (p === 'src/middleware.ts') {
+    return {
+      what: 'Edge middleware for redirects',
+      why: 'Canonical/alias routing and query preservation at the edge'
+    };
+  }
+  if (p === 'src/utils/internallinks.ts') {
+    return {
+      what: 'Internal link helpers',
+      why: 'Cross-service deep links + local guides (BLOG_BASE-aware)'
+    };
+  }
+  if (p === 'src/components/crossservicelinks.astro') {
+    return {
+      what: 'Cross-service link UI component',
+      why: 'Above-the-fold onward journeys; analytics + prefetch'
+    };
+  }
+  if (p.startsWith('scripts/')) {
+    return {
+      what: 'Build/Test/Guard script',
+      why: 'Automation for CI/CD, audits, or content generation'
+    };
+  }
+  if (p.endsWith('.astro')) {
+    return {
+      what: 'Astro page/component',
+      why: 'Template or UI unit rendered in the site'
+    };
+  }
+  if (p.endsWith('.ts') || p.endsWith('.js') || p.endsWith('.mjs')) {
+    return {
+      what: 'Source module',
+      why: 'Feature logic or tooling'
+    };
+  }
+  if (p.endsWith('.md')) {
+    return {
+      what: 'Markdown documentation',
+      why: 'Human-readable docs, specs, or notes'
+    };
+  }
+  if (p.endsWith('.json')) {
+    return {
+      what: 'JSON data/config',
+      why: 'Machine-readable configuration or dataset'
+    };
+  }
+  return { what: 'n/a', why: 'n/a' };
+}
+
+function groupSnapshotFolders(files) {
+  // Collapse many png snapshots into per-folder rows
+  const grouped = [];
+  const buckets = new Map(); // key: folder, value: count
+  const pass = [];
+
+  for (const f of files) {
+    const isSnap = f.startsWith('tests/') && f.includes('__snapshots__') && f.endsWith('.png');
+    if (isSnap) {
+      const folder = f.slice(0, f.lastIndexOf('/'));
+      buckets.set(folder, (buckets.get(folder) || 0) + 1);
+    } else {
+      pass.push(f);
+    }
+  }
+
+  for (const [folder, count] of buckets.entries()) {
+    grouped.push({
+      path: `${folder}/`,
+      created: 'various',
+      last: 'various',
+      what: 'Visual snapshots (grouped)',
+      why: `Folder contains ${count} PNG snapshots for visual regression tests`
+    });
+  }
+  return { grouped, pass };
+}
+
+// --- Collect rows
+let files = gitFiles();
+const rows = [];
+
+let groupedRows = [];
+if (GROUP_SNAPSHOTS) {
+  const { grouped, pass } = groupSnapshotFolders(files);
+  groupedRows = grouped;
+  files = pass;
+}
+
+for (const f of files) {
+  const created = gitCreated(f);
+  const last = gitLast(f);
+  const { what, why } = inferWhatWhy(f);
+  rows.push({ path: f, created, last, what, why });
+}
+
+// Merge grouped snapshot rows, if any
+rows.push(...groupedRows);
+
+// Sort: by path asc
+rows.sort((a, b) => a.path.localeCompare(b.path));
+
+// --- Render Markdown
+const now = new Date().toISOString();
+
+function renderTable(rs) {
+  const header =
+    '| Path | Created | Last Edited | What | Why |\n' +
+    '|------|---------|-------------|------|-----|';
+  const lines = rs.map(r =>
+    `| \`${r.path}\` | ${r.created} | ${r.last} | ${r.what} | ${r.why} |`
+  );
+  return [header, ...lines].join('\n');
+}
+
+const md =
+`# Codebase Knowledge Base
+
+*Last updated: ${now}*
+
+This document centralizes high-level context for the repository.
+
+- **What**: one-liner describing the file or group
+- **Why**: intent/purpose
+- **Created / Last Edited**: from Git history
+
+---
+
+## File Index
+
+${renderTable(rows)}
+`;
+
+writeFileSync(OUT, md, 'utf8');
+console.log(`Wrote ${OUT} with ${rows.length} entries.`);
+```
+
+### Run it
+
+```bash
+node scripts/generate-knowledge-base.mjs --group-snapshots
+# or without grouping if you prefer every file listed:
+node scripts/generate-knowledge-base.mjs
+```
+
+* **`--group-snapshots`** turns hundreds of `__snapshots__/*.png` entries into one line per folder with a count, keeping the index readable.
+* “What/Why” are **heuristically** filled for common paths; everything else falls back to `n/a`.
+
+> If you want to **preserve hand-written “What/Why”** you’ve already added, a simple extension is to parse the existing `REPO_FILES.md` first and **merge** known descriptions back when regenerating. (Happy to supply that merge variant if you want it.)
+
+---
+
+# Actionable next steps
+
+1. **Add the generator script** above to `scripts/` and run it with `--group-snapshots`. It will write a fresh `REPO_FILES.md` in one go without touching any source files.
+
+2. **Promote runtime data** you rely on (adjacency, clusters/cluster\_map, coverage) into `src/data/` with final names, and mark the “linking and suburbs aug16/” folder as archival in the KB. This locks inputs for `internalLinks.ts` to stable paths and clarifies provenance.
+
+3. **(Optional) Add the tiny helpers** if you plan to use them:
+
+   * `src/utils/repSuburb.ts` — representative suburb per cluster (highest adjacency degree)
+   * `src/utils/nearbyCovered.ts` — nearest covered suburb when the current suburb isn’t covered
+   * `src/utils/chooseSuburbForPost.ts` — frontmatter → slug tokens → representative fallback for blog posts
+
+4. **Keep the KB lean and useful**:
+
+   * Group snapshot images.
+   * Auto-fill assets/data/public with generic “What/Why” so “n/a” shrinks.
+   * Consider an ignore list for generated noise (e.g., `.DS_Store`, `.map`, tmp logs) if any creep in later.
+
+---
+
+# Why this central file works well for your repo
+
+* **Zero churn to source**: no per-file comment blocks or merge-y timestamps.
+* **Confidence**: created/updated dates are pulled directly from Git, reproducibly.
+* **Clarity**: hot paths (middleware, internal links, cross-service UI, guards) are easy to find; static assets don’t drown the signal thanks to grouping and heuristics.
+* **Repeatable**: run the script “now and again” after major changes, and the index stays accurate.
+
+If you want the “merge existing notes back in” version so hand-edits in `REPO_FILES.md` are preserved across regenerations, I can provide that variant too.

@@ -1,0 +1,98 @@
+// Unified geo handler for clusters and suburbs based on src/content/areas.clusters.json
+import areas from '~/content/areas.clusters.json' assert { type: 'json' };
+import slugify from '~/utils/slugify.js';
+
+// Canonical clusters array
+const clustersData = Array.isArray(areas?.clusters) ? areas.clusters : [];
+
+// Exported list of clusters (slug + name)
+export const clusters = clustersData.map(c => ({ slug: c.slug, name: c.name }));
+
+// Build alias -> canonical slug map (include identity mapping)
+const clusterAliasToCanonical = (() => {
+  const map = Object.create(null);
+  for (const c of clustersData) {
+    map[slugify(c.slug)] = c.slug;
+    const aliases = c.aliases || {}; // object of alias -> display name
+    for (const alias of Object.keys(aliases)) {
+      map[slugify(alias)] = c.slug;
+    }
+  }
+  return map;
+})();
+
+// Resolve any input (alias or slug) to the canonical cluster slug
+export function resolveClusterSlug(input) {
+  if (!input) return '';
+  const s = slugify(input);
+  return clusterAliasToCanonical[s] ?? s;
+}
+
+// Find cluster config by slug or alias
+export function findClusterBySlug(clusterSlug) {
+  const canonical = resolveClusterSlug(clusterSlug);
+  return clustersData.find(c => c.slug === canonical) || null;
+}
+
+// Flat list of all suburbs with their cluster association
+export const suburbs = clustersData.flatMap(c =>
+  (c.suburbs || []).map(name => ({
+    name,
+    slug: slugify(name),
+    clusterSlug: c.slug,
+    clusterName: c.name,
+  }))
+);
+
+// Helper maps for fast lookups
+const suburbBySlug = new Map(suburbs.map(s => [s.slug, s]));
+
+// Return canonical cluster slug or null when unknown
+export function getCanonicalCluster(input) {
+  if (!input) return null;
+  const key = slugify(input);
+  return clusterAliasToCanonical[key] || null;
+}
+
+// List clusters as objects
+export function listClusters() {
+  return clusters.slice();
+}
+
+// List suburbs for a given cluster (slug or alias)
+export function listSuburbsForCluster(cluster) {
+  const canonical = getCanonicalCluster(cluster) ?? slugify(cluster || '');
+  return suburbs.filter(s => s.clusterSlug === canonical).map(({ name, slug }) => ({ name, slug }));
+}
+
+// Find a suburb by slug or name
+export function findSuburb(input) {
+  if (!input) return null;
+  const key = slugify(input);
+  return suburbBySlug.get(key) || null;
+}
+
+// Alias export for clarity in callers
+export const findSuburbBySlug = findSuburb;
+
+// Given a suburb slug, return its cluster object
+export function getClusterForSuburb(suburbSlug) {
+  const sub = findSuburb(suburbSlug);
+  return sub ? findClusterBySlug(sub.clusterSlug) : null;
+}
+
+// Validation utility for builds/tests
+export function validateAreas() {
+  const errors = [];
+  // Ensure no duplicate suburb slugs
+  const seen = new Set();
+  for (const s of suburbs) {
+    if (seen.has(s.slug)) errors.push(`Duplicate suburb slug: ${s.slug}`);
+    seen.add(s.slug);
+  }
+  // Ensure all clusters resolve
+  for (const c of clustersData) {
+    if (!c.slug || !c.name) errors.push(`Cluster missing fields: ${JSON.stringify(c)}`);
+  }
+  return errors;
+}

@@ -1,0 +1,43 @@
+---
+export interface Props {
+  variant?: 'primary' | 'secondary' | 'ghost' | 'link';
+  size?: 'sm' | 'md' | 'lg';
+  href?: string;
+  type?: 'button' | 'submit' | 'reset';
+  full?: boolean;
+  disabled?: boolean;
+  ariaLabel?: string;
+}
+const {
+  variant = 'primary',
+  size = 'md',
+  href,
+  type = 'button',
+  full = false,
+  disabled = false,
+  ariaLabel,
+} = Astro.props as Props;
+
+const base = `inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 ${full ? 'w-full' : ''}`;
+const sizes: Record<string, string> = {
+  sm: 'text-sm px-3 py-1.5',
+  md: 'text-sm md:text-base px-4 py-2',
+  lg: 'text-base md:text-lg px-5 py-2.5',
+};
+const variants: Record<string, string> = {
+  primary: 'btn-brand',
+  secondary: 'bg-white text-deep-navy ring-1 ring-slate-200 hover:ring-slate-300 shadow-sm hover:shadow',
+  ghost: 'bg-transparent text-deep-navy hover:bg-slate-100',
+  link: 'bg-transparent link-brand underline underline-offset-4',
+};
+const cls = `${base} ${sizes[size]} ${variants[variant]}`;
+---
+{href ? (
+  <a href={href} aria-label={ariaLabel} class={cls} aria-disabled={disabled}>
+    <slot />
+  </a>
+) : (
+  <button type={type} aria-label={ariaLabel} class={cls} disabled={disabled}>
+    <slot />
+  </button>
+)}

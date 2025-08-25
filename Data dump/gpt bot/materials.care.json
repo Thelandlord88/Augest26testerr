@@ -1,0 +1,26 @@
+[
+  {
+    "surface": "Stainless steel",
+    "ok": ["neutral cleaner", "glass cleaner", "IPA 10%"],
+    "caution": ["mild acid (quick rinse)"],
+    "avoid": ["chlorine bleach", "abrasive pads"]
+  },
+  {
+    "surface": "Natural stone (marble, limestone)",
+    "ok": ["neutral cleaner"],
+    "caution": ["alkaline up to 1:100"],
+    "avoid": ["acids", "vinegar", "harsh degreasers"]
+  },
+  {
+    "surface": "Timber floors (sealed)",
+    "ok": ["neutral 1:120"],
+    "caution": ["minimal water, well wrung"],
+    "avoid": ["steam", "strong alkaline"]
+  },
+  {
+    "surface": "Shower glass",
+    "ok": ["citric 5–8%", "glass cleaner", "squeegee"],
+    "caution": ["razor scraping (only if trained)"],
+    "avoid": ["fluoridic acids", "abrasive powders"]
+  }
+]

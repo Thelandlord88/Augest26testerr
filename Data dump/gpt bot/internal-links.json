@@ -1,0 +1,19 @@
+{
+  "byService": {
+    "bond-cleaning": [
+      "/blog/{cluster}/bond-cleaning-checklist/",
+      "/blog/{cluster}/what-agents-want/",
+      "/services/bond-cleaning/{suburb}/"
+    ],
+    "spring-cleaning": [
+      "/blog/{cluster}/eco-bond-cleaning/",
+      "/blog/{cluster}/client-stories/",
+      "/services/spring-cleaning/{suburb}/"
+    ],
+    "bathroom-deep-clean": [
+      "/blog/{cluster}/bond-cleaning-checklist/",
+      "/services/bathroom-deep-clean/{suburb}/",
+      "/#quote"
+    ]
+  }
+}

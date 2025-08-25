@@ -1,0 +1,51 @@
+---
+// src/components/FloatingButton.astro
+interface Props { 
+    target: string; 
+    text: string; 
+    ariaLabel: string;
+}
+const { target, text, ariaLabel } = Astro.props;
+---
+<a 
+  href={target} 
+  id="floating-cta"
+  class="fixed bottom-4 right-4 z-50 bg-fresh-sky text-white font-bold py-3 px-5 rounded-full shadow-2xl flex items-center gap-3 transition-all duration-300 transform translate-y-24 opacity-0"
+  aria-label={ariaLabel}
+>
+  <span>{text}</span>
+  {/* CORRECTED ICON: Using the appropriate directional arrow for better UX */}
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
+</a>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    const floatingBtn = document.getElementById('floating-cta');
+    const heroSection = document.getElementById('hero'); // Assumes your hero section has id="hero"
+
+    if (!floatingBtn || !heroSection) return;
+
+    // This observer watches the hero section.
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // The button's 'show-cta' class is toggled based on whether the hero is intersecting.
+        // `!entries[0].isIntersecting` means "is the hero NOT on screen?"
+        floatingBtn.classList.toggle('show-cta', !entries[0].isIntersecting);
+      }, 
+      { 
+        threshold: 0.1, // Fire when 10% of the hero is visible/hidden
+        rootMargin: '-50px 0px 0px 0px' // Trigger 50px before the hero is fully out of view
+      }
+    );
+    
+    observer.observe(heroSection);
+  });
+</script>
+
+<style>
+  /* This class defines the final "visible" state for the button */
+  #floating-cta.show-cta { 
+    transform: translateY(0); 
+    opacity: 1; 
+  }
+</style>

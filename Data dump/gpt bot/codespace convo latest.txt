@@ -1,0 +1,631 @@
+GitHub Copilot
+
+Short answer: partly. You have sources of truth for regions/suburbs and services, but not one single “master” file listing every page and its contents.
+
+What you already have
+- areas.clusters.json — Canonical clusters (Ipswich, Brisbane, Logan), aliases (ipswich-region, brisbane-west), and suburb lists.
+- services.json — Service definitions (slugs, labels, copy hooks).
+- serviceCoverage.json — Which services are available in which suburbs/areas.
+- geoHandler.js — Alias→canonical resolution, suburb lookups (logic, not content).
+- ai-rules.json — Intent rules (must/forbid terms) per service.
+- public/_redirects — Canonical URL policy and synonym/legacy redirects.
+- Sitemap (build output) — Enumerates all generated routes, but not a source of content.
+
+Blog content is typically in Markdown with frontmatter (region tags) under src/content or src/pages/blog; hubs are derived from cluster slugs.
+
+If you want a single master index
+I can add a generated registry (e.g., scripts/site-index.mjs) that merges clusters + services + coverage + blog frontmatter into a JSON/Markdown report so you can see “all websites and what they have” in one place. Say “generate the site index” and I’ll add it.
+
+
+Here’s a deeper, practical inventory of what you already have, how it fits together, and quick commands to inspect it.
+
+Core sources of truth
+- areas.clusters.json
+  - Canonical clusters (Ipswich, Brisbane, Logan), optional aliases (ipswich-region, brisbane-west), and suburb lists.
+  - Drives: area hubs, blog hubs, alias resolution, and redirects (via tests/validators).
+- services.json
+  - Service definitions (slug, human label, copy hooks). Used by service pages and schema.
+- serviceCoverage.json
+  - Availability matrix: which services map to which suburbs.
+- ai-rules.json
+  - Intent rules per service (must/forbid terms) for the AI Intent Linter.
+
+URL policy and routing
+- public/_redirects
+  - Edge 301s for:
+    - Synonyms → canonical services (bond/spring/bathroom).
+    - Cluster renames (/blog|/areas brisbane-west → brisbane; ipswich-region → ipswich).
+    - Legacy service URLs with cluster segment → /services/:service/:suburb.
+- Astro pages (static)
+  - index.astro
+  - [suburb].astro
+  - src/pages/areas/[cluster]/[suburb].astro (and hubs)
+  - index.astro (and categories/posts)
+- SSR endpoints (redirect shims)
+  - src/pages/<synonym>/[suburb].ts with export const prerender = false
+  - Purpose: dev/preview parity with edge redirects; 404 on unknown suburbs.
+
+Utilities and schema
+- geoHandler.js
+  - slugify, resolveClusterSlug (alias → canonical), findSuburbBySlug, serviceLabel, suburb → LGA mapping.
+- schema.js
+  - Service-aware Service JSON-LD generator (accepts serviceSlug), page-relative URLs, areaServed per LGA/suburb.
+
+Validators and tests
+- scripts/validate-data.js, scripts/validate-schema.js, validate-footer.js
+  - Data integrity, JSON-LD correctness per service, and footer/blog link sanity.
+- Playwright tests
+  - skip-link.spec.ts — accessibility skip link focuses <main>.
+  - redirects.spec.ts (or synonyms suite) — 301s from synonyms/legacy → canonical; 404 on unknown suburbs.
+  - intent.spec.ts — guards: spring pages contain “spring clean” and forbid “bond clean”; bathroom requires tiles/shower/grout.
+- Optional AI agents (if present)
+  - ai-intent-lint.js — flags intent mismatches (must/forbid terms).
+  - ai-enrichment-critic.js — thin-content/schema/CTA audit with JSON “upgrade plan.”
+
+Sitemap and canonicals
+- Build emits /sitemap.xml (or sitemap-index.xml) with canonical URLs only (no synonyms).
+- Pages include canonical link tags and Service JSON-LD.
+
+CSS/components (selection)
+- input.css (e.g., .faq-lux h2 { -webkit-background-clip: text; })
+- Service-specific FAQs components or JSON (Bond/Spring/Bathroom) used conditionally by service pages.
+- Sticky CTA and in-page CTAs on service pages.
+
+Quick ways to see “what you have”
+- List cluster and suburb counts
+````bash
+jq '.clusters[].slug' -r src/content/areas.clusters.json | sort | uniq -c
+jq '[.clusters[].suburbs[]] | length' -r src/content/areas.clusters.json
+````
+- Verify synonym redirects (dev)
+````bash
+npm run build && npm run preview &
+PREV=$!; sleep 2
+for p in \
+  /bond-cleaners/redbank-plains \
+  /end-of-lease-cleaning/kenmore \
+  /house-cleaning/indooroopilly \
+  /bathroom-cleaning/forest-lake \
+  /blog/brisbane-west/checklist/ \
+  /areas/ipswich-region/redbank-plains/ \
+  ; do
+  printf "%s -> " "$p"; curl -sI "http://localhost:4322$p" | grep -i '^location:' || echo "(no redirect)"
+done
+kill $PREV
+````
+- Generate a current Markdown site map (from sitemap)
+````bash
+SITE_ORIGIN=http://localhost:4322 node scripts/site-map.mjs > SITE_MAP.md  # if you added the helper
+$BROWSER SITE_MAP.md
+````
+
+Where a “master list” lives today
+- It’s distributed:
+  - Clusters/suburbs: areas.clusters.json
+  - Services: services.json
+  - Coverage: serviceCoverage.json
+  - Blog hubs/posts: derived from folder structure/frontmatter
+  - Canonical URLs: inferred from routing + redirects
+- If you want one generated registry (JSON/Markdown) that enumerates every page with title/H1/region/service and intent hits, I can add scripts/site-index.mjs to produce it from these sources plus sitemap.
+
+If you want, say “generate the site index,” and I’ll add a script that outputs a single JSON and Markdown summary of every page with its service, cluster/LGA, FAQs present, CTAs, and schema checks.
+
+
+
+user: what do we think of this?
+
+This looks solid and very close to “production-grade”. Your intent is clear: collapse legacy and synonym routes to one canonical URL per service/suburb, and rename clusters site-wide. A few hardening tweaks will make it bullet-proof and easier to maintain.
+
+What’s good
+
+Clear canonical: /services/:service/:suburb/ everywhere.
+
+Blog/areas cluster renames catch hubs, categories, and posts with :splat.
+
+You’re doing edge-first redirects in public/_redirects, which are faster than SSR.
+
+Legacy “cluster in the URL” service pages get collapsed to canonical.
+
+Tighten it (small but important)
+
+Catch both with and without trailing slash (sources)
+Netlify matches literally. If you only list /bond-cleaning/:suburb/, the slash-less form won’t hit. Add both:
+
+/bond-cleaning/:suburb      /services/bond-cleaning/:suburb  301!
+/bond-cleaning/:suburb/     /services/bond-cleaning/:suburb  301!
+
+
+(Do the same for the other synonym families.)
+
+Force redirects where a real file/route may exist
+You’re migrating paths; use the bang 301! on rules that could collide with built files, so the redirect always wins.
+
+Normalise destinations with a trailing slash
+Pick one style and stick to it. Your examples mix with/without. I’d standardise on a trailing slash in the target:
+
+/services/:service/:suburb/
+
+
+Then ensure your pages and canonicals match that (and your tests assert it).
+
+Case & encoding
+Netlify matching is case-sensitive. If you used to publish any Title-Case paths, add a quick lowercasing Edge rule (optional) or ship extra rules for those one-offs. Your ipswich-region → ipswich and brisbane-west → brisbane are good; keep them lowercase.
+
+Order matters
+Keep specific rules above broad :splat rules. You’ve done that—just don’t add any future “/areas/*” catch-alls above the cluster rename block.
+
+Prefer 308 for method preservation (optional)
+For GET it’s the same as 301, but if you ever POST to a route that later redirects, 308 preserves the method:
+
+/house-cleaning/:suburb   /services/spring-cleaning/:suburb/   308!
+
+
+Sticking to 301 is fine if everything is GET.
+
+Unknown suburb behaviour
+Your _redirects only fires for known patterns; unknown suburbs will 404 naturally (good). If you want “did-you-mean?” UX, keep a tiny Edge Function or SSR handler to catch unknowns and suggest nearby suburbs, but don’t redirect unknowns to a hub (that creates soft-404s).
+
+Generate these rules from data
+You’ll never miss a suburb if the file is built from serviceCoverage.json. (You already have a script—great.) Make it the single source so _redirects and any Edge function read the same compiled list.
+
+Suggested _redirects block (drop-in pattern)
+# --- Service legacy to canonical (both slash variants) ---
+/bond-cleaning/:suburb      /services/bond-cleaning/:suburb/        301!
+/bond-cleaning/:suburb/     /services/bond-cleaning/:suburb/        301!
+/bond-cleaning/:suburb/checklist   /services/bond-cleaning/:suburb/ 301!
+
+# --- Service synonym families ---
+# Bond-cleaning synonyms
+/bond-cleaners/:suburb             /services/bond-cleaning/:suburb/      301!
+/bond-cleaners/:suburb/            /services/bond-cleaning/:suburb/      301!
+/end-of-lease-cleaning/:suburb     /services/bond-cleaning/:suburb/      301!
+/end-of-lease-cleaning/:suburb/    /services/bond-cleaning/:suburb/      301!
+/exit-clean/:suburb                /services/bond-cleaning/:suburb/      301!
+/exit-clean/:suburb/               /services/bond-cleaning/:suburb/      301!
+
+# Spring-cleaning synonyms
+/house-cleaning/:suburb            /services/spring-cleaning/:suburb/    301!
+/house-cleaning/:suburb/           /services/spring-cleaning/:suburb/    301!
+/deep-cleaning/:suburb             /services/spring-cleaning/:suburb/    301!
+/deep-cleaning/:suburb/            /services/spring-cleaning/:suburb/    301!
+
+# Bathroom deep clean synonyms
+/bathroom-cleaning/:suburb         /services/bathroom-deep-clean/:suburb/    301!
+/bathroom-cleaning/:suburb/        /services/bathroom-deep-clean/:suburb/    301!
+/shower-screen-restoration/:suburb /services/bathroom-deep-clean/:suburb/    301!
+/shower-screen-restoration/:suburb/ /services/bathroom-deep-clean/:suburb/   301!
+
+# --- Cluster renames (areas) ---
+/areas/brisbane-west/*   /areas/brisbane/:splat   301!
+/areas/ipswich-region/*  /areas/ipswich/:splat    301!
+
+# --- Cluster renames (blog hubs/categories/posts) ---
+/blog/brisbane-west/*    /blog/brisbane/:splat    301!
+/blog/ipswich-region/*   /blog/ipswich/:splat     301!
+
+# --- Old service URL with cluster segment ---
+/services/:service/:cluster/:suburb/*   /services/:service/:suburb/   301!
+
+Test matrix (quick sanity list)
+
+GET /house-cleaning/kenmore → 301/308 Location /services/spring-cleaning/kenmore/
+
+GET /bond-cleaners/Redbank-Plains/ → 301/308 Location /services/bond-cleaning/redbank-plains/
+
+GET /blog/brisbane-west/checklist/ → 301 Location /blog/brisbane/checklist/
+
+GET /areas/ipswich-region/redbank-plains/ → 301 Location /areas/ipswich/redbank-plains/
+
+GET /services/bond-cleaning/brisbane-west/kenmore/anything → 301 Location /services/bond-cleaning/kenmore/
+
+Unknown: GET /house-cleaning/not-a-suburb/ → 404 (no redirect)
+
+CI tip (you already have Playwright)
+
+Add a tiny “redirects” spec that:
+
+requests both slash and no-slash sources,
+
+asserts status and final canonical pathname (parse Location and compare pathname),
+
+runs against both local dev and Netlify Deploy Preview (where absolute URLs appear).
+
+If you want, I can also give you a tiny build script that:
+
+compiles the suburb slugs from serviceCoverage.json,
+
+writes the synonym rules (both slash variants) into public/_redirects, preserving any manual rules you’ve added.
+
+You said:
+
+Yes. The repo is set up for safe change and extension.
+
+What’s already in place
+
+Hybrid delivery:
+Static Astro pages for services, areas, blogs.
+Edge redirects in public/_redirects for synonyms and cluster renames.
+SSR endpoint shims (prerender=false) for synonym routes with 404 on unknown suburbs.
+Canonicalization and geo:
+Canonical cluster slugs (ipswich/brisbane/logan) with alias resolution.
+Service‑aware JSON‑LD and service‑specific FAQs/CTAs.
+Quality gates:
+Playwright suites (redirects, skip‑link, intent guards).
+Local validators (schema/footer/data).
+CI with AI reviewers/agents producing SARIF annotations.
+Impact of common changes
+
+Add a suburb: update areas.clusters.json; SSR shims and redirects work; tests stay green.
+Rename a cluster: aliases already cover old→new; redirects emit 301s; breadcrumbs/sitemap update from source of truth.
+Add a synonym route: add one rule to _redirects and (optionally) an SSR shim; extend the redirect test matrix.
+Add a new service: add FAQs + JSON‑LD mapping + redirects/shims for synonyms; copy a test block; pattern is established.
+Small hardening to make future changes trivial
+
+Single source of truth for redirects: a JSON config that generates both public/_redirects and the Playwright redirect tests.
+Unit tests for geoHandler (alias→canonical, suburb→LGA).
+Sitemap assertion test to ensure only canonical URLs are emitted.
+CI: keep SCAN_ROUTES env tuned for AI agents to reduce noise.
+Run checks locally
+
+Build and preview: npm run build && npm run preview
+Tests: npx playwright test
+In short: the hybrid pattern is implemented and tested. Adding suburbs, synonyms, or even new services is low‑risk with the current guardrails.
+ChatGPT said:
+Thought for 29s
+
+Awesome—time to make redirects + tests truly “one source of truth.” Here’s a drop-in mini-system that:
+
+Generates public/_redirects from a small JSON config and your existing serviceCoverage.json
+
+Auto-writes a Playwright test file from the same source so CI always matches reality
+
+Keeps space for any hand-written rules you still want to keep
+
+You can paste these files as-is and run the commands at the end.
+
+1) Redirect config (authoritative)
+
+Create src/config/redirects.config.json:
+
+{
+  "trailingSlash": true,
+  "status": 301,
+  "force": true,
+  "clustersRename": {
+    "ipswich-region": "ipswich",
+    "brisbane-west": "brisbane"
+  },
+  "serviceSynonyms": {
+    "bond-cleaning": [
+      "/bond-cleaning/:suburb",
+      "/bond-cleaners/:suburb",
+      "/end-of-lease-cleaning/:suburb",
+      "/exit-clean/:suburb"
+    ],
+    "spring-cleaning": [
+      "/house-cleaning/:suburb",
+      "/deep-cleaning/:suburb"
+    ],
+    "bathroom-deep-clean": [
+      "/bathroom-cleaning/:suburb",
+      "/shower-screen-restoration/:suburb"
+    ]
+  },
+  "legacyPatterns": [
+    "/services/:service/:cluster/:suburb/*"
+  ],
+  "manualKeepHeader": "# --- MANUAL RULES (kept verbatim above the generated block) ---"
+}
+
+
+You already hold the suburb slugs per service in src/data/serviceCoverage.json—we’ll use that.
+
+2) (Optional) Manual rules header
+
+Create public/_redirects (if you don’t have one) with any hand-written rules above the header line:
+
+# --- MANUAL RULES (kept verbatim above the generated block) ---
+
+
+Everything below that header will be replaced by the generator.
+
+3) Generator script
+
+Create scripts/build-redirects.mjs:
+
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const root = path.resolve(__dirname, '..');
+const cfgPath = path.join(root, 'src/config/redirects.config.json');
+const coveragePath = path.join(root, 'src/data/serviceCoverage.json');
+const redirectsFile = path.join(root, 'public/_redirects');
+const testsOut = path.join(root, 'tests/redirects.generated.spec.ts');
+
+function line(parts) { return parts.filter(Boolean).join(' ').trim(); }
+
+function withSlashVariants(source) {
+  // e.g. "/bond-cleaning/:suburb" -> ["/bond-cleaning/:suburb", "/bond-cleaning/:suburb/"]
+  return source.endsWith('/') ? [source.slice(0, -1), source] : [source, `${source}/`];
+}
+
+async function readJson(p) {
+  const raw = await fs.readFile(p, 'utf8');
+  return JSON.parse(raw);
+}
+
+function statusCode({ status = 301, force = true }) {
+  return force ? `${status}!` : String(status);
+}
+
+function destFor({ service, suburb, trailingSlash }) {
+  const base = `/services/${service}/${suburb}`;
+  return trailingSlash ? `${base}/` : base;
+}
+
+function headerBlock() {
+  const stamp = new Date().toISOString();
+  return [
+    '',
+    '# ------------------------------------------------------------------',
+    `# AUTO-GENERATED by scripts/build-redirects.mjs @ ${stamp}`,
+    '# Do not edit below this line; edit src/config/redirects.config.json instead.',
+    '# ------------------------------------------------------------------'
+  ].join('\n');
+}
+
+async function main() {
+  const cfg = await readJson(cfgPath);
+  const coverage = await readJson(coveragePath);
+  const code = statusCode(cfg);
+  const trailing = !!cfg.trailingSlash;
+
+  // 1) Read or create _redirects and split at manual header
+  const manualHeader = cfg.manualKeepHeader || '# --- MANUAL RULES';
+  let existing = '';
+  try { existing = await fs.readFile(redirectsFile, 'utf8'); } catch {}
+  const [manual, _generated] = existing.includes(manualHeader)
+    ? existing.split(manualHeader)
+    : [`${manualHeader}\n`, ''];
+
+  const out = [];
+
+  // 2) Service synonyms → canonical
+  out.push('\n# --- Service synonym families to canonical ---');
+  for (const [service, patterns] of Object.entries(cfg.serviceSynonyms)) {
+    for (const pattern of patterns) {
+      const [noSlash, withSlash] = withSlashVariants(pattern);
+      out.push(line([noSlash, `/services/${service}/:suburb${trailing ? '/' : ''}`, code]));
+      out.push(line([withSlash, `/services/${service}/:suburb${trailing ? '/' : ''}`, code]));
+    }
+  }
+
+  // 3) Legacy service URLs with cluster → canonical
+  out.push('\n# --- Legacy service URL with cluster segment ---');
+  for (const legacy of cfg.legacyPatterns || []) {
+    const [noSlash, withSlash] = withSlashVariants(legacy);
+    out.push(line([noSlash, `/services/:service/:suburb${trailing ? '/' : ''}`, code]));
+    out.push(line([withSlash, `/services/:service/:suburb${trailing ? '/' : ''}`, code]));
+  }
+
+  // 4) Cluster renames (areas + blog)
+  out.push('\n# --- Cluster renames (areas + blog) ---');
+  for (const [from, to] of Object.entries(cfg.clustersRename || {})) {
+    out.push(line([`/areas/${from}/*`, `/areas/${to}/:splat`, code]));
+    out.push(line([`/blog/${from}/*`, `/blog/${to}/:splat`, code]));
+  }
+
+  // 5) (Optional) bond-cleaning legacy root variants (if you had a naked /bond-cleaning/:suburb/checklist)
+  out.push('\n# --- Specific legacy path cleanups ---');
+  out.push(line(['/bond-cleaning/:suburb/checklist', `/services/bond-cleaning/:suburb${trailing ? '/' : ''}`, code]));
+
+  // Write redirects file: keep manual section verbatim
+  const finalText = manualHeader + manual.split(manualHeader)[1] + headerBlock() + '\n' + out.join('\n') + '\n';
+  await fs.mkdir(path.dirname(redirectsFile), { recursive: true });
+  await fs.writeFile(redirectsFile, finalText, 'utf8');
+
+  // 6) Generate Playwright tests from same source (sample a few suburbs per service)
+  const cases = [];
+  for (const [service, patterns] of Object.entries(cfg.serviceSynonyms)) {
+    const suburbs = (coverage[service] || []).slice(0, 3); // keep CI light
+    for (const suburb of suburbs) {
+      for (const pattern of patterns) {
+        for (const variant of withSlashVariants(pattern)) {
+          const src = variant.replace(':suburb', suburb);
+          const expected = destFor({ service, suburb, trailingSlash: trailing });
+          cases.push({ src, expected, code: cfg.status });
+        }
+      }
+    }
+  }
+  const testFile = `/**
+ * AUTO-GENERATED by scripts/build-redirects.mjs — do not edit.
+ */
+import { test, expect } from '@playwright/test';
+
+test.describe('Redirects (generated)', () => {
+  const matrix = ${JSON.stringify(cases, null, 2)};
+  for (const tc of matrix) {
+    test(\`\${tc.src} -> \${tc.expected}\`, async ({ request, baseURL }) => {
+      const res = await request.get(tc.src, { maxRedirects: 0 });
+      expect([301, 308]).toContain(res.status());
+      const loc = res.headers()['location'];
+      expect(loc).toBeTruthy();
+      const final = new URL(loc, baseURL).pathname;
+      expect(final).toBe(new URL(tc.expected, baseURL).pathname);
+    });
+  }
+});
+`;
+  await fs.writeFile(testsOut, testFile, 'utf8');
+
+  console.log(`Wrote:\n- ${path.relative(root, redirectsFile)}\n- ${path.relative(root, testsOut)}`);
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
+
+4) Add NPM scripts
+
+Add to package.json:
+
+{
+  "scripts": {
+    "build:redirects": "node scripts/build-redirects.mjs",
+    "build": "npm run build:faqs && npm run build:redirects && USE_NETLIFY=1 astro build && npm run validate:schema",
+    "test:redirects": "PLAYWRIGHT_JSON_OUTPUT_NAME=redirects npx playwright test tests/redirects.generated.spec.ts"
+  }
+}
+
+
+We insert the generator before your Astro build so Deploy Previews pick up the fresh _redirects.
+
+5) Run it
+npm run build:redirects
+npm run test:redirects
+# or run the whole suite
+npm test
+
+
+You’ll see:
+
+public/_redirects rewritten with a clearly marked AUTO-GENERATED block (your manual rules stay above it)
+
+tests/redirects.generated.spec.ts created and included in the suite
+
+Notes & nice extras
+
+Trailing slash: Toggle once in redirects.config.json and both redirects + tests align.
+
+Force (!): We default to 301! so the redirect wins even if a stale file exists.
+
+Unknown suburbs: _redirects will still redirect to the canonical pattern, and your SSR shim (or lack of built page) returns 404—this is fine and SEO-safe. If you prefer a “did-you-mean” suggestion, keep your SSR handler for unknowns.
+
+Expanding coverage: When you add a suburb to serviceCoverage.json, re-running the generator automatically adds test cases and ensures _redirects keeps up.
+
+If you want me to also generate a tiny Edge Function template (Netlify) that logs synonym hits / unknown suburbs and assigns an A/B cookie, I can drop that in too.
+
+
+
+
+GitHub Copilot
+
+Short answer: keep separate, focused master files, and add one “orchestrator” module that composes them. Don’t cram everything into a single mega‑file.
+
+Why split masters (recommended)
+- Separation of concerns:
+  - Clusters/aliases/suburbs evolve with geo.
+  - Services/labels/intent rules evolve with offerings.
+  - Coverage changes more frequently than either.
+  - Redirect patterns are routing policy, not content.
+- Lower merge friction: smaller JSONs change independently.
+- Safer generation: scripts can validate each domain, then compose.
+
+Add one orchestrator for convenience
+- Create a typed registry module that loads all masters once and exposes:
+  - clusters (with alias resolution)
+  - services
+  - coverage
+  - redirects config
+  - derived lookups (findSuburbBySlug, getCanonicalCluster, service labels)
+- Generators (redirects, sitemap, tests) import from this single module.
+
+Suggested structure
+- Master files (authoritative)
+  - areas.clusters.json
+  - services.json
+  - serviceCoverage.json
+  - src/config/redirects.config.json
+  - ai-rules.json (intent)
+- Orchestrator (compose/derive)
+  - src/config/registry.ts
+- Generators/validators
+  - scripts/build-redirects.mjs → writes public/_redirects + tests/redirects.generated.spec.ts
+  - validate-data.js → validates shapes (AJV) and cross‑refs
+  - scripts/site-index.mjs (optional) → emits a site inventory Markdown/JSON
+
+Drop‑in orchestrator module
+
+````ts
+import areas from '@/content/areas.clusters.json';
+import services from '@/data/services.json';
+import coverage from '@/data/serviceCoverage.json';
+import redirectsCfg from '@/config/redirects.config.json';
+import slugify from '@/utils/slugify.js';
+
+export type Cluster = {
+  slug: string;
+  name: string;
+  aliases?: Record<string, string>;
+  suburbs: string[];
+};
+
+export const clusters: Cluster[] = areas.clusters;
+
+const aliasToCanonical = new Map<string, string>(
+  clusters.flatMap(c =>
+    Object.keys(c.aliases ?? {}).map(a => [slugify(a), c.slug]),
+  ),
+);
+
+export function getCanonicalCluster(input: string) {
+  const s = slugify(input);
+  return aliasToCanonical.get(s) || s;
+}
+
+export type SuburbRef = { name: string; slug: string; clusterSlug: string; clusterName: string };
+
+export const suburbs: SuburbRef[] = clusters.flatMap(c =>
+  c.suburbs.map(name => ({
+    name,
+    slug: slugify(name),
+    clusterSlug: c.slug,
+    clusterName: c.name,
+  })),
+);
+
+export function findSuburbBySlug(slug: string): SuburbRef | null {
+  const s = slugify(slug);
+  return suburbs.find(x => x.slug === s) || null;
+}
+
+export const serviceMap: Record<string, { label: string }> = Object.fromEntries(
+  (services || []).map((s: any) => [s.slug, { label: s.label ?? s.slug }]),
+);
+
+export const serviceCoverage: Record<string, string[]> = coverage;
+
+export const redirectsConfig = redirectsCfg;
+
+export function serviceLabel(slug: string) {
+  return serviceMap[slug]?.label ?? slug;
+}
+````
+
+Example: SSR synonym endpoint imports the orchestrator (no duplicated logic)
+
+````ts
+export const prerender = false;
+import type { APIRoute } from 'astro';
+import { findSuburbBySlug } from '@/config/registry';
+
+export const GET: APIRoute = ({ params, redirect }) => {
+  const match = findSuburbBySlug(params.suburb ?? '');
+  if (!match) return new Response('Unknown suburb', { status: 404 });
+  return redirect(`/services/bond-cleaning/${match.slug}/`, 301);
+};
+````
+
+Generator already aligned
+- scripts/build-redirects.mjs can import src/config/redirects.config.json (as it does), and you can optionally switch it to import from src/config/registry.ts if you want alias‑aware logic (Node ESM + ts-node/tsx if needed). Today’s JSON+script split is fine.
+
+Operational guidance
+- Keep the masters split; use the orchestrator as the single import for code and generators.
+- Validate masters in validate-data.js (AJV), run in CI.
+- Build redirects/tests from config before Astro build (you already wired this).
+
+If you want, I can wire consumers (SSR shims, validators, generators) to import the new registry module now.

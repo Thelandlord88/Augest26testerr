@@ -1,0 +1,34 @@
+{
+  "brand": "One N Done Bond Clean",
+  "tone": ["warm", "practical", "reassuring", "plain AU English"],
+  "audiences": ["Tenant", "Landlord", "Property Manager", "DIYer"],
+  "voice_rules": {
+    "reading_level": "Year 8–10",
+    "tense": "active",
+    "spelling": "AU",
+    "avoid": ["jargon without definition", "absolute guarantees", "fear tactics"],
+    "do": [
+      "Define technical terms on first use",
+      "State ratios, dwell times and tools when giving how-tos",
+      "Flag safety (PPE, ventilation, spot-tests) when risk > low"
+    ]
+  },
+  "positioning": {
+    "promise": "100% Bond-Back Focus with 7-day re-clean support",
+    "proof": ["Before/after photos", "Agent-aligned checklist", "Local family team"],
+    "eco": "Prefer low-odour, biodegradable where effective"
+  },
+  "cta": {
+    "primary": "Get my guaranteed quote",
+    "secondary": "See the agent-aligned checklist",
+    "contact": "Talk to Trent & Pandora"
+  },
+  "seo": {
+    "meta_title": "{Primary intent keyword} | {Area} Bond Cleaning | One N Done",
+    "meta_description": "{Service} for {audience} in {area}. Agent-aligned checklist, friendly local team, on-time. Get your {outcome} with our 7-day re-clean support."
+  },
+  "lexicon": {
+    "preferred": ["bond clean", "end-of-lease", "agent-aligned", "re-clean", "soap scum", "degrease", "descale"],
+    "avoid": ["cheap", "miracle", "toxic-free"]
+  }
+}

@@ -1,0 +1,265 @@
+
+
+Reasoning Snapshot
+You’ve handed me a solid page skeleton. I’m ready to turn it into conversion-ready, agent-aligned copy for a Bathroom Deep Clean service that works as a hub (multi-area) and scales to suburb spokes. I’ll keep the tone warm AU-English, wire in cluster-aware internal links, and layer in real-world process chemistry with clear safety and guarantees.
+
+Action Plan
+
+Confirm page type and targeting (5 minutes)
+Choose: Hub (Ipswich • Brisbane • Logan) now; spokes later.
+Assets checklist: 3–6 before/after pairs (glass, grout, chrome), rating badge, ABN/insurance icon, phone number for tel: link. Pass–fail: Hub H1 must include areas; CTAs visible on mobile and desktop.
+2. Build the hero and top-of-page conversion block (10 minutes)
+
+H1 + subhead that mirrors intent.
+Primary CTA: Get a Fast Quote (links to /#quote), secondary CTA: Call Now (tel:).
+Trust row: ratings, “Agent-ready”, insured/ABN. Pass–fail: Scroll test—CTA present above the fold on mobile; phone link tappable.
+3. Draft Pain → Promise and What’s Included (15 minutes)
+
+3–5 pains, then outcome-led promise.
+Acceptance slice grouped by Shower, Bath, Vanity & Basin, Toilet, Floors & Skirting, Vents & Fittings.
+Scope clarifiers: non-structural mould up to 2 m²; standard ceiling height up to 2.7 m. Pass–fail: No ambiguity on mould scope; glass etching limitation stated.
+4. Add-ons/Upgrades, Pricing clarifier, How it works (10 minutes)
+
+4–6 upgrade cards with “from $X” or “quote on inspection”.
+Pricing notes: size/condition factors; time estimate (typical main bathroom 1.5–2.5 hrs). Pass–fail: Clear sliders on scope; no surprise-add perception.
+5. Process SOP with ratios and dwell times + Safety box (15 minutes)
+
+Chemically accurate, agent-safe workflow: alkaline → acid → neutralise → rinse → polish → mould treatment (non-chlorine option).
+Safety: PPE, ventilation, spot-tests; never mix bleach with ammonia or acids (chlorine gas risk); protect acid-sensitive stone. Pass–fail: No hazardous mixes; AU guardrails explicit; dilution/dwell ranges included.
+6. Guarantees, FAQs, Local linking mesh (10 minutes)
+
+48-hour touch-up guarantee (conditions).
+FAQ schema-eligible questions that deflect common tickets.
+Internal links: hub → spokes; cross-service upsells; cluster-aware blog links. Pass–fail: At least 2–3 internal links live; guarantees framed as policy, not certainty.
+7. Technical SEO and JSON (10 minutes)
+
+Meta title/description within limits; section IDs for jump links.
+Acceptance JSON; Service + FAQPage JSON-LD. Pass–fail: Title ≤60 chars; Description ≤155; JSON validates.
+Why It Works
+This blends buyer psychology (proof, clarity, risk-reversal) with operations reality (ratios, dwell times, scope limits), so expectations are set and met. The internal link mesh builds topical authority while the safety/SOP earns trust with both clients and property managers.
+
+SEO & Conversion Layer
+
+Page type: Hub (multi-area). I’ll also show how a spoke is cloned.
+H1
+Bathroom Deep Clean in Ipswich, Brisbane & Logan — Bond-Back Focused
+
+Meta Title (≤60)
+Bathroom Deep Clean | Sparkling Glass & Grout | One N Done
+
+Meta Description (≤155)
+Deep clean for showers, tiles, grout and glass. Mould treatment, scale removal, polished chrome. Fixed quotes.
+
+Primary CTAs
+
+Get a Fast Quote → /#quote
+Call now → tel:[your number]
+Hero copy
+Bathroom Deep Clean
+Deep sanitisation for tiles, grout, shower screens and fixtures—streak-free and mould-targeted.
+
+Fixed price
+Supplies included
+48-hour touch-up guarantee
+Pain → Promise
+
+The usual suspects: soap-scum haze, pink mould in grout, hard-water scale on glass, exhaust-fan grime.
+Our promise: we strip buildup, treat mould, polish glass and chrome, and leave a dry, streak-free finish ready for photos or inspection.
+What’s Included (Acceptance Slice)
+Shower
+
+Glass scale removal and polish
+Tiles and grout deep clean
+Chrome fixtures descaled and buffed
+Shower screen tracks detailed
+Bath
+
+Tub descaled and sanitised
+Tile surround scrubbed and rinsed
+Overflow and waste detailed
+Vanity & Basin
+
+Sink and tapware descaled
+Bench and splashback cleaned
+Mirror streak-free polish
+Cabinet exterior wiped
+Toilet
+
+Bowl deep clean and descaling
+Seat, hinges and base sanitised
+Exterior and adjacent tiles cleaned
+Floors & Skirting
+
+Edge vacuum
+Scrub as needed and mop to a dry finish
+Skirting and ledges dusted and wiped
+Vents & Fittings
+
+Exhaust cover degreased
+Light switches and handles sanitised
+Scope clarifiers
+
+Non-structural mould treatment on non-porous surfaces, up to 2 m² per bathroom (heavier growth quoted).
+Standard ceiling heights up to 2.7 m. Acid-sensitive stone (marble/terrazzo/travertine) cleaned with non-acid method.
+Before/After Evidence
+
+Shower glass: heavy mineral scale removed; finish polished.
+Grout lines: soap scum and pink mould treated; brightened and sealed-on request.
+Chrome tapware: limescale removed, buffed to mirror finish. Tip: Use at least one slider image and ALT like “Shower glass after mineral scale removal”.
+Add-ons / Upgrades
+
+Grout steam-revive (per bathroom) — lifts embedded residue without harsh chemicals.
+Silicone mould remediation (non-replacement) — lifts surface growth; replacement via referral if needed.
+Calcium/scale intensive treatment (glass/tiles) — quote on inspection for etched/lime-burnt zones.
+Exhaust fan deep-degunk — improves extraction performance.
+Vanity drawer cleanout/organise — clears clutter for a proper wipe-down.
+Pricing & Inclusions clarifier
+
+From $X for small ensuites; transparent fixed quote after photos.
+Factors: heavy limescale or mould, oversized areas, specialty stone care, silicone remediation, poor ventilation.
+Typical time on site: main bathroom 1.5–2.5 hours; ensuite 1–1.5 hours.
+How it works
+
+Send quick photos (or select rooms)
+We confirm price and time window
+Deep clean and sign-off (walkthrough welcome)
+Our Process & Products (SOP + Safety)
+Method overview
+
+Soap scum removal (alkaline): Apply an alkaline degreaser 1:10–1:20 with water (pH ~10–12). Dwell 5–7 minutes. Agitate with non-scratch pads. Rinse thoroughly.
+Descale glass/ceramic (acid): Apply a safe acid descaler (e.g., citric 5–10% or phosphoric 10–15%). Dwell 3–5 minutes. Do not let dry. Light agitation if needed. Rinse to neutral. Avoid acid on marble/terrazzo/travertine—use non-acid method there.
+Neutralise & polish: Follow with a neutral pH rinse, then microfibre polish on glass, chrome and mirror surfaces for a streak-free finish.
+Mould treatment (non-chlorine option): Apply a quaternary ammonium compound-based biocide at 0.2–0.5% to non-porous surfaces. Dwell 10 minutes. Rinse or wipe to finish. For stubborn spots, oxygen-based gel (3–6% hydrogen-peroxide class) may be used—colourfast test first.
+Grout steam (if chosen): Controlled passes with 140–160°C steam, towels to capture condensate; keep nozzle moving to protect grout.
+Safety (AU guardrails)
+
+PPE: gloves, eye protection, mask as required; keep the room well ventilated.
+Never mix bleach with ammonia or acids—risk of toxic chlorine gas.
+Spot-test on a small, inconspicuous area; protect acid-sensitive stone and plated finishes.
+Floors may be slippery when wet; keep kids and pets out until dry.
+Guarantees & standards
+
+48-hour touch-up guarantee: If you’re not happy with a listed inclusion, we return to address it within 2 business days. Excludes reappearance of mould from ongoing moisture/ventilation issues or silicone/structural defects.
+Agent-ready finish when booked as part of exit/bond cleaning; we align to common agent checklists and note that outcome depends on property condition, access and scope.
+FAQs (schema-ready)
+
+Do you replace silicone or regrout? We clean and remediate surface mould only; silicone replacement or regrouting is via referral or pre-quoted trade.
+Can you remove etched/burnt glass? Etching is permanent surface damage. We remove mineral scale and polish the remaining surface; improvement, not full restoration.
+How do you handle heavy black mould? We treat non-structural mould on non-porous surfaces within scope. For porous substrate or recurring moisture problems, we’ll flag remediation or ventilation fixes.
+What should I do before you arrive? Clear personal items, unlock the area, ensure water/power access, and secure pets. Run the exhaust or open a window if possible.
+Are your products pet-safe? Yes—we select low-residue options and rinse surfaces. Let us know if you prefer non-chlorine products only.
+Local service area (internal linking)
+Hub → suburb spokes (sample)
+
+/services/bathroom-deep-clean/springfield-lakes/
+/services/bathroom-deep-clean/ipswich/
+/services/bathroom-deep-clean/ripley/
+/services/bathroom-deep-clean/redbank-plains/
+/services/bathroom-deep-clean/goodna/
+/services/bathroom-deep-clean/indooroopilly/
+/services/bathroom-deep-clean/toowong/
+/services/bathroom-deep-clean/taringa/
+/services/bathroom-deep-clean/st-lucia/
+/services/bathroom-deep-clean/logan-central/
+/services/bathroom-deep-clean/springwood/
+/services/bathroom-deep-clean/rochedale-south/
+Cross-service links
+
+Bond Cleaning → /services/bond-cleaning/
+Spring Cleaning → /services/spring-cleaning/
+Helpful reads (cluster-aware blog links; example: Ipswich)
+
+Bond cleaning checklist → /blog/ipswich/bond-cleaning-checklist/
+What agents want → /blog/ipswich/what-agents-want/
+CTA band (repeat near footer)
+Ready for a hotel-clean bathroom? Get a Fast Quote → /#quote • Same-week slots available.
+
+Footer notes
+
+Mini sitemap: Services, Areas, Resources/Blog, Contact, Terms/Privacy.
+Contact details, working hours, socials, ABN, insurance.
+Acceptance JSON (example)
+{
+"title": "Bathroom Deep Clean – What’s Included",
+"groups": [
+{ "label": "Shower", "items": [
+"Glass scale removal & polish",
+"Tiles & grout deep clean",
+"Chrome fixtures descaled & buffed",
+"Shower screen tracks detailed"
+]},
+{ "label": "Bath", "items": [
+"Tub descaled & sanitised",
+"Tile surround scrubbed & rinsed",
+"Overflow & waste detailed"
+]},
+{ "label": "Vanity & Basin", "items": [
+"Sink & tapware descaled",
+"Bench & splashback cleaned",
+"Mirror streak-free polish",
+"Cabinet exterior wiped"
+]},
+{ "label": "Toilet", "items": [
+"Bowl deep clean & descaling",
+"Seat, hinges & base sanitised",
+"Exterior & adjacent tiles cleaned"
+]},
+{ "label": "Floors & Skirting", "items": [
+"Edges vacuumed",
+"Scrubbed as needed & mopped",
+"Skirting/ledges dusted & wiped"
+]},
+{ "label": "Vents & Fittings", "items": [
+"Exhaust cover degreased",
+"High-touch points sanitised"
+]}
+],
+"notes": [
+"Mould treated on non-porous surfaces within standard scope (up to 2 m²).",
+"Acid-sensitive stone requires a non-acid method."
+]
+}
+
+JSON-LD (Service) – Hub version (replace X with price if used)
+{
+"@context": "https://schema.org",
+"@type": "Service",
+"name": "Bathroom Deep Clean",
+"provider": { "@type": "LocalBusiness", "name": "One N Done Bond Clean" },
+"areaServed": ["Ipswich QLD", "Brisbane QLD", "Logan QLD"],
+"hasOfferCatalog": {
+"@type": "OfferCatalog",
+"name": "Bathroom Deep Clean – What’s Included",
+"itemListElement": [
+{ "@type": "OfferCatalog", "name": "Shower" },
+{ "@type": "OfferCatalog", "name": "Bath" },
+{ "@type": "OfferCatalog", "name": "Vanity & Basin" },
+{ "@type": "OfferCatalog", "name": "Toilet" },
+{ "@type": "OfferCatalog", "name": "Floors & Skirting" },
+{ "@type": "OfferCatalog", "name": "Vents & Fittings" }
+]
+},
+"offers": {
+"@type": "Offer",
+"priceCurrency": "AUD",
+"price": "from X",
+"availability": "https://schema.org/InStock",
+"url": "https://onendonebondclean.com.au/services/bathroom-deep-clean/"
+}
+}
+
+Mobile UX notes
+
+Keep a sticky bottom bar on mobile: “Get a Quote” + phone icon.
+Use section IDs like #inclusions, #pricing, #faqs so CTAs can jump-link.
+Use outcome-oriented ALT text (e.g., “Grout after steam reviving”).
+Spoke cloning (example tokens)
+
+URL: /services/bathroom-deep-clean/springfield-lakes/
+H1: Bathroom Deep Clean – Springfield Lakes
+Meta description: Deep clean bathrooms in Springfield Lakes: mould and scale removed, glass polished, grout refreshed. Fixed quotes.
+Local links: Up to hub (/services/bathroom-deep-clean/), across to 2 nearby suburbs (e.g., /services/bathroom-deep-clean/ipswich/ and /services/bathroom-deep-clean/ripley/), plus Bond Cleaning and Spring Cleaning.
+Ready to proceed?
+
+If you’re happy, I’ll finalise: 1 hub page + 3 spokes (Springfield Lakes, Indooroopilly, Logan Central), and tailor the copy where needed.
+If you have preferred image sets, suburb priorities, or “from $” price anchors, drop them in and I’ll bake them in before handover.

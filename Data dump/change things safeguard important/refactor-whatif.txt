@@ -1,0 +1,106 @@
+// scripts/refactor-whatif.mjs
+// “What-if” validator: asserts old paths 30x to the new scheme on a live preview.
+// Examples:
+//   node scripts/refactor-whatif.mjs --preview=https://<preview>.netlify.app --blog-base=example
+//   node scripts/refactor-whatif.mjs --preview=https://<preview>.netlify.app \
+//        --blog-base=example --cluster=brisbane-west:brisbane --cluster=ipswich-region:ipswich \
+//        --sample-slug=my-post --sample-suburb=forest-lake
+
+import fs from "node:fs";
+
+const args = Object.fromEntries(process.argv.slice(2).map(a => {
+  const [k, v] = a.replace(/^--/, "").split("=");
+  return [k, v ?? "true"];
+}));
+
+const BASE = args.preview || process.env.PREVIEW_URL || "http://localhost:4322";
+const newBlogBase = (args["blog-base"] || "blog").replace(/^\/|\/$/g, "");
+const clusterPairs = []
+  .concat([args.cluster].flat())
+  .filter(Boolean)
+  .flatMap(v => String(v).split(","))
+  .map(pair => {
+    const [from, to] = pair.split(":" ).map(s => s.trim());
+    return from && to ? { from, to } : null;
+  })
+  .filter(Boolean);
+
+const sample = {
+  slug: args["sample-slug"] || "bond-cleaning-checklist",
+  suburb: args["sample-suburb"] || "forest-lake",
+};
+
+function ensureSlash(p) {
+  if (!/\.[a-z0-9]+$/i.test(p) && !/[?#]$/.test(p) && !p.endsWith("/")) return p + "/";
+  return p;
+}
+function norm(u) {
+  try { u = new URL(u, BASE).pathname; } catch {}
+  try { u = decodeURI(u); } catch {}
+  return ensureSlash(u);
+}
+async function headOrGet(url) {
+  let res;
+  try {
+    res = await fetch(url, { method: "HEAD", redirect: "manual" });
+    if (!String(res.status).startsWith("30") || !res.headers.get("location")) {
+      res = await fetch(url, { method: "GET", redirect: "manual" });
+    }
+  } catch {
+    res = await fetch(url, { method: "GET", redirect: "manual" });
+  }
+  return res;
+}
+const aliasVariants = (slug) => [slug, slug.replace(/-/g, "_"), slug.replace(/-/g, "%20")];
+
+const tests = [];
+
+// Blog base rename
+if (newBlogBase && newBlogBase !== "blog") {
+  tests.push(
+    { from: `/blog`, to: `/${newBlogBase}/` },
+    { from: `/blog/`, to: `/${newBlogBase}/` },
+    { from: `/blog/ipswich/`, to: `/${newBlogBase}/ipswich/` },
+    { from: `/blog/ipswich/${sample.slug}/`, to: `/${newBlogBase}/ipswich/${sample.slug}/` },
+    { from: `/blog/ipswich/category/checklist/`, to: `/${newBlogBase}/ipswich/category/checklist/` },
+  );
+}
+
+// Cluster renames
+for (const { from, to } of clusterPairs) {
+  for (const v of aliasVariants(from)) {
+    tests.push(
+      { from: `/blog/${v}/`, to: `/${newBlogBase}/${to}/` },
+      { from: `/blog/${v}/${sample.slug}/`, to: `/${newBlogBase}/${to}/${sample.slug}/` },
+      { from: `/blog/${v}/category/checklist/`, to: `/${newBlogBase}/${to}/category/checklist/` },
+
+      { from: `/areas/${v}/${sample.suburb}/`, to: `/areas/${to}/${sample.suburb}/` },
+
+      // legacy service shape with cluster segment -> suburb-only canonical
+      { from: `/services/bond-cleaning/${v}/springfield/`, to: `/services/bond-cleaning/springfield/` },
+    );
+  }
+}
+
+let failures = 0;
+let out = `# Refactor what-if — ${new Date().toISOString()}\nBase: ${BASE}\nNew blog base: ${newBlogBase}\nClusters: ${JSON.stringify(clusterPairs)}\nSamples: ${JSON.stringify(sample)}\n\n`;
+
+for (const t of tests) {
+  try {
+    const res = await headOrGet(`${BASE}${t.from}`);
+    const code = String(res.status);
+    const loc = res.headers.get("location") || "";
+    const ok = code.startsWith("30") && norm(loc) === norm(t.to);
+    out += `${t.from} -> [${code}] ${loc}  ${ok ? "✅" : `❌ expected ${t.to}`}\n`;
+    if (!ok) failures++;
+  } catch (e) {
+    out += `${t.from} -> error: ${e?.message || e} ❌\n`;
+    failures++;
+  }
+}
+
+fs.mkdirSync("__ai", { recursive: true });
+const fname = `__ai/refactor-whatif-${newBlogBase || "blog"}.txt`;
+fs.writeFileSync(fname, out);
+console.log(`Wrote ${fname} (${failures} failure(s))`);
+if (failures) process.exit(1);

@@ -1,0 +1,65 @@
+Bounds (hard max): <=65 chars
+Advisory min: 25
+
+
+Warnings (short titles – consider enriching):
+too-short    len= 24 :: dist/areas/brisbane/index.html
+  Brisbane – Service Areas
+too-short    len= 24 :: dist/areas/index.html
+  Service Areas – Clusters
+too-short    len= 23 :: dist/areas/ipswich/index.html
+  Ipswich – Service Areas
+too-short    len= 21 :: dist/areas/logan/index.html
+  Logan – Service Areas
+too-short    len= 23 :: dist/blog/brisbane/category/local/index.html
+  Blog – Brisbane / Local
+too-short    len= 23 :: dist/blog/brisbane/category/story/index.html
+  Blog – Brisbane / Story
+too-short    len= 24 :: dist/blog/brisbane/category/suburb/index.html
+  Blog – Brisbane / Suburb
+too-short    len= 21 :: dist/blog/brisbane/category/usp/index.html
+  Blog – Brisbane / Usp
+too-short    len= 14 :: dist/blog/brisbane/client-stories/index.html
+  Client Stories
+too-short    len= 15 :: dist/blog/brisbane/index.html
+  Blog – brisbane
+too-short    len= 24 :: dist/blog/brisbane/kenmore/index.html
+  Bond Cleaning in Kenmore
+too-short    len= 17 :: dist/blog/index.html
+  Blog – One N Done
+too-short    len= 22 :: dist/blog/ipswich/category/local/index.html
+  Blog – Ipswich / Local
+too-short    len= 22 :: dist/blog/ipswich/category/story/index.html
+  Blog – Ipswich / Story
+too-short    len= 23 :: dist/blog/ipswich/category/suburb/index.html
+  Blog – Ipswich / Suburb
+too-short    len= 20 :: dist/blog/ipswich/category/usp/index.html
+  Blog – Ipswich / Usp
+too-short    len= 14 :: dist/blog/ipswich/client-stories/index.html
+  Client Stories
+too-short    len= 14 :: dist/blog/ipswich/index.html
+  Blog – ipswich
+too-short    len= 24 :: dist/blog/ipswich/kenmore/index.html
+  Bond Cleaning in Kenmore
+too-short    len= 24 :: dist/blog/logan/category/checklist/index.html
+  Blog – Logan / Checklist
+too-short    len= 20 :: dist/blog/logan/category/local/index.html
+  Blog – Logan / Local
+too-short    len= 20 :: dist/blog/logan/category/story/index.html
+  Blog – Logan / Story
+too-short    len= 21 :: dist/blog/logan/category/suburb/index.html
+  Blog – Logan / Suburb
+too-short    len= 18 :: dist/blog/logan/category/usp/index.html
+  Blog – Logan / Usp
+too-short    len= 14 :: dist/blog/logan/client-stories/index.html
+  Client Stories
+too-short    len= 12 :: dist/blog/logan/index.html
+  Blog – logan
+too-short    len= 24 :: dist/blog/logan/kenmore/index.html
+  Bond Cleaning in Kenmore
+too-short    len= 20 :: dist/gallery/index.html
+  Gallery – One N Done
+too-short    len= 10 :: dist/ui/index.html
+  UI Catalog
+
+No blocking violations.

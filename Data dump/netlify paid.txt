@@ -1,0 +1,202 @@
+Absolutely—if you’re stepping up to a paid Netlify plan, here’s what’s worth implementing for your Astro site (high-ROI first), plus exactly how each piece fits your stack.
+
+What to turn on (and why)
+1) Netlify Analytics (server-side)
+
+Zero JS, no CLS/CPU hit; you still keep GA4 for events only.
+
+Use it to watch pageviews, top pages, referrers and 404s without adding scripts. 
+CSS-Tricks
+Netlify Docs
+
+Do: Enable Project Analytics on the site; add a GA4 Measurement Protocol function for quote events later.
+
+2) Image CDN (/.netlify/images)
+
+Automatic AVIF/WebP, width/quality transforms at the edge; perfect for your SmartImage helper and Markdown/remote images. 
+Netlify Docs
+
+Do: Route public/remote assets through /.netlify/images?url=…&w=…&fm=…; keep astro:assets for local imports.
+
+3) Edge Functions
+
+Geo-aware nudges (detect QLD locality), canonicalization (defensive redirects), A/B experiments, header/cookie work—all without shipping JS. Runs on Deno at the CDN edge. 
+Netlify Docs
++1
+
+Do: Small edge middleware to (a) 301 any non-canonical blog/service paths, (b) attach geo hints for preselecting clusters.
+
+4) Scheduled & Background Functions
+
+Nightly chores (ping sitemap, pre-warm images, regenerate JSON data), and longer runs (email digests, image batch work) without blocking requests. 
+Netlify Docs
+GitHub
+
+Do: Cron a sitemap-ping and a prewarm-images job; move any long tasks (e.g., generating thumbnails) to background functions.
+
+5) On-demand Builders (Distributed Persistent Rendering)
+
+Generate long-tail suburb pages on first hit and cache them—great if you expand beyond your current whitelist without making builds slow. 
+Netlify Docs
+
+Do: Keep today’s core suburbs prebuilt; wire low-traffic fringe suburbs as ODB endpoints.
+
+6) Password-protect non-prod + Branch/Deploy Previews
+
+Gate previews behind a password; share safe links with agents/clients; keep crawlers out. 
+Netlify Support Forums
+
+Do: Add basic auth for previews; keep your “preview = noindex” headers as you already do.
+
+7) Firewall Rules (Business+)
+
+Rate-limit bots, block abusive IPs/countries, and shield quotes endpoint. 
+Netlify Docs
+
+Do: Add a low-risk rule set: throttle /quote submissions and deny obvious scrapers.
+
+8) Forms (progressive-enhancement fallback)
+
+If the JS quote form fails, Netlify can still capture fields server-side and notify you; you can also route submissions to functions/webhooks. 
+Netlify Support Forums
+
+Do: Add netlify/netlify-honeypot attributes to the form as a resilient fallback.
+
+9) Blobs + Function Metrics
+
+Blobs: simple, serverless storage for leads or “abandoned quote” drafts. Function Metrics: see errors/duration per function and correlate to deploys. 
+Netlify
++1
+Netlify Docs
+developers.netlify.com
+
+Do: Store quote drafts in Blobs; watch Function Metrics to catch slowdowns.
+
+10) Split Testing with branch deploys (optional)
+
+Flip hero copy/layout variants at the edge and keep it sticky with cookies—no client JS. 
+Netlify Docs
+
+Concrete “enable + implement” checklist (fits your repo)
+Performance & UX
+
+Turn on Image CDN and route non-import images via /.netlify/images. (Keep <Image> for local imports.) 
+Netlify Docs
+
+Add a scheduled function to pre-request your heaviest images and checklist pages weekly (primes the CDN). 
+Netlify Docs
+
+SEO & Routing
+
+Edge Function: enforce lowercase/slugged service/blog paths and add a fast 301 for any legacy cluster in the URL. 
+Netlify Docs
+
+Scheduled function: ping Search Console/Bing with /sitemap.xml on every successful production deploy. 
+Netlify Docs
+
+Analytics without bloat
+
+Enable Netlify Analytics (server logs, no JS). Keep GA4 only for quote events via a tiny serverless function. 
+CSS-Tricks
+Netlify Docs
+
+Security & Ops
+
+Add password protection for Deploy Previews. 
+Netlify Support Forums
+
+On Business, add Firewall rules: rate-limit /api/quote and block known bad ASNs. 
+Netlify Docs
+
+Start using Function Metrics to watch your quote function’s success rate and p95 duration. 
+Netlify Docs
+Netlify
+
+Scale without slower builds
+
+Migrate any “maybe later” suburb pages to On-demand Builders; prebuild only the top 50 suburbs; let the rest generate on first view. 
+Netlify Docs
+
+Tiny code stubs (drop-ins)
+Edge redirect (canonical service URL)
+
+ts
+Copy
+Edit
+// netlify/edge-functions/canonicalize.ts
+export default async (req: Request) => {
+  const url = new URL(req.url);
+  url.pathname = url.pathname.replace(/\/services\/([^/]+)\/[^/]+\/([^/]+)/, '/services/$1/$2'); // drop cluster
+  if (url.pathname !== new URL(req.url).pathname) return Response.redirect(url.toString(), 301);
+  return new Response(null, { status: 204 });
+};
+export const config = { path: "/*" };
+(Attach in Netlify config; complements your existing Netlify redirects.) 
+Netlify Docs
+
+Scheduled sitemap ping
+
+js
+Copy
+Edit
+// netlify/functions/ping-sitemaps.ts
+export default async () => {
+  const base = 'https://onendonebondclean.com.au';
+  await Promise.all([
+    fetch(`https://www.google.com/ping?sitemap=${base}/sitemap.xml`),
+    fetch(`https://www.bing.com/ping?sitemap=${base}/sitemap.xml`)
+  ]);
+  return new Response("ok");
+};
+// netlify.toml -> [functions] and [[scheduled.functions]] cron = "0 2 * * 1"
+Netlify Docs
+
+On-demand builder for a fringe suburb
+
+js
+Copy
+Edit
+// netlify/functions/suburb-page.js
+import { builder } from "@netlify/functions";
+export const handler = builder(async (event) => {
+  // generate HTML using your templates & JSON data
+  const html = renderSuburb(event.queryStringParameters.slug);
+  return { statusCode: 200, headers: { "content-type": "text/html" }, body: html };
+});
+Netlify Docs
+
+Plan by tier
+Pro: Analytics, Image CDN, Edge/Functions, Scheduled/Background Functions, Deploy Previews (password), Split testing. Good default for you. 
+Netlify Support Forums
+
+Business: Everything in Pro + Firewall rules, SSO/SAML, SLAs, log drains—choose if you want traffic rules and enterprise controls. 
+Netlify Docs
+
+What changes you’ll feel immediately
+Faster loads from image transforms at the edge; fewer layout shifts (no GA tag for pageviews). 
+Netlify Docs
+CSS-Tricks
+
+Cleaner SEO through edge canonicalization + sitemap pings. 
+Netlify Docs
++1
+
+Safer ops with passworded previews, basic firewall rate-limits, and function observability. 
+Netlify Support Forums
+Netlify Docs
++1
+
+If you want, I can draft the Netlify config (edge function registration, scheduled jobs block, analytics toggle checklist) and the SmartImage helper wired to /.netlify/images so you can paste it in and ship.
+
+
+
+
+
+
+
+
+
+
+Sources
+
+Ask ChatGPT

@@ -1,0 +1,15 @@
+{
+  "bond-cleaning": [
+    ["/bond-cleaners/:suburb", "/services/bond-cleaning/:suburb"],
+    ["/end-of-lease-cleaning/:suburb", "/services/bond-cleaning/:suburb"],
+    ["/exit-clean/:suburb", "/services/bond-cleaning/:suburb"]
+  ],
+  "spring-cleaning": [
+    ["/house-cleaning/:suburb", "/services/spring-cleaning/:suburb"],
+    ["/deep-cleaning/:suburb", "/services/spring-cleaning/:suburb"]
+  ],
+  "bathroom-deep-clean": [
+    ["/bathroom-cleaning/:suburb", "/services/bathroom-deep-clean/:suburb"],
+    ["/shower-screen-restoration/:suburb", "/services/bathroom-deep-clean/:suburb"]
+  ]
+}

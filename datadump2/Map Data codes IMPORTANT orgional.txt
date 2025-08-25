@@ -1,0 +1,1863 @@
+
+
+## CELL 1 — Install dependencies
+
+# Enriches polygons with POA (postcodes) + ASGS SA2/SA3/SA4/GCCSA via ABS services.
+# Writes: suburbs_enriched.geojson and suburbs_enriched.csv
+
+from shapely import make_valid
+
+def fetch_abs_for_codes():
+    sa2 = fetch_abs_layer(ABS_SA2, "STE_CODE21='3'", "SA2_CODE21,SA2_NAME21,STE_CODE21,shape")
+    sa3 = fetch_abs_layer(ABS_SA3, "STE_CODE21='3'", "SA3_CODE21,SA3_NAME21,STE_CODE21,shape")
+    sa4 = fetch_abs_layer(ABS_SA4, "STE_CODE21='3'", "SA4_CODE21,SA4_NAME21,STE_CODE21,shape")
+    gcc = fetch_abs_layer(ABS_GCC, "1=1", "GCC_CODE21,GCC_NAME21,shape")
+    poa = fetch_abs_layer(ABS_POA, "1=1", "POA_CODE21,shape")
+    for g in [sa2,sa3,sa4,gcc,poa]:
+        if not g.empty:
+            g["geometry"] = g.geometry.apply(make_valid)
+    return sa2, sa3, sa4, gcc, poa
+
+def enrich_with_abs(loc_df):
+    sa2, sa3, sa4, gcc, poa = fetch_abs_for_codes()
+    enriched = loc_df.copy()
+
+    def sjoin_keep(left, right, cols):
+        if right.empty:
+            for col in cols: enriched[col]=None
+            return left
+        j = gpd.sjoin(left, right[cols+["geometry"]], how="left", predicate="intersects")
+        if "index_right" in j.columns: j = j.drop(columns=["index_right"])
+        return j
+
+    if not sa2.empty: enriched = sjoin_keep(enriched, sa2, ["SA2_CODE21","SA2_NAME21"])
+    if not sa3.empty: enriched = sjoin_keep(enriched, sa3, ["SA3_CODE21","SA3_NAME21"])
+    if not sa4.empty: enriched = sjoin_keep(enriched, sa4, ["SA4_CODE21","SA4_NAME21"])
+    if not gcc.empty: enriched = sjoin_keep(enriched, gcc, ["GCC_CODE21","GCC_NAME21"])
+
+    # POA: area-weighted top 3
+    def postcode_list_for_poly(poly, poa_gdf):
+        if poa_gdf.empty or poly is None or poly.is_empty: return []
+        inter = gpd.overlay(poa_gdf[["POA_CODE21","geometry"]],
+                            gpd.GeoDataFrame(geometry=[poly], crs=4326),
+                            how="intersection")
+        if inter.empty: return []
+        inter["a"] = inter.to_crs(3857).area
+        inter = inter.sort_values("a", ascending=False)
+        return [int(c) for c in inter["POA_CODE21"].head(3) if pd.notna(c)]
+
+    zips = []
+    if not poa.empty:
+        for g in enriched.geometry:
+            try: zips.append(postcode_list_for_poly(g, poa))
+            except Exception: zips.append([])
+    else:
+        zips = [[] for _ in range(len(enriched))]
+    enriched["postcode_list"] = zips
+    return enriched
+
+enriched = enrich_with_abs(loc)
+
+# Write enriched outputs
+def props_enriched(r):
+    return {
+        "name_official": r["LOCALITY_NAME"],
+        "name_variants": [],
+        "slug": r["slug"],
+        "lga": r["LGA_NAME"],
+        "state": STATE,
+        "postcode_list": r.get("postcode_list", []) or [],
+        "abs_codes": {
+            "gccsa": r.get("GCC_CODE21"),
+            "sa4": r.get("SA4_CODE21"),
+            "sa3": r.get("SA3_CODE21"),
+            "sa2": r.get("SA2_CODE21"),
+        },
+        "centroid": {"lat": round(r["centroid_lat"],6), "lon": round(r["centroid_lon"],6)},
+        "label_point": {"lat": round(r["label_lat"],6), "lon": round(r["label_lon"],6)},
+        "polygon_ref": ("ABS ASGS 2021 SAL (CC BY 4.0)" if source_used=="ABS"
+                        else "QSpatial: AdministrativeBoundaries/Locality (CC BY 4.0)"),
+        "population_est": None,
+        "population_year": 2021,
+        "distance_to_bne_cbd_km": float(r["distance_to_bne_cbd_km"]),
+        "transport_notes": None,
+        "sources": (
+            [ABS_SAL, ABS_LGA, ABS_SA2, ABS_SA3, ABS_SA4, ABS_GCC, ABS_POA] if source_used=="ABS" else
+            ["https://www.data.qld.gov.au/dataset/locality-boundaries-queensland",
+             f"{QSPATIAL_BASE}/{LAYER_LOCALITY}", f"{QSPATIAL_BASE}/{LAYER_LGA}",
+             ABS_SA2, ABS_SA3, ABS_SA4, ABS_GCC, ABS_POA]
+        ),
+        "record_hash": r.get("record_hash"),
+        "data_edition": r.get("data_edition"),
+        "last_verified": pd.Timestamp.today().date().isoformat()
+    }
+
+props2 = enriched.apply(props_enriched, axis=1)
+
+# GeoJSON enriched
+features=[]
+for geom, p in zip(enriched.geometry, props2):
+    gj = json.loads(gpd.GeoSeries([geom]).to_json())["features"][0]["geometry"]
+    features.append({"type":"Feature","geometry":gj,"properties":p})
+with open(f"{OUTDIR}/suburbs_enriched.geojson","w",encoding="utf-8") as f:
+    json.dump({"type":"FeatureCollection","features":features}, f, ensure_ascii=False)
+
+# CSV enriched
+pd.DataFrame([{
+    "name_official": p["name_official"],
+    "slug": p["slug"],
+    "lga": p["lga"],
+    "state": p["state"],
+    "postcodes": ",".join(map(str, p["postcode_list"])),
+    "centroid_lat": p["centroid"]["lat"],
+    "centroid_lon": p["centroid"]["lon"],
+    "distance_to_bne_cbd_km": p["distance_to_bne_cbd_km"],
+    "label_lat": p["label_point"]["lat"],
+    "label_lon": p["label_point"]["lon"],
+    "sa2": p["abs_codes"]["sa2"],
+    "sa3": p["abs_codes"]["sa3"],
+    "sa4": p["abs_codes"]["sa4"],
+    "gccsa": p["abs_codes"]["gccsa"],
+    "record_hash": p["record_hash"]
+} for p in props2]).to_csv(f"{OUTDIR}/suburbs_enriched.csv", index=False)
+
+print("Enriched files:", [fn for fn in os.listdir(OUTDIR) if "enriched" in fn])
+
+import json, pandas as pd, geopandas as gpd, os
+
+# Files exist?
+for fn in ["suburbs.geojson","suburbs.csv","adjacency.json","clusters.json","sources_index.json"]:
+    p = os.path.join(OUTDIR, fn); assert os.path.isfile(p), f"Missing {fn}"
+
+gj = gpd.read_file(os.path.join(OUTDIR,"suburbs.geojson"))
+adj = json.load(open(os.path.join(OUTDIR,"adjacency.json"),"r",encoding="utf-8"))
+print("Features:", len(gj))
+print("LGAs:", sorted(gj["lga"].unique().tolist()))
+deg = pd.Series({k: len(v.get("adjacent_suburbs",[])) for k,v in adj.items()})
+print("Adjacency degree — min/median/max:", int(deg.min()), float(deg.median()), int(deg.max()))
+print("Nodes with <2 neighbours:", int((deg < 2).sum()))
+
+## Cell 9 (Optional)
+
+from google.colab import drive
+import os, shutil
+
+drive.mount('/content/drive', force_remount=True)
+drive_folder = "/content/drive/MyDrive/suburb-datasets"
+os.makedirs(drive_folder, exist_ok=True)
+
+shutil.copy2(zip_path, os.path.join(drive_folder, os.path.basename(zip_path)))
+print("Saved to Drive:", os.path.join(drive_folder, os.path.basename(zip_path)))
+
+## Cell 8 (Optional)
+
+import os, datetime, shutil, subprocess
+folder = "/content/out" if os.path.isdir("/content/out") else ("out" if os.path.isdir("out") else None)
+assert folder, "No output folder found — run previous cells first."
+
+stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+zip_base = f"/content/suburb-data-{stamp}"
+zip_path = shutil.make_archive(zip_base, 'zip', root_dir=folder)
+print("Created zip:", zip_path)
+subprocess.run(["unzip", "-l", zip_path])
+
+from google.colab import files
+files.download(zip_path)
+
+## Cell 7 (Optional)
+
+# Enriches polygons with POA (postcodes) + ASGS SA2/SA3/SA4/GCCSA via ABS services.
+# Writes: suburbs_enriched.geojson and suburbs_enriched.csv
+
+from shapely import make_valid
+
+def fetch_abs_for_codes():
+    sa2 = fetch_abs_layer(ABS_SA2, "STE_CODE21='3'", "SA2_CODE21,SA2_NAME21,STE_CODE21,shape")
+    sa3 = fetch_abs_layer(ABS_SA3, "STE_CODE21='3'", "SA3_CODE21,SA3_NAME21,STE_CODE21,shape")
+    sa4 = fetch_abs_layer(ABS_SA4, "STE_CODE21='3'", "SA4_CODE21,SA4_NAME21,STE_CODE21,shape")
+    gcc = fetch_abs_layer(ABS_GCC, "1=1", "GCC_CODE21,GCC_NAME21,shape")
+    poa = fetch_abs_layer(ABS_POA, "1=1", "POA_CODE21,shape")
+    for g in [sa2,sa3,sa4,gcc,poa]:
+        if not g.empty:
+            g["geometry"] = g.geometry.apply(make_valid)
+    return sa2, sa3, sa4, gcc, poa
+
+def enrich_with_abs(loc_df):
+    sa2, sa3, sa4, gcc, poa = fetch_abs_for_codes()
+    enriched = loc_df.copy()
+
+    def sjoin_keep(left, right, cols):
+        if right.empty:
+            for col in cols: enriched[col]=None
+            return left
+        j = gpd.sjoin(left, right[cols+["geometry"]], how="left", predicate="intersects")
+        if "index_right" in j.columns: j = j.drop(columns=["index_right"])
+        return j
+
+    if not sa2.empty: enriched = sjoin_keep(enriched, sa2, ["SA2_CODE21","SA2_NAME21"])
+    if not sa3.empty: enriched = sjoin_keep(enriched, sa3, ["SA3_CODE21","SA3_NAME21"])
+    if not sa4.empty: enriched = sjoin_keep(enriched, sa4, ["SA4_CODE21","SA4_NAME21"])
+    if not gcc.empty: enriched = sjoin_keep(enriched, gcc, ["GCC_CODE21","GCC_NAME21"])
+
+    # POA: area-weighted top 3
+    def postcode_list_for_poly(poly, poa_gdf):
+        if poa_gdf.empty or poly is None or poly.is_empty: return []
+        inter = gpd.overlay(poa_gdf[["POA_CODE21","geometry"]],
+                            gpd.GeoDataFrame(geometry=[poly], crs=4326),
+                            how="intersection")
+        if inter.empty: return []
+        inter["a"] = inter.to_crs(3857).area
+        inter = inter.sort_values("a", ascending=False)
+        return [int(c) for c in inter["POA_CODE21"].head(3) if pd.notna(c)]
+
+    zips = []
+    if not poa.empty:
+        for g in enriched.geometry:
+            try: zips.append(postcode_list_for_poly(g, poa))
+            except Exception: zips.append([])
+    else:
+        zips = [[] for _ in range(len(enriched))]
+    enriched["postcode_list"] = zips
+    return enriched
+
+enriched = enrich_with_abs(loc)
+
+# Write enriched outputs
+def props_enriched(r):
+    return {
+        "name_official": r["LOCALITY_NAME"],
+        "name_variants": [],
+        "slug": r["slug"],
+        "lga": r["LGA_NAME"],
+        "state": STATE,
+        "postcode_list": r.get("postcode_list", []) or [],
+        "abs_codes": {
+            "gccsa": r.get("GCC_CODE21"),
+            "sa4": r.get("SA4_CODE21"),
+            "sa3": r.get("SA3_CODE21"),
+            "sa2": r.get("SA2_CODE21"),
+        },
+        "centroid": {"lat": round(r["centroid_lat"],6), "lon": round(r["centroid_lon"],6)},
+        "label_point": {"lat": round(r["label_lat"],6), "lon": round(r["label_lon"],6)},
+        "polygon_ref": ("ABS ASGS 2021 SAL (CC BY 4.0)" if source_used=="ABS"
+                        else "QSpatial: AdministrativeBoundaries/Locality (CC BY 4.0)"),
+        "population_est": None,
+        "population_year": 2021,
+        "distance_to_bne_cbd_km": float(r["distance_to_bne_cbd_km"]),
+        "transport_notes": None,
+        "sources": (
+            [ABS_SAL, ABS_LGA, ABS_SA2, ABS_SA3, ABS_SA4, ABS_GCC, ABS_POA] if source_used=="ABS" else
+            ["https://www.data.qld.gov.au/dataset/locality-boundaries-queensland",
+             f"{QSPATIAL_BASE}/{LAYER_LOCALITY}", f"{QSPATIAL_BASE}/{LAYER_LGA}",
+             ABS_SA2, ABS_SA3, ABS_SA4, ABS_GCC, ABS_POA]
+        ),
+        "record_hash": r.get("record_hash"),
+        "data_edition": r.get("data_edition"),
+        "last_verified": pd.Timestamp.today().date().isoformat()
+    }
+
+props2 = enriched.apply(props_enriched, axis=1)
+
+# GeoJSON enriched
+features=[]
+for geom, p in zip(enriched.geometry, props2):
+    gj = json.loads(gpd.GeoSeries([geom]).to_json())["features"][0]["geometry"]
+    features.append({"type":"Feature","geometry":gj,"properties":p})
+with open(f"{OUTDIR}/suburbs_enriched.geojson","w",encoding="utf-8") as f:
+    json.dump({"type":"FeatureCollection","features":features}, f, ensure_ascii=False)
+
+# CSV enriched
+pd.DataFrame([{
+    "name_official": p["name_official"],
+    "slug": p["slug"],
+    "lga": p["lga"],
+    "state": p["state"],
+    "postcodes": ",".join(map(str, p["postcode_list"])),
+    "centroid_lat": p["centroid"]["lat"],
+    "centroid_lon": p["centroid"]["lon"],
+    "distance_to_bne_cbd_km": p["distance_to_bne_cbd_km"],
+    "label_lat": p["label_point"]["lat"],
+    "label_lon": p["label_point"]["lon"],
+    "sa2": p["abs_codes"]["sa2"],
+    "sa3": p["abs_codes"]["sa3"],
+    "sa4": p["abs_codes"]["sa4"],
+    "gccsa": p["abs_codes"]["gccsa"],
+    "record_hash": p["record_hash"]
+} for p in props2]).to_csv(f"{OUTDIR}/suburbs_enriched.csv", index=False)
+
+print("Enriched files:", [fn for fn in os.listdir(OUTDIR) if "enriched" in fn])
+
+import json, pandas as pd, geopandas as gpd, os
+
+# Files exist?
+for fn in ["suburbs.geojson","suburbs.csv","adjacency.json","clusters.json","sources_index.json"]:
+    p = os.path.join(OUTDIR, fn); assert os.path.isfile(p), f"Missing {fn}"
+
+gj = gpd.read_file(os.path.join(OUTDIR,"suburbs.geojson"))
+adj = json.load(open(os.path.join(OUTDIR,"adjacency.json"),"r",encoding="utf-8"))
+print("Features:", len(gj))
+print("LGAs:", sorted(gj["lga"].unique().tolist()))
+deg = pd.Series({k: len(v.get("adjacent_suburbs",[])) for k,v in adj.items()})
+print("Adjacency degree — min/median/max:", int(deg.min()), float(deg.median()), int(deg.max()))
+print("Nodes with <2 neighbours:", int((deg < 2).sum()))
+
+## Cell 9: Check Output Files
+
+Checks if the primary output files were created successfully.
+
+from google.colab import drive
+import os, shutil
+
+drive.mount('/content/drive', force_remount=True)
+drive_folder = "/content/drive/MyDrive/suburb-datasets"
+os.makedirs(drive_folder, exist_ok=True)
+
+shutil.copy2(zip_path, os.path.join(drive_folder, os.path.basename(zip_path)))
+print("Saved to Drive:", os.path.join(drive_folder, os.path.basename(zip_path)))
+
+## Cell 8 (Optional): Save to Google Drive
+
+Saves the created zip archive to your Google Drive.
+
+import os, datetime, shutil, subprocess
+folder = "/content/out" if os.path.isdir("/content/out") else ("out" if os.path.isdir("out") else None)
+assert folder, "No output folder found — run previous cells first."
+
+stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+zip_base = f"/content/suburb-data-{stamp}"
+zip_path = shutil.make_archive(zip_base, 'zip', root_dir=folder)
+print("Created zip:", zip_path)
+subprocess.run(["unzip", "-l", zip_path])
+
+from google.colab import files
+files.download(zip_path)
+
+## Cell 7 (Optional): Create Zip Archive
+
+Creates a zip archive of the output files.
+
+# Enriches polygons with POA (postcodes) + ASGS SA2/SA3/SA4/GCCSA via ABS services.
+# Writes: suburbs_enriched.geojson and suburbs_enriched.csv
+
+from shapely import make_valid
+
+def fetch_abs_for_codes():
+    sa2 = fetch_abs_layer(ABS_SA2, "STE_CODE21='3'", "SA2_CODE21,SA2_NAME21,STE_CODE21,shape")
+    sa3 = fetch_abs_layer(ABS_SA3, "STE_CODE21='3'", "SA3_CODE21,SA3_NAME21,STE_CODE21,shape")
+    sa4 = fetch_abs_layer(ABS_SA4, "STE_CODE21='3'", "SA4_CODE21,SA4_NAME21,STE_CODE21,shape")
+    gcc = fetch_abs_layer(ABS_GCC, "1=1", "GCC_CODE21,GCC_NAME21,shape")
+    poa = fetch_abs_layer(ABS_POA, "1=1", "POA_CODE21,shape")
+    for g in [sa2,sa3,sa4,gcc,poa]:
+        if not g.empty:
+            g["geometry"] = g.geometry.apply(make_valid)
+    return sa2, sa3, sa4, gcc, poa
+
+
+def enrich_with_abs(loc_df):
+    sa2, sa3, sa4, gcc, poa = fetch_abs_for_codes()
+    enriched = loc_df.copy()
+
+    def sjoin_keep(left, right, cols):
+        if right.empty:
+            for col in cols: enriched[col]=None
+            return left
+        j = gpd.sjoin(left, right[cols+["geometry"]], how="left", predicate="intersects")
+        if "index_right" in j.columns: j = j.drop(columns=["index_right"])
+        return j
+
+    if not sa2.empty: enriched = sjoin_keep(enriched, sa2, ["SA2_CODE21","SA2_NAME21"])
+    if not sa3.empty: enriched = sjoin_keep(enriched, sa3, ["SA3_CODE21","SA3_NAME21"])
+    if not sa4.empty: enriched = sjoin_keep(enriched, sa4, ["SA4_CODE21","SA4_NAME21"])
+    if not gcc.empty: enriched = sjoin_keep(enriched, gcc, ["GCC_CODE21","GCC_NAME21"])
+
+
+    # POA: area-weighted top 3
+    def postcode_list_for_poly(poly, poa_gdf):
+        if poa_gdf.empty or poly is None or poly.is_empty: return []
+        inter = gpd.overlay(poa_gdf[["POA_CODE21","geometry"]],
+                            gpd.GeoDataFrame(geometry=[poly], crs=4326),
+                            how="intersection")
+        if inter.empty: return []
+        inter["a"] = inter.to_crs(3857).area
+        inter = inter.sort_values("a", ascending=False)
+        return [int(c) for c in inter["POA_CODE21"].head(3) if pd.notna(c)]
+
+    zips = []
+    if not poa.empty:
+        for g in enriched.geometry:
+            try: zips.append(postcode_list_for_poly(g, poa))
+            except Exception: zips.append([])
+    else:
+        zips = [[] for _ in range(len(enriched))]
+    enriched["postcode_list"] = zips
+    return enriched
+
+enriched = enrich_with_abs(loc)
+
+# Write enriched outputs
+def props_enriched(r):
+    return {
+        "name_official": r["LOCALITY_NAME"],
+        "name_variants": [],
+        "slug": r["slug"],
+        "lga": r["LGA_NAME"],
+        "state": STATE,
+        "postcode_list": r.get("postcode_list", []) or [],
+        "abs_codes": {
+            "gccsa": r.get("GCC_CODE21"),
+            "sa4": r.get("SA4_CODE21"),
+            "sa3": r.get("SA3_CODE21"),
+            "sa2": r.get("SA2_CODE21"),
+        },
+        "centroid": {"lat": round(r["centroid_lat"],6), "lon": round(r["centroid_lon"],6)},
+        "label_point": {"lat": round(r["label_lat"],6), "lon": round(r["label_lon"],6)},
+        "polygon_ref": ("ABS ASGS 2021 SAL (CC BY 4.0)" if source_used=="ABS"
+                        else "QSpatial: AdministrativeBoundaries/Locality (CC BY 4.0)"),
+        "population_est": None,
+        "population_year": 2021,
+        "distance_to_bne_cbd_km": float(r["distance_to_bne_cbd_km"]),
+        "transport_notes": None,
+        "sources": (
+            [ABS_SAL, ABS_LGA, ABS_SA2, ABS_SA3, ABS_SA4, ABS_GCC, ABS_POA] if source_used=="ABS" else
+            ["https://www.data.qld.gov.au/dataset/locality-boundaries-queensland",
+             f"{QSPATIAL_BASE}/{LAYER_LOCALITY}", f"{QSPATIAL_BASE}/{LAYER_LGA}",
+             ABS_SA2, ABS_SA3, ABS_SA4, ABS_GCC, ABS_POA]
+        ),
+        "record_hash": r.get("record_hash"),
+        "data_edition": r.get("data_edition"),
+        "last_verified": pd.Timestamp.today().date().isoformat()
+    }
+
+props2 = enriched.apply(props_enriched, axis=1)
+
+# GeoJSON enriched
+features=[]
+for geom, p in zip(enriched.geometry, props2):
+    gj = json.loads(gpd.GeoSeries([geom]).to_json())["features"][0]["geometry"]
+    features.append({"type":"Feature","geometry":gj,"properties":p})
+with open(f"{OUTDIR}/suburbs_enriched.geojson","w",encoding="utf-8") as f:
+    json.dump({"type":"FeatureCollection","features":features}, f, ensure_ascii=False)
+
+# CSV enriched
+pd.DataFrame([{
+    "name_official": p["name_official"],
+    "slug": p["slug"],
+    "lga": p["lga"],
+    "state": p["state"],
+    "postcodes": ",".join(map(str, p["postcode_list"])),
+    "centroid_lat": p["centroid"]["lat"],
+    "centroid_lon": p["centroid"]["lon"],
+    "distance_to_bne_cbd_km": p["distance_to_bne_cbd_km"],
+    "label_lat": p["label_point"]["lat"],
+    "label_lon": p["label_point"]["lon"],
+    "sa2": p["abs_codes"]["sa2"],
+    "sa3": p["abs_codes"]["sa3"],
+    "sa4": p["abs_codes"]["sa4"],
+    "gccsa": p["abs_codes"]["gccsa"],
+    "record_hash": p["record_hash"]
+} for p in props2]).to_csv(f"{OUTDIR}/suburbs_enriched.csv", index=False)
+
+print("Enriched files:", [fn for fn in os.listdir(OUTDIR) if "enriched" in fn])
+
+## Cell 6: Enrich with ABS Data
+
+Enriches the locality polygons with additional ABS data (POA, SA2, SA3, SA4, GCCSA).
+
+# === WRITE OUTPUTS ===
+import os, json, pandas as pd, geopandas as gpd
+from pathlib import Path
+
+# 1) Properties builder (adds label point + provenance)
+def to_props(r):
+    return {
+        "name_official": r["LOCALITY_NAME"],
+        "name_variants": [],
+        "slug": r["slug"],
+        "lga": r["LGA_NAME"],
+        "state": STATE,
+        "postcode_list": [],  # enriched later (optional)
+        "abs_codes": {"gccsa": None,"sa4": None,"sa3": None,"sa2": None},
+        "centroid": {"lat": round(r["centroid_lat"],6), "lon": round(r["centroid_lon"],6)},
+        "label_point": {"lat": round(r["label_lat"],6), "lon": round(r["label_lon"],6)},
+        "polygon_ref": ("ABS ASGS 2021 SAL (CC BY 4.0)" if source_used=="ABS"
+                        else "QSpatial: AdministrativeBoundaries/Locality (CC BY 4.0)"),
+        "population_est": None,
+        "population_year": 2021,
+        "distance_to_bne_cbd_km": float(r["distance_to_bne_cbd_km"]),
+        "transport_notes": None,
+        "sources": (
+            [ABS_SAL, ABS_LGA] if source_used=="ABS" else
+            ["https://www.data.qld.gov.au/dataset/locality-boundaries-queensland",
+             f"{QSPATIAL_BASE}/{LAYER_LOCALITY}", f"{QSPATIAL_BASE}/{LAYER_LGA}"]
+        ),
+        "record_hash": r.get("record_hash"),
+        "data_edition": r.get("data_edition"),
+        "last_verified": pd.Timestamp.today().date().isoformat()
+    }
+
+props = loc.apply(to_props, axis=1)
+
+# 2) GeoJSON
+features=[]
+for geom, p in zip(loc.geometry, props):
+    gj = json.loads(gpd.GeoSeries([geom]).to_json())["features"][0]["geometry"]
+    features.append({"type":"Feature","geometry":gj,"properties":p})
+with open(f"{OUTDIR}/suburbs.geojson","w",encoding="utf-8") as f:
+    json.dump({"type":"FeatureCollection","features":features}, f, ensure_ascii=False)
+
+# 3) CSV (keep compatibility + add labels/hash)
+pd.DataFrame([{
+    "name_official": p["name_official"],
+    "slug": p["slug"],
+    "lga": p["lga"],
+    "state": p["state"],
+    "postcodes": ",".join(map(str, p["postcode_list"])),
+    "centroid_lat": p["centroid"]["lat"],
+    "centroid_lon": p["centroid"]["lon"],
+    "distance_to_bne_cbd_km": p["distance_to_bne_cbd_km"],
+    "label_lat": p["label_point"]["lat"],
+    "label_lon": p["label_point"]["lon"],
+    "record_hash": p["record_hash"]
+} for p in props]).to_csv(f"{OUTDIR}/suburbs.csv", index=False)
+
+# 4) adjacency + nearest (include 'derived' list)
+derived_by = {s: [] for s in loc["slug"]}
+for a,b in derived_edges:
+    derived_by[a].append(b)
+    derived_by[b].append(a)
+
+adjacency_json = {
+    s: {
+        "adjacent_suburbs": adj_sorted[s],
+        "nearest_nonsiblings": nearest_map.get(s, []),
+        "derived": sorted(derived_by.get(s, []))  # optional metadata
+    }
+    for s in sorted(adj_sorted)
+}
+with open(f"{OUTDIR}/adjacency.json","w",encoding="utf-8") as f:
+    json.dump(adjacency_json, f, ensure_ascii=False, indent=2)
+
+# 5) clusters (and reverse map)
+def slug_lga(s): return s.lower().replace(" ","-")
+cluster_by = { r["slug"]: slug_lga(r["LGA_NAME"]) for _, r in loc[["slug","LGA_NAME"]].iterrows() }
+
+clusters = {}
+for slug, cluster in cluster_by.items():
+    clusters.setdefault(cluster, []).append(slug)
+clusters = {c: sorted(v) for c, v in sorted(clusters.items())}
+
+with open(f"{OUTDIR}/clusters.json","w",encoding="utf-8") as f:
+    json.dump(clusters, f, ensure_ascii=False, indent=2)
+with open(f"{OUTDIR}/cluster_map.json","w",encoding="utf-8") as f:
+    json.dump(cluster_by, f, ensure_ascii=False, indent=2)
+
+# 6) sources_index.json (with timestamp)
+sources_idx = [
+  {
+    "name": "Locality boundaries - Queensland",
+    "publisher": "Queensland Government (QSpatial)",
+    "edition": "Current service",
+    "licence": "CC BY 4.0",
+    "url": f"{QSPATIAL_BASE}/{LAYER_LOCALITY}"
+  },
+  {
+    "name": "Local government area boundaries - Queensland",
+    "publisher": "Queensland Government (QSpatial)",
+    "edition": "Current service",
+    "licence": "CC BY 4.0",
+    "url": f"{QSPATIAL_BASE}/{LAYER_LGA}"
+  },
+  {
+    "name": "ASGS 2021 SAL / LGA (ArcGIS services)",
+    "publisher": "Australian Bureau of Statistics",
+    "edition": "ASGS Edition 3 (2021–2026)",
+    "licence": "CC BY 4.0",
+    "url": ABS_BASE
+  }
+]
+with open(f"{OUTDIR}/sources_index.json","w",encoding="utf-8") as f:
+    json.dump({"generated_at": pd.Timestamp.utcnow().isoformat(), "sources": sources_idx}, f, ensure_ascii=False, indent=2)
+
+print("Wrote:", ", ".join(sorted(os.listdir(OUTDIR))))
+
+# Quick QA hooks (hard-fail on obvious issues)
+OUT = Path(OUTDIR)
+for name in ["suburbs.geojson","suburbs.csv","adjacency.json","clusters.json","cluster_map.json","sources_index.json"]:
+    assert (OUT/name).exists(), f"Missing {name}"
+
+adj = json.loads((OUT/"adjacency.json").read_text())
+clu = json.loads((OUT/"clusters.json").read_text())
+clm = json.loads((OUT/"cluster_map.json").read_text())
+
+# Adjacency symmetry
+asym = [(a,b) for a, v in adj.items() for b in v["adjacent_suburbs"] if a not in adj.get(b, {}).get("adjacent_suburbs", [])]
+assert not asym, f"Asymmetric edges (sample): {asym[:10]}"
+
+# Coverage: every suburb in cluster_map
+missing = [s for s in adj.keys() if s not in clm]
+assert not missing, f"Missing cluster_map entries (sample): {missing[:10]}"
+
+# Optional: detect isolates
+isolates = [s for s, v in adj.items() if len(v["adjacent_suburbs"]) < 1]
+if isolates:
+    print("⚠️ Isolated suburbs (check geometry):", isolates[:10])
+
+## Cell 5: Write Initial Outputs
+
+Writes the initial suburb data, adjacency information, and cluster information to GeoJSON and CSV files.
+
+# === BUILD DATASET ===
+import json, numpy as np, pandas as pd, geopandas as gpd
+from shapely.ops import unary_union
+from shapely import make_valid
+from shapely.geometry.base import BaseGeometry
+from hashlib import sha1
+
+# 1) Try QSpatial → fallback to ABS
+try:
+    lga_gdf = fetch_qspatial_lga()
+    loc_gdf = fetch_qspatial_localities_chunked(LGAS)
+    source_used = "QSpatial"
+    if loc_gdf.empty:
+        raise RuntimeError("QSpatial returned 0 localities for target LGAs")
+except Exception as e:
+    print("QSpatial path failed / empty -> switching to ABS SAL/LGA. Reason:", repr(e))
+    lga_gdf = fetch_abs_layer(ABS_LGA, "1=1", "LGA_NAME21,LGA_CODE21,shape").rename(columns={"LGA_NAME21":"LGA_NAME"})
+    loc_gdf = fetch_abs_layer(ABS_SAL, "STE_CODE21='3'", "SAL_NAME21,SAL_CODE21,STE_CODE21,shape").rename(columns={"SAL_NAME21":"LOCALITY_NAME"})
+    source_used = "ABS"
+
+# 2) Valid geometries
+for g in (lga_gdf, loc_gdf):
+    g["geometry"] = g.geometry.apply(lambda x: make_valid(x) if isinstance(x, BaseGeometry) else x)
+
+# 3) Stable id then LGA assignment by largest overlap (keep all geometry types, filter later)
+loc_gdf = loc_gdf.reset_index(drop=True).copy()
+loc_gdf["LOC_ID"] = np.arange(len(loc_gdf), dtype=int)
+
+inter = gpd.overlay(
+    loc_gdf[["LOC_ID","LOCALITY_NAME","geometry"]],
+    lga_gdf[["LGA_NAME","geometry"]],
+    how="intersection",
+    keep_geom_type=False,
+)
+inter = inter[inter.geometry.geom_type.isin(["Polygon","MultiPolygon"])].copy()
+if inter.empty:
+    raise SystemExit("Empty intersection; cannot assign LGAs.")
+
+inter3577 = inter.to_crs(3577).copy()
+inter3577["area_m2"] = inter3577.geometry.area
+best = (inter3577.sort_values(["LOC_ID","area_m2"], ascending=[True,False])
+                 .drop_duplicates(subset=["LOC_ID"])
+                 .loc[:, ["LOC_ID","LOCALITY_NAME","LGA_NAME","geometry"]]
+                 .to_crs(4326))
+
+# 4) Filter to target LGAs + precise clip
+best = best[best["LGA_NAME"].isin(TARGET_LGAS)].copy()
+if best.empty:
+    raise SystemExit("No localities in target LGAs after area assignment.")
+
+lga3 = lga_gdf[lga_gdf["LGA_NAME"].isin(TARGET_LGAS)].copy()
+lga_union = unary_union(lga3.geometry.to_list())
+mask = gpd.GeoDataFrame(geometry=[lga_union], crs=4326)
+loc = gpd.overlay(best, mask, how="intersection", keep_geom_type=False).reset_index(drop=True)
+loc = loc[loc.geometry.geom_type.isin(["Polygon","MultiPolygon"])].copy()
+
+# 5) Slug & state
+loc["slug"] = loc["LOCALITY_NAME"].apply(slugify)
+loc["state"] = STATE
+
+# 6) CRS-safe centroids + representative label points
+loc_m = loc.to_crs(3577)                     # Australian Albers (meters)
+cent_proj = loc_m.geometry.centroid
+cent_wgs  = gpd.GeoSeries(cent_proj, crs=3577).to_crs(4326)
+loc["centroid_lon"] = cent_wgs.x
+loc["centroid_lat"] = cent_wgs.y
+
+rep_proj = loc_m.representative_point()
+rep_wgs  = gpd.GeoSeries(rep_proj, crs=3577).to_crs(4326)
+loc["label_lon"] = rep_wgs.x
+loc["label_lat"] = rep_wgs.y
+
+# 7) Distance to Brisbane CBD (geodesic)
+loc["distance_to_bne_cbd_km"] = loc.apply(
+    lambda r: round(geodesic_km(r.centroid_lat, r.centroid_lon, BNE_CBD[0], BNE_CBD[1]), 3), axis=1
+)
+
+print(f"Source used for Locality polygons: {source_used}")
+print("Localities:", len(loc), "LGAs:", sorted(loc['LGA_NAME'].unique().tolist()))
+
+# 8) Fast, strict adjacency (edge-touch only), vectorized candidates
+pairs = loc_m.sindex.query_bulk(loc_m.geometry, predicate="intersects").T
+idx_by_slug = {s:i for i,s in enumerate(loc["slug"])}
+slug_by_idx = {i:s for s,i in idx_by_slug.items()}
+
+def shared_edge_len_m(i, j) -> float:
+    if i == j: return 0.0
+    seg = loc_m.geometry[i].boundary.intersection(loc_m.geometry[j].boundary)
+    return float(getattr(seg, "length", 0.0))
+
+adj_map = {s:set() for s in loc["slug"]}
+for i, j in pairs:
+    if i >= j:
+        continue
+    if shared_edge_len_m(i, j) > 0.0:  # > 0m excludes pure point-touch
+        a = slug_by_idx[i]; b = slug_by_idx[j]
+        adj_map[a].add(b); adj_map[b].add(a)
+
+# 9) Backfill “islands” to reach ≥2 neighbours (same LGA, within 1.5km)
+DERIVED_BUFFER_M = 1500
+derived_edges = set()
+lga_at_idx = list(loc["LGA_NAME"])
+
+for a_slug, nbrs in list(adj_map.items()):
+    if len(nbrs) >= 2:
+        continue
+    i = idx_by_slug[a_slug]
+    lga = lga_at_idx[i]
+    ring = loc_m.geometry[i].buffer(DERIVED_BUFFER_M)
+    cand_idx = loc_m.sindex.query(ring, predicate="intersects")
+    ordered = sorted(
+        (j for j in cand_idx if j != i and lga_at_idx[j] == lga),
+        key=lambda j: loc_m.geometry[i].distance(loc_m.geometry[j])
+    )
+    for j in ordered:
+        b_slug = slug_by_idx[j]
+        if b_slug in adj_map[a_slug]:
+            continue
+        adj_map[a_slug].add(b_slug)
+        adj_map[b_slug].add(a_slug)
+        derived_edges.add(tuple(sorted((a_slug, b_slug))))
+        if len(adj_map[a_slug]) >= 2:
+            break
+
+# 10) Stable neighbour ordering by shared-edge length (desc), then slug
+def sort_key(a_slug, b_slug):
+    i = idx_by_slug[a_slug]; j = idx_by_idx[b_slug]
+    return (-shared_edge_len_m(i, j), b_slug)
+
+adj_sorted = { a: sorted(v, key=lambda b: sort_key(a, b)) for a, v in adj_map.items() }
+
+# 11) Nearest non-adjacent within same LGA (fallback list)
+nearest_map = {}
+if len(loc) >= 2:
+    from sklearn.neighbors import BallTree
+    coords = np.radians(loc[["centroid_lat","centroid_lon"]].to_numpy())
+    tree = BallTree(coords, metric="haversine")
+    for i, row in loc.iterrows():
+        slug, lga = row["slug"], row["LGA_NAME"]
+        dists, idxs = tree.query([coords[i]], k=min(12, len(loc)))
+        picks=[]
+        for j, d in zip(idxs[0], dists[0]):
+            if j==i: continue
+            if loc.at[j,"LGA_NAME"] != lga: continue
+            if loc.at[j,"slug"] in adj_map[slug]: continue
+            picks.append(loc.at[j,"slug"])
+            if len(picks)==NEAREST_K: break
+        nearest_map[slug]=picks
+else:
+    for slug in loc["slug"]:
+        nearest_map[slug]=[]
+
+# 12) Provenance & record hash
+def wkt_hash(geom) -> str:
+    try:
+        return sha1(geom.wkt.encode("utf-8")).hexdigest()[:12]
+    except Exception:
+        return "na"
+
+edition_stamp = {
+    "qspatial": {"layer": "AdministrativeBoundaries/Locality", "licence": "CC BY 4.0", "edition": "current-service"},
+    "abs": {"layers": ["ASGS 2021 LGA","ASGS 2021 SAL"], "licence": "CC BY 4.0", "edition": "2021"}
+}
+loc["record_hash"] = [wkt_hash(g) + "-" + str(n) for g, n in zip(loc.geometry, loc.index)]
+loc["data_edition"] = json.dumps(edition_stamp)
+
+# 13) Invariants (sanity)
+asym = [(a,b) for a,vs in adj_sorted.items() for b in vs if a not in adj_sorted.get(b, [])]
+if asym:
+    print("⚠️ Asymmetric adjacency edges found (sample):", asym[:10])
+
+few = [s for s,vs in adj_sorted.items() if len(vs) < 2]
+if few:
+    print(f"⚠️ {len(few)} suburbs have <2 neighbours after backfill (likely edge cases):", few[:10])
+
+print("Sample adjacency counts:", {k: len(v) for k,v in list(adj_sorted.items())[:5]})
+print("Sample nearest lists:", dict(list(nearest_map.items())[:5]))
+
+## Cell 4: Build Dataset
+
+Fetches locality and LGA data, assigns LGAs to localities, clips to target LGAs, calculates centroids, representative points, and distance to Brisbane CBD. Also computes adjacency and nearest neighbors.
+
+import os, re, time, json, math, random
+import requests, requests_cache
+import numpy as np
+import pandas as pd
+import geopandas as gpd
+from shapely.ops import unary_union
+from shapely import make_valid
+from pyproj import Geod
+
+# Local setup
+os.makedirs(OUTDIR, exist_ok=True)
+TARGET_LGAS = set(LGAS)
+geod = Geod(ellps="WGS84")
+
+# Cache HTTP (ABS/QSpatial) to speed iterative runs
+requests_cache.install_cache("arcgis_cache", backend="sqlite", expire_after=6*3600)
+
+def slugify(s: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", s.lower().strip()).strip("-")
+
+def geodesic_km(lat1, lon1, lat2, lon2) -> float:
+    _,_,dist = geod.inv(lon1, lat1, lon2, lat2)
+    return dist/1000.0
+
+# --- ArcGIS helpers (chunked by objectIds, POST) ---
+def arcgis_ids(base_url: str, layer_id: int, where: str, timeout=90):
+    url = f"{base_url}/{layer_id}/query"
+    params = {"f":"json", "where":where, "returnIdsOnly":"true", "outSR":4326}
+    r = requests.get(url, params=params, timeout=timeout); r.raise_for_status()
+    j = r.json()
+    return j.get("objectIds", []), j.get("objectIdFieldName", "OBJECTID")
+
+def arcgis_fetch_by_ids(base_url: str, layer_id: int, object_ids, out_fields="*", timeout=120, chunk=800):
+    url = f"{base_url}/{layer_id}/query"
+    feats = []
+    for i in range(0, len(object_ids), chunk):
+        ids = object_ids[i:i+chunk]
+        data = {"f":"geojson","where":"1=1","objectIds":",".join(map(str, ids)),
+                "outFields": out_fields, "outSR":4326, "returnGeometry":"true"}
+        # gentle retry/backoff for flaky responses
+        for attempt in range(4):
+            try:
+                r = requests.post(url, data=data, timeout=timeout); r.raise_for_status()
+                feats.extend(r.json().get("features", []))
+                break
+            except requests.HTTPError:
+                if attempt==3: raise
+                time.sleep(1.0 + attempt*1.5 + random.random())
+    # Filter out features without geometry
+    feats_with_geom = [f for f in feats if f.get("geometry") is not None]
+    if not feats_with_geom:
+        return gpd.GeoDataFrame(columns=["geometry"], geometry="geometry", crs="EPSG:4326")
+    return gpd.GeoDataFrame.from_features(feats_with_geom, crs="EPSG:4326")
+
+
+def fetch_qspatial_lga():
+    ids, _ = arcgis_ids(QSPATIAL_BASE, LAYER_LGA, "1=1")
+    g = arcgis_fetch_by_ids(QSPATIAL_BASE, LAYER_LGA, ids, out_fields="objectid,lga,shape")
+    if "lga" not in g.columns:
+        raise RuntimeError(f"Unexpected LGA schema: {list(g.columns)}")
+    return g.rename(columns={"lga":"LGA_NAME"})
+
+def fetch_qspatial_localities_chunked(lga_names):
+    frames = []
+    for name in lga_names:
+        q = "lga = '{}'".format(name.replace("'", "''"))
+        ids, _ = arcgis_ids(QSPATIAL_BASE, LAYER_LOCALITY, q)
+        if not ids:
+            continue
+        gdf = arcgis_fetch_by_ids(QSPATIAL_BASE, LAYER_LOCALITY, ids, out_fields="objectid,locality,lga,shape")
+        cols_lower = {c.lower(): c for c in gdf.columns}
+        loc_field = cols_lower.get("locality") or cols_lower.get("locality_name") or cols_lower.get("name")
+        lga_field = cols_lower.get("lga") or cols_lower.get("lga_name")
+        if not loc_field or not lga_field:
+            raise RuntimeError(f"Unexpected Locality schema for {name}: {list(gdf.columns)}")
+        frames.append(gdf[[loc_field, lga_field, "geometry"]].rename(columns={loc_field:"LOCALITY_NAME", lga_field:"LGA_ATTR"}))
+    if not frames:
+        return gpd.GeoDataFrame(columns=["LOCALITY_NAME","LGA_ATTR","geometry"], geometry="geometry", crs="EPSG:4326")
+    return pd.concat(frames, ignore_index=True)
+
+def fetch_abs_layer(service_url: str, where: str, out_fields: str):
+    url = f"{service_url}/query"
+    ids = requests.get(url, params={"f":"json","where":where,"returnIdsOnly":"true"}).json().get("objectIds", [])
+    feats = []
+    if not ids:
+        return gpd.GeoDataFrame(columns=["geometry"], geometry="geometry", crs="EPSG:4326")
+    for i in range(0, len(ids), 800):
+        data = {"f":"geojson","objectIds":",".join(map(str, ids[i:i+800])),
+                "outFields":out_fields,"returnGeometry":"true","outSR":4326}
+        r = requests.post(url, data=data, timeout=180); r.raise_for_status()
+        feats.extend(r.json().get("features", []))
+    # Filter out features without geometry
+    feats_with_geom = [f for f in feats if f.get("geometry") is not None]
+    if not feats_with_geom:
+        return gpd.GeoDataFrame(columns=["geometry"], geometry="geometry", crs="EPSG:4326")
+    return gpd.GeoDataFrame.from_features(feats_with_geom, crs="EPSG:4326")
+
+## Cell 3: Helper Functions
+
+Defines functions for interacting with ArcGIS services (QSpatial and ABS) and calculating geodesic distances.
+
+%pip install requests_cache
+
+## Cell 2: Install dependencies
+
+Installs the `requests_cache` library for caching HTTP requests.
+
+# ===== CONFIG (edit only if you need different areas) =====
+OUTDIR = "out"
+
+# Target LGAs (inputs)
+LGAS = ["Brisbane City", "Ipswich City", "Logan City"]
+STATE = "QLD"
+
+# Brisbane CBD reference (WGS84)
+BNE_CBD = (-27.4698, 153.0251)
+
+# QSpatial endpoints (authoritative; CC BY 4.0)
+QSPATIAL_BASE = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Boundaries/AdministrativeBoundaries/MapServer"
+LAYER_LGA      = 1  # field: lga
+LAYER_LOCALITY = 2  # fields: locality, lga
+
+# ABS ASGS 2021 endpoints (fallback + enrichment; CC BY 4.0)
+ABS_BASE = "https://geo.abs.gov.au/arcgis/rest/services/ASGS2021"
+ABS_SAL  = f"{ABS_BASE}/SAL/MapServer/0"    # Suburb/Locality
+ABS_LGA  = f"{ABS_BASE}/LGA/MapServer/0"
+ABS_SA2  = f"{ABS_BASE}/SA2/MapServer/0"
+ABS_SA3  = f"{ABS_BASE}/SA3/MapServer/0"
+ABS_SA4  = f"{ABS_BASE}/SA4/MapServer/0"
+ABS_GCC  = f"{ABS_BASE}/GCCSA/MapServer/0"
+ABS_POA  = f"{ABS_BASE}/POA/MapServer/0"
+
+# Nearby list fallback count
+NEAREST_K = 3
+
+# Suburb Data Processing
+
+This notebook processes and enriches suburb data for specific Local Government Areas (LGAs) in Queensland, Australia. It fetches data from QSpatial or ABS, calculates adjacency and nearest neighbors, and outputs the results in GeoJSON and CSV formats. Optional steps include enriching with ABS SA2/SA3/SA4/GCCSA/POA codes, creating a zip archive, and saving to Google Drive.
+
+---
+
+## Cell 1: Configuration
+
+Edit this cell to define the target LGAs, state, Brisbane CBD coordinates, and API endpoints.
+
+## Cell 6
+
+# === WRITE OUTPUTS ===
+import os, json, pandas as pd, geopandas as gpd
+from pathlib import Path
+
+# 1) Properties builder (adds label point + provenance)
+def to_props(r):
+    return {
+        "name_official": r["LOCALITY_NAME"],
+        "name_variants": [],
+        "slug": r["slug"],
+        "lga": r["LGA_NAME"],
+        "state": STATE,
+        "postcode_list": [],  # enriched later (optional)
+        "abs_codes": {"gccsa": None,"sa4": None,"sa3": None,"sa2": None},
+        "centroid": {"lat": round(r["centroid_lat"],6), "lon": round(r["centroid_lon"],6)},
+        "label_point": {"lat": round(r["label_lat"],6), "lon": round(r["label_lon"],6)},
+        "polygon_ref": ("ABS ASGS 2021 SAL (CC BY 4.0)" if source_used=="ABS"
+                        else "QSpatial: AdministrativeBoundaries/Locality (CC BY 4.0)"),
+        "population_est": None,
+        "population_year": 2021,
+        "distance_to_bne_cbd_km": float(r["distance_to_bne_cbd_km"]),
+        "transport_notes": None,
+        "sources": (
+            [ABS_SAL, ABS_LGA] if source_used=="ABS" else
+            ["https://www.data.qld.gov.au/dataset/locality-boundaries-queensland",
+             f"{QSPATIAL_BASE}/{LAYER_LOCALITY}", f"{QSPATIAL_BASE}/{LAYER_LGA}"]
+        ),
+        "record_hash": r.get("record_hash"),
+        "data_edition": r.get("data_edition"),
+        "last_verified": pd.Timestamp.today().date().isoformat()
+    }
+
+props = loc.apply(to_props, axis=1)
+
+# 2) GeoJSON
+features=[]
+for geom, p in zip(loc.geometry, props):
+    gj = json.loads(gpd.GeoSeries([geom]).to_json())["features"][0]["geometry"]
+    features.append({"type":"Feature","geometry":gj,"properties":p})
+with open(f"{OUTDIR}/suburbs.geojson","w",encoding="utf-8") as f:
+    json.dump({"type":"FeatureCollection","features":features}, f, ensure_ascii=False)
+
+# 3) CSV (keep compatibility + add labels/hash)
+pd.DataFrame([{
+    "name_official": p["name_official"],
+    "slug": p["slug"],
+    "lga": p["lga"],
+    "state": p["state"],
+    "postcodes": ",".join(map(str, p["postcode_list"])),
+    "centroid_lat": p["centroid"]["lat"],
+    "centroid_lon": p["centroid"]["lon"],
+    "distance_to_bne_cbd_km": p["distance_to_bne_cbd_km"],
+    "label_lat": p["label_point"]["lat"],
+    "label_lon": p["label_point"]["lon"],
+    "record_hash": p["record_hash"]
+} for p in props]).to_csv(f"{OUTDIR}/suburbs.csv", index=False)
+
+# 4) adjacency + nearest (include 'derived' list)
+derived_by = {s: [] for s in loc["slug"]}
+for a,b in derived_edges:
+    derived_by[a].append(b)
+    derived_by[b].append(a)
+
+adjacency_json = {
+    s: {
+        "adjacent_suburbs": adj_sorted[s],
+        "nearest_nonsiblings": nearest_map.get(s, []),
+        "derived": sorted(derived_by.get(s, []))  # optional metadata
+    }
+    for s in sorted(adj_sorted)
+}
+with open(f"{OUTDIR}/adjacency.json","w",encoding="utf-8") as f:
+    json.dump(adjacency_json, f, ensure_ascii=False, indent=2)
+
+# 5) clusters (and reverse map)
+def slug_lga(s): return s.lower().replace(" ","-")
+cluster_by = { r["slug"]: slug_lga(r["LGA_NAME"]) for _, r in loc[["slug","LGA_NAME"]].iterrows() }
+
+clusters = {}
+for slug, cluster in cluster_by.items():
+    clusters.setdefault(cluster, []).append(slug)
+clusters = {c: sorted(v) for c, v in sorted(clusters.items())}
+
+with open(f"{OUTDIR}/clusters.json","w",encoding="utf-8") as f:
+    json.dump(clusters, f, ensure_ascii=False, indent=2)
+with open(f"{OUTDIR}/cluster_map.json","w",encoding="utf-8") as f:
+    json.dump(cluster_by, f, ensure_ascii=False, indent=2)
+
+# 6) sources_index.json (with timestamp)
+sources_idx = [
+  {
+    "name": "Locality boundaries - Queensland",
+    "publisher": "Queensland Government (QSpatial)",
+    "edition": "Current service",
+    "licence": "CC BY 4.0",
+    "url": f"{QSPATIAL_BASE}/{LAYER_LOCALITY}"
+  },
+  {
+    "name": "Local government area boundaries - Queensland",
+    "publisher": "Queensland Government (QSpatial)",
+    "edition": "Current service",
+    "licence": "CC BY 4.0",
+    "url": f"{QSPATIAL_BASE}/{LAYER_LGA}"
+  },
+  {
+    "name": "ASGS 2021 SAL / LGA (ArcGIS services)",
+    "publisher": "Australian Bureau of Statistics",
+    "edition": "ASGS Edition 3 (2021–2026)",
+    "licence": "CC BY 4.0",
+    "url": ABS_BASE
+  }
+]
+with open(f"{OUTDIR}/sources_index.json","w",encoding="utf-8") as f:
+    json.dump({"generated_at": pd.Timestamp.utcnow().isoformat(), "sources": sources_idx}, f, ensure_ascii=False, indent=2)
+
+print("Wrote:", ", ".join(sorted(os.listdir(OUTDIR))))
+
+# Quick QA hooks (hard-fail on obvious issues)
+OUT = Path(OUTDIR)
+for name in ["suburbs.geojson","suburbs.csv","adjacency.json","clusters.json","cluster_map.json","sources_index.json"]:
+    assert (OUT/name).exists(), f"Missing {name}"
+
+adj = json.loads((OUT/"adjacency.json").read_text())
+clu = json.loads((OUT/"clusters.json").read_text())
+clm = json.loads((OUT/"cluster_map.json").read_text())
+
+# Adjacency symmetry
+asym = [(a,b) for a, v in adj.items() for b in v["adjacent_suburbs"] if a not in adj.get(b, {}).get("adjacent_suburbs", [])]
+assert not asym, f"Asymmetric edges (sample): {asym[:10]}"
+
+# Coverage: every suburb in cluster_map
+missing = [s for s in adj.keys() if s not in clm]
+assert not missing, f"Missing cluster_map entries (sample): {missing[:10]}"
+
+# Optional: detect isolates
+isolates = [s for s, v in adj.items() if len(v["adjacent_suburbs"]) < 1]
+if isolates:
+    print("⚠️ Isolated suburbs (check geometry):", isolates[:10])
+
+## Cell 5
+
+# === BUILD DATASET ===
+import json, numpy as np, pandas as pd, geopandas as gpd
+from shapely.ops import unary_union
+from shapely import make_valid
+from shapely.geometry.base import BaseGeometry
+from hashlib import sha1
+
+# 1) Try QSpatial → fallback to ABS
+try:
+    lga_gdf = fetch_qspatial_lga()
+    loc_gdf = fetch_qspatial_localities_chunked(LGAS)
+    source_used = "QSpatial"
+    if loc_gdf.empty:
+        raise RuntimeError("QSpatial returned 0 localities for target LGAs")
+except Exception as e:
+    print("QSpatial path failed / empty -> switching to ABS SAL/LGA. Reason:", repr(e))
+    lga_gdf = fetch_abs_layer(ABS_LGA, "1=1", "LGA_NAME21,LGA_CODE21,shape").rename(columns={"LGA_NAME21":"LGA_NAME"})
+    loc_gdf = fetch_abs_layer(ABS_SAL, "STE_CODE21='3'", "SAL_NAME21,SAL_CODE21,STE_CODE21,shape").rename(columns={"SAL_NAME21":"LOCALITY_NAME"})
+    source_used = "ABS"
+
+# 2) Valid geometries
+for g in (lga_gdf, loc_gdf):
+    g["geometry"] = g.geometry.apply(lambda x: make_valid(x) if isinstance(x, BaseGeometry) else x)
+
+# 3) Stable id then LGA assignment by largest overlap (keep all geometry types, filter later)
+loc_gdf = loc_gdf.reset_index(drop=True).copy()
+loc_gdf["LOC_ID"] = np.arange(len(loc_gdf), dtype=int)
+
+inter = gpd.overlay(
+    loc_gdf[["LOC_ID","LOCALITY_NAME","geometry"]],
+    lga_gdf[["LGA_NAME","geometry"]],
+    how="intersection",
+    keep_geom_type=False,
+)
+inter = inter[inter.geometry.geom_type.isin(["Polygon","MultiPolygon"])].copy()
+if inter.empty:
+    raise SystemExit("Empty intersection; cannot assign LGAs.")
+
+inter3577 = inter.to_crs(3577).copy()
+inter3577["area_m2"] = inter3577.geometry.area
+best = (inter3577.sort_values(["LOC_ID","area_m2"], ascending=[True,False])
+                 .drop_duplicates(subset=["LOC_ID"])
+                 .loc[:, ["LOC_ID","LOCALITY_NAME","LGA_NAME","geometry"]]
+                 .to_crs(4326))
+
+# 4) Filter to target LGAs + precise clip
+best = best[best["LGA_NAME"].isin(TARGET_LGAS)].copy()
+if best.empty:
+    raise SystemExit("No localities in target LGAs after area assignment.")
+
+lga3 = lga_gdf[lga_gdf["LGA_NAME"].isin(TARGET_LGAS)].copy()
+lga_union = unary_union(lga3.geometry.to_list())
+mask = gpd.GeoDataFrame(geometry=[lga_union], crs=4326)
+loc = gpd.overlay(best, mask, how="intersection", keep_geom_type=False).reset_index(drop=True)
+loc = loc[loc.geometry.geom_type.isin(["Polygon","MultiPolygon"])].copy()
+
+# 5) Slug & state
+loc["slug"] = loc["LOCALITY_NAME"].apply(slugify)
+loc["state"] = STATE
+
+# 6) CRS-safe centroids + representative label points
+loc_m = loc.to_crs(3577)                     # Australian Albers (meters)
+cent_proj = loc_m.geometry.centroid
+cent_wgs  = gpd.GeoSeries(cent_proj, crs=3577).to_crs(4326)
+loc["centroid_lon"] = cent_wgs.x
+loc["centroid_lat"] = cent_wgs.y
+
+rep_proj = loc_m.representative_point()
+rep_wgs  = gpd.GeoSeries(rep_proj, crs=3577).to_crs(4326)
+loc["label_lon"] = rep_wgs.x
+loc["label_lat"] = rep_wgs.y
+
+# 7) Distance to Brisbane CBD (geodesic)
+loc["distance_to_bne_cbd_km"] = loc.apply(
+    lambda r: round(geodesic_km(r.centroid_lat, r.centroid_lon, BNE_CBD[0], BNE_CBD[1]), 3), axis=1
+)
+
+print(f"Source used for Locality polygons: {source_used}")
+print("Localities:", len(loc), "LGAs:", sorted(loc['LGA_NAME'].unique().tolist()))
+
+# 8) Fast, strict adjacency (edge-touch only), vectorized candidates
+pairs = loc_m.sindex.query_bulk(loc_m.geometry, predicate="intersects").T
+idx_by_slug = {s:i for i,s in enumerate(loc["slug"])}
+slug_by_idx = {i:s for s,i in idx_by_slug.items()}
+
+def shared_edge_len_m(i, j) -> float:
+    if i == j: return 0.0
+    seg = loc_m.geometry[i].boundary.intersection(loc_m.geometry[j].boundary)
+    return float(getattr(seg, "length", 0.0))
+
+adj_map = {s:set() for s in loc["slug"]}
+for i, j in pairs:
+    if i >= j:
+        continue
+    if shared_edge_len_m(i, j) > 0.0:  # > 0m excludes pure point-touch
+        a = slug_by_idx[i]; b = slug_by_idx[j]
+        adj_map[a].add(b); adj_map[b].add(a)
+
+# 9) Backfill “islands” to reach ≥2 neighbours (same LGA, within 1.5km)
+DERIVED_BUFFER_M = 1500
+derived_edges = set()
+lga_at_idx = list(loc["LGA_NAME"])
+
+for a_slug, nbrs in list(adj_map.items()):
+    if len(nbrs) >= 2:
+        continue
+    i = idx_by_slug[a_slug]
+    lga = lga_at_idx[i]
+    ring = loc_m.geometry[i].buffer(DERIVED_BUFFER_M)
+    cand_idx = loc_m.sindex.query(ring, predicate="intersects")
+    ordered = sorted(
+        (j for j in cand_idx if j != i and lga_at_idx[j] == lga),
+        key=lambda j: loc_m.geometry[i].distance(loc_m.geometry[j])
+    )
+    for j in ordered:
+        b_slug = slug_by_idx[j]
+        if b_slug in adj_map[a_slug]:
+            continue
+        adj_map[a_slug].add(b_slug)
+        adj_map[b_slug].add(a_slug)
+        derived_edges.add(tuple(sorted((a_slug, b_slug))))
+        if len(adj_map[a_slug]) >= 2:
+            break
+
+# 10) Stable neighbour ordering by shared-edge length (desc), then slug
+def sort_key(a_slug, b_slug):
+    i = idx_by_slug[a_slug]; j = idx_by_idx[b_slug]
+    return (-shared_edge_len_m(i, j), b_slug)
+
+adj_sorted = { a: sorted(v, key=lambda b: sort_key(a, b)) for a, v in adj_map.items() }
+
+# 11) Nearest non-adjacent within same LGA (fallback list)
+nearest_map = {}
+if len(loc) >= 2:
+    from sklearn.neighbors import BallTree
+    coords = np.radians(loc[["centroid_lat","centroid_lon"]].to_numpy())
+    tree = BallTree(coords, metric="haversine")
+    for i, row in loc.iterrows():
+        slug, lga = row["slug"], row["LGA_NAME"]
+        dists, idxs = tree.query([coords[i]], k=min(12, len(loc)))
+        picks=[]
+        for j, d in zip(idxs[0], dists[0]):
+            if j==i: continue
+            if loc.at[j,"LGA_NAME"] != lga: continue
+            if loc.at[j,"slug"] in adj_map[slug]: continue
+            picks.append(loc.at[j,"slug"])
+            if len(picks)==NEAREST_K: break
+        nearest_map[slug]=picks
+else:
+    for slug in loc["slug"]:
+        nearest_map[slug]=[]
+
+# 12) Provenance & record hash
+def wkt_hash(geom) -> str:
+    try:
+        return sha1(geom.wkt.encode("utf-8")).hexdigest()[:12]
+    except Exception:
+        return "na"
+
+edition_stamp = {
+    "qspatial": {"layer": "AdministrativeBoundaries/Locality", "licence": "CC BY 4.0", "edition": "current-service"},
+    "abs": {"layers": ["ASGS 2021 LGA","ASGS 2021 SAL"], "licence": "CC BY 4.0", "edition": "2021"}
+}
+loc["record_hash"] = [wkt_hash(g) + "-" + str(n) for g, n in zip(loc.geometry, loc.index)]
+loc["data_edition"] = json.dumps(edition_stamp)
+
+# 13) Invariants (sanity)
+asym = [(a,b) for a,vs in adj_sorted.items() for b in vs if a not in adj_sorted.get(b, [])]
+if asym:
+    print("⚠️ Asymmetric adjacency edges found (sample):", asym[:10])
+
+few = [s for s,vs in adj_sorted.items() if len(vs) < 2]
+if few:
+    print(f"⚠️ {len(few)} suburbs have <2 neighbours after backfill (likely edge cases):", few[:10])
+
+print("Sample adjacency counts:", {k: len(v) for k,v in list(adj_sorted.items())[:5]})
+print("Sample nearest lists:", dict(list(nearest_map.items())[:5]))
+
+## Cell 4
+
+import os, re, time, json, math, random
+import requests, requests_cache
+import numpy as np
+import pandas as pd
+import geopandas as gpd
+from shapely.ops import unary_union
+from shapely import make_valid
+from pyproj import Geod
+
+# Local setup
+os.makedirs(OUTDIR, exist_ok=True)
+TARGET_LGAS = set(LGAS)
+geod = Geod(ellps="WGS84")
+
+# Cache HTTP (ABS/QSpatial) to speed iterative runs
+requests_cache.install_cache("arcgis_cache", backend="sqlite", expire_after=6*3600)
+
+def slugify(s: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", s.lower().strip()).strip("-")
+
+def geodesic_km(lat1, lon1, lat2, lon2) -> float:
+    _,_,dist = geod.inv(lon1, lat1, lon2, lat2)
+    return dist/1000.0
+
+# --- ArcGIS helpers (chunked by objectIds, POST) ---
+def arcgis_ids(base_url: str, layer_id: int, where: str, timeout=90):
+    url = f"{base_url}/{layer_id}/query"
+    params = {"f":"json", "where":where, "returnIdsOnly":"true", "outSR":4326}
+    r = requests.get(url, params=params, timeout=timeout); r.raise_for_status()
+    j = r.json()
+    return j.get("objectIds", []), j.get("objectIdFieldName", "OBJECTID")
+
+def arcgis_fetch_by_ids(base_url: str, layer_id: int, object_ids, out_fields="*", timeout=120, chunk=800):
+    url = f"{base_url}/{layer_id}/query"
+    feats = []
+    for i in range(0, len(object_ids), chunk):
+        ids = object_ids[i:i+chunk]
+        data = {"f":"geojson","where":"1=1","objectIds":",".join(map(str, ids)),
+                "outFields": out_fields, "outSR":4326, "returnGeometry":"true"}
+        # gentle retry/backoff for flaky responses
+        for attempt in range(4):
+            try:
+                r = requests.post(url, data=data, timeout=timeout); r.raise_for_status()
+                feats.extend(r.json().get("features", []))
+                break
+            except requests.HTTPError:
+                if attempt==3: raise
+                time.sleep(1.0 + attempt*1.5 + random.random())
+    # Filter out features without geometry
+    feats_with_geom = [f for f in feats if f.get("geometry") is not None]
+    if not feats_with_geom:
+        return gpd.GeoDataFrame(columns=["geometry"], geometry="geometry", crs="EPSG:4326")
+    return gpd.GeoDataFrame.from_features(feats_with_geom, crs="EPSG:4326")
+
+def fetch_qspatial_lga():
+    ids, _ = arcgis_ids(QSPATIAL_BASE, LAYER_LGA, "1=1")
+    g = arcgis_fetch_by_ids(QSPATIAL_BASE, LAYER_LGA, ids, out_fields="objectid,lga,shape")
+    if "lga" not in g.columns:
+        raise RuntimeError(f"Unexpected LGA schema: {list(g.columns)}")
+    return g.rename(columns={"lga":"LGA_NAME"})
+
+def fetch_qspatial_localities_chunked(lga_names):
+    frames = []
+    for name in lga_names:
+        q = "lga = '{}'".format(name.replace("'", "''"))
+        ids, _ = arcgis_ids(QSPATIAL_BASE, LAYER_LOCALITY, q)
+        if not ids:
+            continue
+        gdf = arcgis_fetch_by_ids(QSPATIAL_BASE, LAYER_LOCALITY, ids, out_fields="objectid,locality,lga,shape")
+        cols_lower = {c.lower(): c for c in gdf.columns}
+        loc_field = cols_lower.get("locality") or cols_lower.get("locality_name") or cols_lower.get("name")
+        lga_field = cols_lower.get("lga") or cols_lower.get("lga_name")
+        if not loc_field or not lga_field:
+            raise RuntimeError(f"Unexpected Locality schema for {name}: {list(gdf.columns)}")
+        frames.append(gdf[[loc_field, lga_field, "geometry"]].rename(columns={loc_field:"LOCALITY_NAME", lga_field:"LGA_ATTR"}))
+    if not frames:
+        return gpd.GeoDataFrame(columns=["LOCALITY_NAME","LGA_ATTR","geometry"], geometry="geometry", crs="EPSG:4326")
+    return pd.concat(frames, ignore_index=True)
+
+def fetch_abs_layer(service_url: str, where: str, out_fields: str):
+    url = f"{service_url}/query"
+    ids = requests.get(url, params={"f":"json","where":where,"returnIdsOnly":"true"}).json().get("objectIds", [])
+    feats = []
+    if not ids:
+        return gpd.GeoDataFrame(columns=["geometry"], geometry="geometry", crs="EPSG:4326")
+    for i in range(0, len(ids), 800):
+        data = {"f":"geojson","objectIds":",".join(map(str, ids[i:i+800])),
+                "outFields":out_fields,"returnGeometry":"true","outSR":4326}
+        r = requests.post(url, data=data, timeout=180); r.raise_for_status()
+        feats.extend(r.json().get("features", []))
+    # Filter out features without geometry
+    feats_with_geom = [f for f in feats if f.get("geometry") is not None]
+    if not feats_with_geom:
+        return gpd.GeoDataFrame(columns=["geometry"], geometry="geometry", crs="EPSG:4326")
+    return gpd.GeoDataFrame.from_features(feats_with_geom, crs="EPSG:4326")
+
+## Cell 3
+
+%pip install requests_cache
+
+## Cell 2
+
+# ===== CONFIG (edit only if you need different areas) =====
+OUTDIR = "out"
+
+# Target LGAs (inputs)
+LGAS = ["Brisbane City", "Ipswich City", "Logan City"]
+STATE = "QLD"
+
+# Brisbane CBD reference (WGS84)
+BNE_CBD = (-27.4698, 153.0251)
+
+# QSpatial endpoints (authoritative; CC BY 4.0)
+QSPATIAL_BASE = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Boundaries/AdministrativeBoundaries/MapServer"
+LAYER_LGA      = 1  # field: lga
+LAYER_LOCALITY = 2  # fields: locality, lga
+
+# ABS ASGS 2021 endpoints (fallback + enrichment; CC BY 4.0)
+ABS_BASE = "https://geo.abs.gov.au/arcgis/rest/services/ASGS2021"
+ABS_SAL  = f"{ABS_BASE}/SAL/MapServer/0"    # Suburb/Locality
+ABS_LGA  = f"{ABS_BASE}/LGA/MapServer/0"
+ABS_SA2  = f"{ABS_BASE}/SA2/MapServer/0"
+ABS_SA3  = f"{ABS_BASE}/SA3/MapServer/0"
+ABS_SA4  = f"{ABS_BASE}/SA4/MapServer/0"
+ABS_GCC  = f"{ABS_BASE}/GCCSA/MapServer/0"
+ABS_POA  = f"{ABS_BASE}/POA/MapServer/0"
+
+# Nearby list fallback count
+NEAREST_K = 3
+
+## Cell 1
+
+%pip install requests_cache
+
+import json, pandas as pd, geopandas as gpd, os
+
+# Files exist?
+for fn in ["suburbs.geojson","suburbs.csv","adjacency.json","clusters.json","sources_index.json"]:
+    p = os.path.join(OUTDIR, fn); assert os.path.isfile(p), f"Missing {fn}"
+
+gj = gpd.read_file(os.path.join(OUTDIR,"suburbs.geojson"))
+adj = json.load(open(os.path.join(OUTDIR,"adjacency.json"),"r",encoding="utf-8"))
+print("Features:", len(gj))
+print("LGAs:", sorted(gj["lga"].unique().tolist()))
+deg = pd.Series({k: len(v.get("adjacent_suburbs",[])) for k,v in adj.items()})
+print("Adjacency degree — min/median/max:", int(deg.min()), float(deg.median()), int(deg.max()))
+print("Nodes with <2 neighbours:", int((deg < 2).sum()))
+
+from google.colab import drive
+import os, shutil
+
+drive.mount('/content/drive', force_remount=True)
+drive_folder = "/content/drive/MyDrive/suburb-datasets"
+os.makedirs(drive_folder, exist_ok=True)
+
+shutil.copy2(zip_path, os.path.join(drive_folder, os.path.basename(zip_path)))
+print("Saved to Drive:", os.path.join(drive_folder, os.path.basename(zip_path)))
+
+import os, datetime, shutil, subprocess
+folder = "/content/out" if os.path.isdir("/content/out") else ("out" if os.path.isdir("out") else None)
+assert folder, "No output folder found — run previous cells first."
+
+stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+zip_base = f"/content/suburb-data-{stamp}"
+zip_path = shutil.make_archive(zip_base, 'zip', root_dir=folder)
+print("Created zip:", zip_path)
+subprocess.run(["unzip", "-l", zip_path])
+
+from google.colab import files
+files.download(zip_path)
+
+# === WRITE OUTPUTS ===
+import os, json, pandas as pd, geopandas as gpd
+from pathlib import Path
+
+# 1) Properties builder (adds label point + provenance)
+def to_props(r):
+    return {
+        "name_official": r["LOCALITY_NAME"],
+        "name_variants": [],
+        "slug": r["slug"],
+        "lga": r["LGA_NAME"],
+        "state": STATE,
+        "postcode_list": [],  # enriched later (optional)
+        "abs_codes": {"gccsa": None,"sa4": None,"sa3": None,"sa2": None},
+        "centroid": {"lat": round(r["centroid_lat"],6), "lon": round(r["centroid_lon"],6)},
+        "label_point": {"lat": round(r["label_lat"],6), "lon": round(r["label_lon"],6)},
+        "polygon_ref": ("ABS ASGS 2021 SAL (CC BY 4.0)" if source_used=="ABS"
+                        else "QSpatial: AdministrativeBoundaries/Locality (CC BY 4.0)"),
+        "population_est": None,
+        "population_year": 2021,
+        "distance_to_bne_cbd_km": float(r["distance_to_bne_cbd_km"]),
+        "transport_notes": None,
+        "sources": (
+            [ABS_SAL, ABS_LGA] if source_used=="ABS" else
+            ["https://www.data.qld.gov.au/dataset/locality-boundaries-queensland",
+             f"{QSPATIAL_BASE}/{LAYER_LOCALITY}", f"{QSPATIAL_BASE}/{LAYER_LGA}"]
+        ),
+        "record_hash": r.get("record_hash"),
+        "data_edition": r.get("data_edition"),
+        "last_verified": pd.Timestamp.today().date().isoformat()
+    }
+
+props = loc.apply(to_props, axis=1)
+
+# 2) GeoJSON
+features=[]
+for geom, p in zip(loc.geometry, props):
+    gj = json.loads(gpd.GeoSeries([geom]).to_json())["features"][0]["geometry"]
+    features.append({"type":"Feature","geometry":gj,"properties":p})
+with open(f"{OUTDIR}/suburbs.geojson","w",encoding="utf-8") as f:
+    json.dump({"type":"FeatureCollection","features":features}, f, ensure_ascii=False)
+
+# 3) CSV (keep compatibility + add labels/hash)
+pd.DataFrame([{
+    "name_official": p["name_official"],
+    "slug": p["slug"],
+    "lga": p["lga"],
+    "state": p["state"],
+    "postcodes": ",".join(map(str, p["postcode_list"])),
+    "centroid_lat": p["centroid"]["lat"],
+    "centroid_lon": p["centroid"]["lon"],
+    "distance_to_bne_cbd_km": p["distance_to_bne_cbd_km"],
+    "label_lat": p["label_point"]["lat"],
+    "label_lon": p["label_point"]["lon"],
+    "record_hash": p["record_hash"]
+} for p in props]).to_csv(f"{OUTDIR}/suburbs.csv", index=False)
+
+# 4) adjacency + nearest (include 'derived' list)
+derived_by = {s: [] for s in loc["slug"]}
+for a,b in derived_edges:
+    derived_by[a].append(b)
+    derived_by[b].append(a)
+
+adjacency_json = {
+    s: {
+        "adjacent_suburbs": adj_sorted[s],
+        "nearest_nonsiblings": nearest_map.get(s, []),
+        "derived": sorted(derived_by.get(s, []))  # optional metadata
+    }
+    for s in sorted(adj_sorted)
+}
+with open(f"{OUTDIR}/adjacency.json","w",encoding="utf-8") as f:
+    json.dump(adjacency_json, f, ensure_ascii=False, indent=2)
+
+# 5) clusters (and reverse map)
+def slug_lga(s): return s.lower().replace(" ","-")
+cluster_by = { r["slug"]: slug_lga(r["LGA_NAME"]) for _, r in loc[["slug","LGA_NAME"]].iterrows() }
+
+clusters = {}
+for slug, cluster in cluster_by.items():
+    clusters.setdefault(cluster, []).append(slug)
+clusters = {c: sorted(v) for c, v in sorted(clusters.items())}
+
+with open(f"{OUTDIR}/clusters.json","w",encoding="utf-8") as f:
+    json.dump(clusters, f, ensure_ascii=False, indent=2)
+with open(f"{OUTDIR}/cluster_map.json","w",encoding="utf-8") as f:
+    json.dump(cluster_by, f, ensure_ascii=False, indent=2)
+
+# 6) sources_index.json (with timestamp)
+sources_idx = [
+  {
+    "name": "Locality boundaries - Queensland",
+    "publisher": "Queensland Government (QSpatial)",
+    "edition": "Current service",
+    "licence": "CC BY 4.0",
+    "url": f"{QSPATIAL_BASE}/{LAYER_LOCALITY}"
+  },
+  {
+    "name": "Local government area boundaries - Queensland",
+    "publisher": "Queensland Government (QSpatial)",
+    "edition": "Current service",
+    "licence": "CC BY 4.0",
+    "url": f"{QSPATIAL_BASE}/{LAYER_LGA}"
+  },
+  {
+    "name": "ASGS 2021 SAL / LGA (ArcGIS services)",
+    "publisher": "Australian Bureau of Statistics",
+    "edition": "ASGS Edition 3 (2021–2026)",
+    "licence": "CC BY 4.0",
+    "url": ABS_BASE
+  }
+]
+with open(f"{OUTDIR}/sources_index.json","w",encoding="utf-8") as f:
+    json.dump({"generated_at": pd.Timestamp.utcnow().isoformat(), "sources": sources_idx}, f, ensure_ascii=False, indent=2)
+
+print("Wrote:", ", ".join(sorted(os.listdir(OUTDIR))))
+
+# Quick QA hooks (hard-fail on obvious issues)
+OUT = Path(OUTDIR)
+for name in ["suburbs.geojson","suburbs.csv","adjacency.json","clusters.json","cluster_map.json","sources_index.json"]:
+    assert (OUT/name).exists(), f"Missing {name}"
+
+adj = json.loads((OUT/"adjacency.json").read_text())
+clu = json.loads((OUT/"clusters.json").read_text())
+clm = json.loads((OUT/"cluster_map.json").read_text())
+
+# Adjacency symmetry
+asym = [(a,b) for a, v in adj.items() for b in v["adjacent_suburbs"] if a not in adj.get(b, {}).get("adjacent_suburbs", [])]
+assert not asym, f"Asymmetric edges (sample): {asym[:10]}"
+
+# Coverage: every suburb in cluster_map
+missing = [s for s in adj.keys() if s not in clm]
+assert not missing, f"Missing cluster_map entries (sample): {missing[:10]}"
+
+# Optional: detect isolates
+isolates = [s for s, v in adj.items() if len(v["adjacent_suburbs"]) < 1]
+if isolates:
+    print("⚠️ Isolated suburbs (check geometry):", isolates[:10])
+
+# === BUILD DATASET ===
+import json, numpy as np, pandas as pd, geopandas as gpd
+from shapely.ops import unary_union
+from shapely import make_valid
+from shapely.geometry.base import BaseGeometry
+from hashlib import sha1
+
+# 1) Try QSpatial → fallback to ABS
+try:
+    lga_gdf = fetch_qspatial_lga()
+    loc_gdf = fetch_qspatial_localities_chunked(LGAS)
+    source_used = "QSpatial"
+    if loc_gdf.empty:
+        raise RuntimeError("QSpatial returned 0 localities for target LGAs")
+except Exception as e:
+    print("QSpatial path failed / empty -> switching to ABS SAL/LGA. Reason:", repr(e))
+    lga_gdf = fetch_abs_layer(ABS_LGA, "1=1", "LGA_NAME21,LGA_CODE21,shape").rename(columns={"LGA_NAME21":"LGA_NAME"})
+    loc_gdf = fetch_abs_layer(ABS_SAL, "STE_CODE21='3'", "SAL_NAME21,SAL_CODE21,STE_CODE21,shape").rename(columns={"SAL_NAME21":"LOCALITY_NAME"})
+    source_used = "ABS"
+
+# 2) Valid geometries
+for g in (lga_gdf, loc_gdf):
+    g["geometry"] = g.geometry.apply(lambda x: make_valid(x) if isinstance(x, BaseGeometry) else x)
+
+# 3) Stable id then LGA assignment by largest overlap (keep all geometry types, filter later)
+loc_gdf = loc_gdf.reset_index(drop=True).copy()
+loc_gdf["LOC_ID"] = np.arange(len(loc_gdf), dtype=int)
+
+inter = gpd.overlay(
+    loc_gdf[["LOC_ID","LOCALITY_NAME","geometry"]],
+    lga_gdf[["LGA_NAME","geometry"]],
+    how="intersection",
+    keep_geom_type=False,
+)
+inter = inter[inter.geometry.geom_type.isin(["Polygon","MultiPolygon"])].copy()
+if inter.empty:
+    raise SystemExit("Empty intersection; cannot assign LGAs.")
+
+inter3577 = inter.to_crs(3577).copy()
+inter3577["area_m2"] = inter3577.geometry.area
+best = (inter3577.sort_values(["LOC_ID","area_m2"], ascending=[True,False])
+                 .drop_duplicates(subset=["LOC_ID"])
+                 .loc[:, ["LOC_ID","LOCALITY_NAME","LGA_NAME","geometry"]]
+                 .to_crs(4326))
+
+# 4) Filter to target LGAs + precise clip
+best = best[best["LGA_NAME"].isin(TARGET_LGAS)].copy()
+if best.empty:
+    raise SystemExit("No localities in target LGAs after area assignment.")
+
+lga3 = lga_gdf[lga_gdf["LGA_NAME"].isin(TARGET_LGAS)].copy()
+lga_union = unary_union(lga3.geometry.to_list())
+mask = gpd.GeoDataFrame(geometry=[lga_union], crs=4326)
+loc = gpd.overlay(best, mask, how="intersection", keep_geom_type=False).reset_index(drop=True)
+loc = loc[loc.geometry.geom_type.isin(["Polygon","MultiPolygon"])].copy()
+
+# 5) Slug & state
+loc["slug"] = loc["LOCALITY_NAME"].apply(slugify)
+loc["state"] = STATE
+
+# 6) CRS-safe centroids + representative label points
+loc_m = loc.to_crs(3577)                     # Australian Albers (meters)
+cent_proj = loc_m.geometry.centroid
+cent_wgs  = gpd.GeoSeries(cent_proj, crs=3577).to_crs(4326)
+loc["centroid_lon"] = cent_wgs.x
+loc["centroid_lat"] = cent_wgs.y
+
+rep_proj = loc_m.representative_point()
+rep_wgs  = gpd.GeoSeries(rep_proj, crs=3577).to_crs(4326)
+loc["label_lon"] = rep_wgs.x
+loc["label_lat"] = rep_wgs.y
+
+# 7) Distance to Brisbane CBD (geodesic)
+loc["distance_to_bne_cbd_km"] = loc.apply(
+    lambda r: round(geodesic_km(r.centroid_lat, r.centroid_lon, BNE_CBD[0], BNE_CBD[1]), 3), axis=1
+)
+
+print(f"Source used for Locality polygons: {source_used}")
+print("Localities:", len(loc), "LGAs:", sorted(loc['LGA_NAME'].unique().tolist()))
+
+# 8) Fast, strict adjacency (edge-touch only), vectorized candidates
+pairs = loc_m.sindex.query_bulk(loc_m.geometry, predicate="intersects").T
+idx_by_slug = {s:i for i,s in enumerate(loc["slug"])}
+slug_by_idx = {i:s for s,i in idx_by_slug.items()}
+
+def shared_edge_len_m(i, j) -> float:
+    if i == j: return 0.0
+    seg = loc_m.geometry[i].boundary.intersection(loc_m.geometry[j].boundary)
+    return float(getattr(seg, "length", 0.0))
+
+adj_map = {s:set() for s in loc["slug"]}
+for i, j in pairs:
+    if i >= j:
+        continue
+    if shared_edge_len_m(i, j) > 0.0:  # > 0m excludes pure point-touch
+        a = slug_by_idx[i]; b = slug_by_idx[j]
+        adj_map[a].add(b); adj_map[b].add(a)
+
+# 9) Backfill “islands” to reach ≥2 neighbours (same LGA, within 1.5km)
+DERIVED_BUFFER_M = 1500
+derived_edges = set()
+lga_at_idx = list(loc["LGA_NAME"])
+
+for a_slug, nbrs in list(adj_map.items()):
+    if len(nbrs) >= 2:
+        continue
+    i = idx_by_slug[a_slug]
+    lga = lga_at_idx[i]
+    ring = loc_m.geometry[i].buffer(DERIVED_BUFFER_M)
+    cand_idx = loc_m.sindex.query(ring, predicate="intersects")
+    ordered = sorted(
+        (j for j in cand_idx if j != i and lga_at_idx[j] == lga),
+        key=lambda j: loc_m.geometry[i].distance(loc_m.geometry[j])
+    )
+    for j in ordered:
+        b_slug = slug_by_idx[j]
+        if b_slug in adj_map[a_slug]:
+            continue
+        adj_map[a_slug].add(b_slug)
+        adj_map[b_slug].add(a_slug)
+        derived_edges.add(tuple(sorted((a_slug, b_slug))))
+        if len(adj_map[a_slug]) >= 2:
+            break
+
+# 10) Stable neighbour ordering by shared-edge length (desc), then slug
+def sort_key(a_slug, b_slug):
+    i = idx_by_slug[a_slug]; j = idx_by_idx[b_slug]
+    return (-shared_edge_len_m(i, j), b_slug)
+
+adj_sorted = { a: sorted(v, key=lambda b: sort_key(a, b)) for a, v in adj_map.items() }
+
+# 11) Nearest non-adjacent within same LGA (fallback list)
+nearest_map = {}
+if len(loc) >= 2:
+    from sklearn.neighbors import BallTree
+    coords = np.radians(loc[["centroid_lat","centroid_lon"]].to_numpy())
+    tree = BallTree(coords, metric="haversine")
+    for i, row in loc.iterrows():
+        slug, lga = row["slug"], row["LGA_NAME"]
+        dists, idxs = tree.query([coords[i]], k=min(12, len(loc)))
+        picks=[]
+        for j, d in zip(idxs[0], dists[0]):
+            if j==i: continue
+            if loc.at[j,"LGA_NAME"] != lga: continue
+            if loc.at[j,"slug"] in adj_map[slug]: continue
+            picks.append(loc.at[j,"slug"])
+            if len(picks)==NEAREST_K: break
+        nearest_map[slug]=picks
+else:
+    for slug in loc["slug"]:
+        nearest_map[slug]=[]
+
+# 12) Provenance & record hash
+def wkt_hash(geom) -> str:
+    try:
+        return sha1(geom.wkt.encode("utf-8")).hexdigest()[:12]
+    except Exception:
+        return "na"
+
+edition_stamp = {
+    "qspatial": {"layer": "AdministrativeBoundaries/Locality", "licence": "CC BY 4.0", "edition": "current-service"},
+    "abs": {"layers": ["ASGS 2021 LGA","ASGS 2021 SAL"], "licence": "CC BY 4.0", "edition": "2021"}
+}
+loc["record_hash"] = [wkt_hash(g) + "-" + str(n) for g, n in zip(loc.geometry, loc.index)]
+loc["data_edition"] = json.dumps(edition_stamp)
+
+# 13) Invariants (sanity)
+asym = [(a,b) for a,vs in adj_sorted.items() for b in vs if a not in adj_sorted.get(b, [])]
+if asym:
+    print("⚠️ Asymmetric adjacency edges found (sample):", asym[:10])
+
+few = [s for s,vs in adj_sorted.items() if len(vs) < 2]
+if few:
+    print(f"⚠️ {len(few)} suburbs have <2 neighbours after backfill (likely edge cases):", few[:10])
+
+print("Sample adjacency counts:", {k: len(v) for k,v in list(adj_sorted.items())[:5]})
+print("Sample nearest lists:", dict(list(nearest_map.items())[:5]))
+
+import os, re, time, json, math, random
+import requests, requests_cache
+import numpy as np
+import pandas as pd
+import geopandas as gpd
+from shapely.ops import unary_union
+from shapely import make_valid
+from pyproj import Geod
+
+# Local setup
+os.makedirs(OUTDIR, exist_ok=True)
+TARGET_LGAS = set(LGAS)
+geod = Geod(ellps="WGS84")
+
+# Cache HTTP (ABS/QSpatial) to speed iterative runs
+requests_cache.install_cache("arcgis_cache", backend="sqlite", expire_after=6*3600)
+
+def slugify(s: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", s.lower().strip()).strip("-")
+
+def geodesic_km(lat1, lon1, lat2, lon2) -> float:
+    _,_,dist = geod.inv(lon1, lat1, lon2, lat2)
+    return dist/1000.0
+
+# --- ArcGIS helpers (chunked by objectIds, POST) ---
+def arcgis_ids(base_url: str, layer_id: int, where: str, timeout=90):
+    url = f"{base_url}/{layer_id}/query"
+    params = {"f":"json", "where":where, "returnIdsOnly":"true", "outSR":4326}
+    r = requests.get(url, params=params, timeout=timeout); r.raise_for_status()
+    j = r.json()
+    return j.get("objectIds", []), j.get("objectIdFieldName", "OBJECTID")
+
+def arcgis_fetch_by_ids(base_url: str, layer_id: int, object_ids, out_fields="*", timeout=120, chunk=800):
+    url = f"{base_url}/{layer_id}/query"
+    feats = []
+    for i in range(0, len(object_ids), chunk):
+        ids = object_ids[i:i+chunk]
+        data = {"f":"geojson","where":"1=1","objectIds":",".join(map(str, ids)),
+                "outFields": out_fields, "outSR":4326, "returnGeometry":"true"}
+        # gentle retry/backoff for flaky responses
+        for attempt in range(4):
+            try:
+                r = requests.post(url, data=data, timeout=timeout); r.raise_for_status()
+                feats.extend(r.json().get("features", []))
+                break
+            except requests.HTTPError:
+                if attempt==3: raise
+                time.sleep(1.0 + attempt*1.5 + random.random())
+    if not feats:
+        return gpd.GeoDataFrame(columns=["geometry"], geometry="geometry", crs="EPSG:4326")
+    return gpd.GeoDataFrame.from_features(feats, crs="EPSG:4326")
+
+def fetch_qspatial_lga():
+    ids, _ = arcgis_ids(QSPATIAL_BASE, LAYER_LGA, "1=1")
+    g = arcgis_fetch_by_ids(QSPATIAL_BASE, LAYER_LGA, ids, out_fields="objectid,lga,shape")
+    if "lga" not in g.columns:
+        raise RuntimeError(f"Unexpected LGA schema: {list(g.columns)}")
+    return g.rename(columns={"lga":"LGA_NAME"})
+
+def fetch_qspatial_localities_chunked(lga_names):
+    frames = []
+    for name in lga_names:
+        q = "lga = '{}'".format(name.replace("'", "''"))
+        ids, _ = arcgis_ids(QSPATIAL_BASE, LAYER_LOCALITY, q)
+        if not ids:
+            continue
+        gdf = arcgis_fetch_by_ids(QSPATIAL_BASE, LAYER_LOCALITY, ids, out_fields="objectid,locality,lga,shape")
+        cols_lower = {c.lower(): c for c in gdf.columns}
+        loc_field = cols_lower.get("locality") or cols_lower.get("locality_name") or cols_lower.get("name")
+        lga_field = cols_lower.get("lga") or cols_lower.get("lga_name")
+        if not loc_field or not lga_field:
+            raise RuntimeError(f"Unexpected Locality schema for {name}: {list(gdf.columns)}")
+        frames.append(gdf[[loc_field, lga_field, "geometry"]].rename(columns={loc_field:"LOCALITY_NAME", lga_field:"LGA_ATTR"}))
+    if not frames:
+        return gpd.GeoDataFrame(columns=["LOCALITY_NAME","LGA_ATTR","geometry"], geometry="geometry", crs="EPSG:4326")
+    return pd.concat(frames, ignore_index=True)
+
+def fetch_abs_layer(service_url: str, where: str, out_fields: str):
+    url = f"{service_url}/query"
+    ids = requests.get(url, params={"f":"json","where":where,"returnIdsOnly":"true"}).json().get("objectIds", [])
+    feats = []
+    if not ids:
+        return gpd.GeoDataFrame(columns=["geometry"], geometry="geometry", crs="EPSG:4326")
+    for i in range(0, len(ids), 800):
+        data = {"f":"geojson","objectIds":",".join(map(str, ids[i:i+800])),
+                "outFields":out_fields,"returnGeometry":"true","outSR":4326}
+        r = requests.post(url, data=data, timeout=180); r.raise_for_status()
+        feats.extend(r.json().get("features", []))
+    return gpd.GeoDataFrame.from_features(feats, crs="EPSG:4326")
+
+# ===== CONFIG (edit only if you need different areas) =====
+OUTDIR = "out"
+
+# Target LGAs (inputs)
+LGAS = ["Brisbane City", "Ipswich City", "Logan City"]
+STATE = "QLD"
+
+# Brisbane CBD reference (WGS84)
+BNE_CBD = (-27.4698, 153.0251)
+
+# QSpatial endpoints (authoritative; CC BY 4.0)
+QSPATIAL_BASE = "https://spatial-gis.information.qld.gov.au/arcgis/rest/services/Boundaries/AdministrativeBoundaries/MapServer"
+LAYER_LGA      = 1  # field: lga
+LAYER_LOCALITY = 2  # fields: locality, lga
+
+# ABS ASGS 2021 endpoints (fallback + enrichment; CC BY 4.0)
+ABS_BASE = "https://geo.abs.gov.au/arcgis/rest/services/ASGS2021"
+ABS_SAL  = f"{ABS_BASE}/SAL/MapServer/0"    # Suburb/Locality
+ABS_LGA  = f"{ABS_BASE}/LGA/MapServer/0"
+ABS_SA2  = f"{ABS_BASE}/SA2/MapServer/0"
+ABS_SA3  = f"{ABS_BASE}/SA3/MapServer/0"
+ABS_SA4  = f"{ABS_BASE}/SA4/MapServer/0"
+ABS_GCC  = f"{ABS_BASE}/GCCSA/MapServer/0"
+ABS_POA  = f"{ABS_BASE}/POA/MapServer/0"
+
+# Nearby list fallback count
+NEAREST_K = 3

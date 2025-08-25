@@ -1,0 +1,879 @@
+data dump read me resolution 2 aug24
+Here’s a consolidated, implementation-ready guide derived from the notes you compiled. It’s organized as policies, concrete patches, and verification steps so you can copy/paste and ship with confidence.
+
+---
+
+## 1) Accessibility landmarks — policy, fixes, and tests
+
+**Policy**
+
+* Exactly one **primary** page navigation landmark (typically the header): `<nav aria-label="Primary navigation">…</nav>`.
+* The cross-service section is **not** a second `<nav>`; render it as a **region** with `role="region"` and a unique accessible name.
+* Footer navigation must use a unique label (e.g., `aria-label="Footer utility"`).&#x20;
+
+**Common axe failures & cures**
+
+* `landmark-unique`: make the accessible names unique (`Primary navigation`, `Other services and guides`, `Footer utility`).
+* `landmark-complementary-is-top-level`: don’t nest `<aside>`/regions inside other landmarks; keep them as top-level sections or ensure correct labels.&#x20;
+
+**Minimal template patch**
+
+```astro
+<!-- Header -->
+<nav aria-label="Primary navigation" class="container mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+  <!-- brand, primary menu -->
+</nav>
+
+<!-- Cross-service/cards panel (region, not <nav>) -->
+<section role="region" aria-label="Other services and guides" class="related-links mt-10" data-relservices>
+  <!-- cards/links -->
+</section>
+
+<!-- Footer utility links -->
+<nav aria-label="Footer utility" class="mt-12">
+  <!-- sitemap, privacy, terms -->
+</nav>
+```
+
+**A11y test cues**
+
+* Assert **only one `<nav>`** with the header label; assert **no unlabeled `<nav>`**; assert a **single** `[data-relservices]` region. This aligns with the policy above and eliminates `landmark-unique`.&#x20;
+
+---
+
+## 2) JSON-LD graphs — single emitter, absolute IDs, and guards
+
+**Architecture**
+
+* Emit **one** `<script type="application/ld+json">` per page containing a **single `@graph`**, using a dedicated **Schema** component.&#x20;
+* Use small, SSR-safe **builders** (`localBusinessNode`, `serviceAndOfferNodes`, `breadcrumbList`, `faqPageNode`, `aggregateRatingNode`, `reviewNodes`) and a composer `suburbServiceGraph(…)`.&#x20;
+* Build **absolute** `@id` and `url` with `absoluteUrl(origin, path)` so every node is globally addressable.&#x20;
+
+**Guards**
+
+* Post-build consolidation merges any accidental multiples into a **single** `@graph`; validation checks shape; Playwright verifies exactly one script per page.&#x20;
+
+---
+
+## 3) Cross-service navigation — deterministic, precomputed
+
+**Why**
+
+Runtime duplication and data races previously created extra landmarks and test flakiness. The refactor renders **one** panel fed by **precomputed** data.&#x20;
+
+**How**
+
+* Precompute `src/data/crossServiceMap.json` at build via `scripts/build-cross-service-map.mjs`.
+* Lookup is a **synchronous** map: `suburb → currentService → CrossServiceItem[]`.
+* Mark out-of-suburb picks visibly (e.g., “Bathroom Deep Clean **(nearby)**”).&#x20;
+
+**Example shape**
+
+```json
+{
+  "ipswich": {
+    "bond-cleaning": [
+      { "label": "Spring Cleaning", "href": "/services/spring-cleaning/ipswich/", "here": true },
+      { "label": "Bathroom Deep Clean (nearby)", "href": "/services/bathroom-deep-clean/riverhills/", "here": false }
+    ]
+  }
+}
+```
+
+This guarantees the panel is never empty and keeps semantics explicit for users and tests.&#x20;
+
+---
+
+## 4) Redirects & synonym endpoints — prod parity + local emulator
+
+**Production rules (edge)**
+Sample Netlify rules (Edge) for clusters & legacy service paths:
+
+```
+/blog/ipswich-region               /blog/ipswich               301
+/areas/ipswich-region/*            /areas/ipswich/:splat       301
+/services/:service/:cluster/:suburb/*  /services/:service/:suburb 301
+```
+
+Use the emulator for local E2E so Playwright sees **realistic** `:param`/`:splat` substitutions.&#x20;
+
+Run locally:
+
+```bash
+npm run serve:redirects   # serves dist + applies Netlify-style substitutions (port 4322)
+```
+
+This mirrors production behavior in tests.&#x20;
+
+**Synonym SSR endpoints (301 to canonical)**
+
+Keep lightweight `*.ts` pages with `prerender=false` to map common terms to the canonical service×suburb and **preserve query/hash**:
+
+* `bond-cleaners/[suburb].ts`, `end-of-lease-cleaning/[suburb].ts`, `exit-clean/[suburb].ts`
+* `house-cleaning/[suburb].ts` → `spring-cleaning`
+* `deep-cleaning/[suburb].ts` → `spring-cleaning`
+* `bathroom-cleaning/[suburb].ts` → `bathroom-deep-clean`
+* `shower-screen-restoration/[suburb].ts` → `bathroom-deep-clean`&#x20;
+
+---
+
+## 5) Internal link integrity & coverage — guardrails
+
+**Integrity (hard fail)**
+Crawl `dist/**/*.html`, normalize root-relative anchors, and fail the build if any target is missing. This prevents shipping broken links.&#x20;
+
+**Coverage (≥1 meaningful in-content link)**
+Ensure each page’s `<main>` contains at least one internal link; artifacts are written to `__ai/` for remediation.&#x20;
+
+Run:
+
+```bash
+npm run build || true
+npm run audit:internal-links
+```
+
+
+
+---
+
+## 6) Environment & Edge middleware — safe defaults, simple toggle
+
+**.env defaults**
+
+```ini
+USE_EDGE=false
+BLOG_BASE=/blog/
+MIN_REVIEWS_FOR_AGG=10
+```
+
+Use `npm run env:print` or `node scripts/check-env.js` for a quick snapshot. Keep Edge **off** by default in local/CI.&#x20;
+
+**Edge guard**
+
+* `scripts/guard-deno.js` runs before dev/start, refusing to launch Edge unless `USE_EDGE=true` **and** `deno` is available.
+* `astro.config.mjs` branches integrations based on `USE_EDGE`.&#x20;
+
+To try Edge locally:
+
+```bash
+deno --version
+USE_EDGE=true npm run dev
+```
+
+
+
+---
+
+## 7) Tests & CI — what to run, when
+
+**Common commands**
+
+```bash
+# Canary — synonym redirects
+npx playwright test tests/synonym-redirects.canary.spec.ts --reporter=line
+
+# Full E2E
+npm test --silent
+
+# Unit (Vitest)
+npm run test:unit
+
+# Update visual snapshots when intended UI changes land
+npx playwright test tests/e2e/visual.spec.ts --update-snapshots
+```
+
+
+
+**CI snippet (recommended)**
+
+```yaml
+env:
+  USE_EDGE: "false"  # keep Edge off in CI
+
+- name: Build site
+  run: npm run build --silent
+
+- name: Start server (redirect parity)
+  run: npm run serve:redirects &
+
+- name: Wait for server
+  run: npx wait-on http://localhost:4322
+
+- name: E2E tests
+  run: npm run test:e2e --silent
+```
+
+
+
+---
+
+## 8) Routing & canonicals — one glance checklist
+
+* Services: hubs `/services/[service]/`, spokes `/services/[service]/[suburb]/` (canonical).
+* Areas: index `/areas/`, hubs `/areas/[cluster]/`, optional suburb entry `/areas/[cluster]/[suburb]/`.
+* Blog: hub `/blog/[cluster]/`, category `/blog/[cluster]/category/[category]/`, posts `/blog/[cluster]/[slug]/` (alias clusters 301 → canonical).
+* `sitemap.xml` sets `Cache-Control: 300s`.&#x20;
+
+---
+
+## 9) Quick start & prerequisites (for new machines/Codespaces)
+
+* Node 20, npm 9+, Playwright browsers, optional Deno (only if you flip Edge on).
+* Dev: `npm run dev` (Edge OFF); build & preview: `npm run build && npm run preview`; tests: `npm test --silent`.&#x20;
+
+---
+
+## 10) Troubleshooting playbook (high-signal)
+
+* **Playwright “connection refused” or “No tests found”**: start the redirect-aware server, ensure spec filenames end with `.spec.ts`, and confirm the Playwright `webServer` is configured. Use `npm run serve:redirects` to mirror prod redirects locally.&#x20;
+
+---
+
+## 11) Governance & hygiene (nice-to-have, high ROI)
+
+* Keep **alias pages out** of the repo; rely on middleware/edge redirects only. Remove any `src/pages/blog/{ipswich-region|brisbane-west|brisbane_west}` pages if they slip in.&#x20;
+* Optional Husky tune-up: use modern “prepare”: `"husky"` and keep hooks minimal so they’re v9/v10-safe.&#x20;
+
+---
+
+## 12) Verification checklist (copy/paste)
+
+1. **A11y**
+
+   * View source for a service page: confirm **one** `<nav aria-label="Primary navigation">`.
+   * Confirm cross-service container is a **region** with `aria-label="Other services and guides"` and **not** a `<nav>`.
+   * Footer uses `aria-label="Footer utility"`. (Axe: no `landmark-unique`.)&#x20;
+
+2. **Schema**
+
+   * One `<script type="application/ld+json">` per page; IDs are absolute; `@graph` present. Guards pass.&#x20;
+
+3. **Cross-service**
+
+   * Panel renders from the static map; “nearby” clearly indicated for non-local picks.&#x20;
+
+4. **Redirects**
+
+   * Emulator returns 301s with params/splat substitution identical to Netlify.&#x20;
+
+5. **Links**
+
+   * Build passes link integrity & coverage audits; `__ai/` artifacts are clean.&#x20;
+
+6. **Edge**
+
+   * `.env` has `USE_EDGE=false` for local/CI; guard blocks Deno startup unless explicitly enabled.&#x20;
+
+---
+
+### Ready-to-run commands
+
+```bash
+# Build + postbuild guards
+npm run build --silent
+
+# Local redirect parity server for E2E
+npm run serve:redirects & npx wait-on http://localhost:4322
+
+# Canary and full E2E
+npx playwright test tests/synonym-redirects.canary.spec.ts --reporter=line
+npm test --silent
+
+# A11y quick check target pages
+npx playwright test tests/e2e/a11y.spec.ts --grep @/services/
+```
+
+Everything above maps one-to-one to the compiled notes you provided and reflects the intended guardrails for accessibility, schema consistency, deterministic navigation, redirects parity, and safe environment toggles.&#x20;
+--
+# One N Done Bond Clean — Astro + Netlify (Deep-Dive Implementation Guide & Ops Playbook)
+
+Production front-end on **Astro 5** + **Tailwind**, deployed to **Netlify**. This guide covers canonical routing, SSR synonym endpoints, a single JSON-LD emitter, deterministic cross-service navigation, accessibility landmark policy, internal-link integrity, test suites, environment toggles (including Edge), CI suggestions, and day-to-day ops.
+
+---
+
+## Quick start & environment
+
+```bash
+# prerequisites
+node -v          # 20.x
+npm ci
+
+# local dev (Edge off by default)
+npm run dev      # http://localhost:4322
+
+# full build with guardrails
+npm run build
+
+# preview prod behavior locally
+npm run preview
+
+# tests
+npm test                     # full Playwright
+npm run test:unit            # Vitest
+```
+
+Environment template (`.env.example`) and important flags:
+
+```ini
+# Edge functions are OFF locally/CI unless explicitly enabled
+USE_EDGE=false
+
+# Optional non-default blog base rehearsal (CI jobs can vary this)
+BLOG_BASE=/blog/
+
+# Reviews → AggregateRating gate
+MIN_REVIEWS_FOR_AGG=12
+
+# Canonical origin used for absolute schema IDs/URLs
+SITE_URL=https://www.onendone.com.au
+```
+
+Edge/Deno is opt-in via `USE_EDGE`; keep it `false` for local/CI unless you’re actively testing Edge middleware.&#x20;
+
+---
+
+## Canonical routes & redirects
+
+**Canonical route map**
+
+| Area                      | Path pattern                                                                          | Canonical? | Notes                                   |   |
+| ------------------------- | ------------------------------------------------------------------------------------- | ---------- | --------------------------------------- | - |
+| Service hub               | `/services/[service]/`                                                                | ✅          | Hub landing for a service               |   |
+| Service spoke             | `/services/[service]/[suburb]/`                                                       | ✅          | Canonical detail per suburb             |   |
+| Legacy service w/ cluster | `/services/:service/:cluster/:suburb/*`                                               | ❌          | **301 →** `/services/:service/:suburb/` |   |
+| Areas                     | `/areas/`, `/areas/[cluster]/`, `/areas/[cluster]/[suburb]/`                          | ✅          | Suburb entry renders service layout     |   |
+| Blog                      | `/blog/[cluster]/`, `/blog/[cluster]/category/[category]/`, `/blog/[cluster]/[slug]/` | ✅          | Cluster aliases **301** to canonical    |   |
+| Sitemap                   | `/sitemap.xml`                                                                        | ✅          | Cache-Control 300s                      |   |
+| Utility                   | `/privacy`, `/terms`, `/gallery`, `/quote`                                            | ✅          | Static pages                            |   |
+
+**Redirects** live primarily in `public/_redirects` (Edge) and sometimes `netlify.toml`. Examples:
+
+```
+/blog/ipswich-region            /blog/ipswich                 301
+/areas/ipswich-region/*         /areas/ipswich/:splat         301
+/services/:service/:cluster/:suburb/*   /services/:service/:suburb   301
+```
+
+Local E2E runs use a redirect-aware static server that supports `:param` and `:splat` substitution so tests mirror prod behavior. Start it with:
+
+````bash
+npm run serve:redirects   # emulator on port 4322
+``` :contentReference[oaicite:2]{index=2} :contentReference[oaicite:3]{index=3}
+
+> Tip: Keep redirect rules in **either** `public/_redirects` **or** `netlify.toml`, not both, and don’t emit HTML at alias paths; redirects are a safety net, not a substitute for clean routing. :contentReference[oaicite:4]{index=4}
+
+---
+
+## Synonym redirect endpoints (SSR)
+
+Each synonym is an Astro **TypeScript endpoint** that performs a **301** to the canonical service×suburb. All endpoints include `export const prerender = false;` and preserve `?query#hash` with normalized trailing slashes.
+
+**Pattern:** `src/pages/<synonym>/[suburb].ts`
+
+```ts
+// e.g. src/pages/end-of-lease-cleaning/[suburb].ts
+import type { APIRoute } from 'astro';
+export const prerender = false;
+
+export const GET: APIRoute = ({ params, redirect }) => {
+  const suburb = params.suburb!.toLowerCase();
+  return redirect(`/services/bond-cleaning/${suburb}/`, 301);
+};
+````
+
+**Covered synonyms (examples)**
+`bond-cleaners`, `end-of-lease-cleaning`, `exit-clean` → `bond-cleaning`;
+`house-cleaning`, `deep-cleaning` → `spring-cleaning`;
+`bathroom-cleaning`, `shower-screen-restoration` → `bathroom-deep-clean`. &#x20;
+
+**Redirect tests (Playwright)** assert 301s and tolerate slash variants:
+
+````ts
+const cases: Array<[from: string, toPath: string]> = [
+  ['/bond-cleaners/redbank-plains', '/services/bond-cleaning/redbank-plains'],
+  ['/house-cleaning/kenmore', '/services/spring-cleaning/kenmore'],
+  ['/bathroom-cleaning/forest-lake', '/services/bathroom-deep-clean/forest-lake'],
+];
+
+test(`301s ${from} -> ${toPathRaw}`, async ({ request, baseURL }) => {
+  const res = await request.get(from, { maxRedirects: 0 });
+  expect(res.status()).toBe(301);
+  const loc = res.headers()['location']; // allow with/without trailing slash
+  const expectedA = toPathRaw.endsWith('/') ? toPathRaw : `${toPathRaw}/`;
+  const expectedB = toPathRaw.endsWith('/') ? toPathRaw.slice(0, -1) : toPathRaw;
+  expect([expectedA, expectedB]).toContain(new URL(loc!, baseURL!).pathname);
+});
+``` :contentReference[oaicite:7]{index=7}
+
+---
+
+## Accessibility landmarks (policy & a11y contract)
+
+**Policy**
+
+- Exactly one **primary** page navigation landmark (typically header `<nav aria-label="Primary navigation">`).  
+- The cross-service section is **not** a second `<nav>`; use a **region** (`<section role="region">`) with an accessible name.  
+- Footer sub-nav must have a unique label (e.g., `aria-label="Footer utility"`). :contentReference[oaicite:8]{index=8}
+
+**Common axe failures & cures**
+
+- `landmark-unique`: ensure unique labels like `Primary navigation`, `Other services and guides`, `Footer utility`.  
+- `landmark-complementary-is-top-level`: don’t nest `<aside>` inside another landmark; ensure proper labeling. :contentReference[oaicite:9]{index=9}
+
+**In tests**: the suite enforces unique landmark names and excludes unstable regions (maps/iframes/forms) for Axe stability. :contentReference[oaicite:10]{index=10}
+
+---
+
+## Cross-Service Navigation (static, deterministic)
+
+**Why**  
+Legacy runtime logic produced duplicate/empty panels and a11y landmark conflicts. The refactor renders **one** panel from **precomputed** data. :contentReference[oaicite:11]{index=11}
+
+**Pipeline**
+
+1. **Build step** (`scripts/build-cross-service-map.mjs`) emits `src/data/crossServiceMap.json` keyed by suburb → current service → items. :contentReference[oaicite:12]{index=12}  
+2. **Sync accessor** (`src/lib/crossService.ts`) exposes:
+   - `getCrossServiceItems(suburb, currentService)` → deterministic list (same-suburb or `(nearby)` fallback)  
+   - `getCrossServiceLinks({ suburbSlug, currentService })` → UI-ready data :contentReference[oaicite:13]{index=13}
+3. **Adapter** (`src/lib/serviceNav.adapter.ts`) shapes cards/chips for the UI; the component inserts **one** landmark:
+   ```html
+   <nav data-relservices aria-label="Other services and guides">…</nav>
+````
+
+Legacy “related links” are demoted to `<section role="region">` or get distinct labels.&#x20;
+
+**Deterministic map example**
+
+````json
+{
+  "ipswich": {
+    "bond-cleaning": [
+      { "label": "Spring Cleaning", "href": "/services/spring-cleaning/ipswich/", "here": true },
+      { "label": "Bathroom Deep Clean (nearby)", "href": "/services/bathroom-deep-clean/redbank/", "here": false }
+    ]
+  }
+}
+``` :contentReference[oaicite:15]{index=15}
+
+**A11y contract**
+
+- Exactly **one** `[data-relservices]` landmark per page; header/footer navigations have **unique** `aria-label`s.  
+- Avoid anonymous `<nav>` elements (prevents Axe `landmark-unique`). :contentReference[oaicite:16]{index=16}
+
+---
+
+## JSON-LD graphs (single emitter)
+
+- **Single emitter**: `src/components/Schema.astro` outputs one `<script type="application/ld+json">` per page with a **single `@graph`**. :contentReference[oaicite:17]{index=17}
+- **Pure builders**: `src/lib/seoSchema.js` → `localBusinessNode`, `serviceAndOfferNodes`, `breadcrumbList`, `faqPageNode`, `aggregateRatingNode`, `reviewNodes`, plus composer `suburbServiceGraph`. :contentReference[oaicite:18]{index=18}
+- **Absolute IDs/URLs** via `absoluteUrl(...)` from the canonical origin; stable, canonical `@id` and `url` are produced from paths. :contentReference[oaicite:19]{index=19}
+- **Guards**: post-build consolidation into one `@graph` and schema validation; Playwright asserts a single JSON-LD script per page. :contentReference[oaicite:20]{index=20}
+
+---
+
+## Internal link integrity & coverage
+
+- **Integrity**: `scripts/check-internal-links.mjs` crawls `dist/**/*.html`, normalizes root-relative anchors, and **fails the build** on any dead link. :contentReference[oaicite:21]{index=21}
+- **Coverage**: `scripts/audit-internal-links.mjs` ensures every page has ≥1 meaningful in-content link; emits JSON, a summary, and per-route HTML suggestions. :contentReference[oaicite:22]{index=22}
+
+Manual run:
+
+```bash
+npm run build || true
+npm run audit:internal-links
+``` :contentReference[oaicite:23]{index=23}
+
+---
+
+## Test suites (Playwright)
+
+- Suites: a11y, smoke, visual, redirects, structure, geometry, intent; web server auto-managed by `playwright.config.ts`. :contentReference[oaicite:24]{index=24}
+
+**Common commands**
+
+```bash
+# Fast canary for synonym redirects
+npx playwright test tests/synonym-redirects.canary.spec.ts --reporter=line
+
+# Full suite
+npm test --silent
+``` :contentReference[oaicite:25]{index=25}
+
+---
+
+## Netlify control plane & public assets
+
+**Do-this-now checklist**
+
+- Move `_redirects` / `_headers` into `public/` so Netlify publishes them.  
+- Ensure all public assets live under `public/` (e.g., `/images/logo.svg`). :contentReference[oaicite:26]{index=26} :contentReference[oaicite:27]{index=27}
+
+**Red/green smoke (local & prod)**: build, serve `dist`, verify asset 200s, legacy 301s, viewport meta present; then repeat on production. :contentReference[oaicite:28]{index=28} :contentReference[oaicite:29]{index=29}
+
+---
+
+## Lighthouse CI (optional but recommended)
+
+Run Lighthouse against the same static preview used by Playwright for deterministic scores. A minimal workflow:
+
+```yaml
+name: Lighthouse CI
+on:
+  push: { branches: [ main ] }
+  pull_request:
+jobs:
+  lhci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: 'npm' }
+      - run: npm ci
+      - run: npm run build --silent
+      - run: npx serve -s dist -l 4322 &
+      - run: npx wait-on http://localhost:4322
+      - uses: treosh/lighthouse-ci-action@v10
+        with:
+          urls: |
+            http://localhost:4322/
+            http://localhost:4322/services/bond-cleaning
+``` :contentReference[oaicite:30]{index=30}
+
+---
+
+## Known pitfalls & tidy-ups
+
+- **“notusing” pages under `src/pages/`** still compile and can leak routes; move out of `src/pages/`, disable, or remove. :contentReference[oaicite:31]{index=31}  
+- **Parallel route systems** (legacy folders vs `/services/...`) create duplication; keep legacy paths as **SSR 301 handlers only**. :contentReference[oaicite:32]{index=32}  
+- **Single control plane for redirects**: avoid overlapping rules across middleware, `_redirects`, and `netlify.toml`. :contentReference[oaicite:33]{index=33}
+
+---
+
+## Operational playbook
+
+- **Redirect canary**  
+  ```bash
+  npx playwright test tests/e2e/middleware-redirect.spec.ts
+````
+
+Confirms alias → canonical with query/fragment preservation.&#x20;
+
+* **Viewport & legible text**
+  Keep the viewport meta in the base layout and body text at least Tailwind `text-base`. This clears PSI “No viewport/Illegible text”. &#x20;
+
+* **Headers, sitemap, and robots**
+  Serve security headers from Netlify, keep `/sitemap.xml` linked in the footer, and ensure robots allow crawling + reference the sitemap.&#x20;
+
+---
+
+## Rationale: single JSON-LD & consolidated emitter
+
+A single emitter per page prevents accidental multiples, stabilizes `@id`/`url` references, and simplifies QA (Playwright can assert one JSON-LD script). Builders keep schema logic SSR-safe and composable; post-build consolidation and validation provide a safety net. &#x20;
+
+---
+
+## Rationale: deterministic cross-service panel
+
+Precomputing the cross-service map at build time removes runtime flakiness, enforces a single landmark, and enables precise a11y tests. The adapter converts raw items into labeled cards (with explicit `(nearby)` when applicable), and tests target `[data-relservices]` for stability.  &#x20;
+
+---
+
+## Appendix: handy one-liners
+
+* **Count pages with JSON-LD and surface multiples** (run after build)
+
+  ````bash
+  npm run build --silent
+  node -e "const fs=require('fs'),p=require('path');let c=0;function* w(d){for(const f of fs.readdirSync(d)){const fp=p.join(d,f),s=fs.statSync(fp);if(s.isDirectory())yield* w(fp);else if(f.endsWith('.html'))yield fp}};for(const f of w('dist')){const h=fs.readFileSync(f,'utf8');const s=[...h.matchAll(/<script[^>]+type=\\\"application\\/ld\\+json\\\"[^>]*>([\\s\\S]*?)<\\/script>/gi)].length;if(s){c++;if(s>1)console.log('multi:',f.replace(/^dist\\//,''),s)}};console.error('pages with JSON-LD:',c)"
+  ``` :contentReference[oaicite:43]{index=43}
+
+  ````
+* **Move control files to `public/` (once)**
+
+  ````bash
+  mkdir -p public
+  git mv _redirects public/_redirects 2>/dev/null || true
+  git mv _headers   public/_headers   2>/dev/null || true
+  ``` :contentReference[oaicite:44]{index=44}
+  ````
+
+---
+
+### Bottom line
+
+* Canonicalize everything under `/services/[service]/[suburb]/` and `/areas/[cluster]/[suburb]/`; treat legacy as SSR 301s.&#x20;
+* Emit exactly one JSON-LD `@graph` per page via `Schema.astro`.&#x20;
+* Keep landmarks unique: one primary `<nav>`, cross-service as a labeled region, footer with its own name.&#x20;
+* Precompute cross-service links and render a single `[data-relservices]` landmark.&#x20;
+* Guard every deploy with link-integrity checks, redirect canaries, and (optionally) Lighthouse CI. &#x20;
+
+If you want this documented as separate developer docs (e.g., `docs/architecture.md`, `docs/testing.md`, `docs/ops.md`) with cross-links and command snippets, the sections above can be split as-is.&#x20;
+--
+# Technical review & implementation plan for `data dump readme file resolution aug24.txt`
+
+Below is a concrete, end-to-end plan that turns the document into working guardrails, code, and checks. It’s organized by feature area, with “what to do”, “why it matters”, and precise selectors/CLI you can use right now.
+
+---
+
+## 1) Scope at a glance (what this doc already commits to)
+
+* Astro 5 + Netlify adapter; canonical routes for **services / areas / blog**; synonym paths handled via SSR 301s.&#x20;
+* Single, centralized **JSON-LD emitter** (one `@graph` per page) plus post-build consolidation guard.&#x20;
+* Repeatable **Playwright** E2E (axe, visual, redirects, smoke) and **Vitest** support; quick start commands documented.&#x20;
+* **Edge middleware** is feature-gated via `USE_EDGE` with a guard that blocks local/CI crashes if Deno isn’t present.&#x20;
+
+---
+
+## 2) Cross-service navigation (static, deterministic)
+
+**Why**
+Legacy runtime computation duplicated panels and caused axe “landmark-unique” failures. The new approach precomputes once at build and renders a single landmark, stabilizing tests and a11y.&#x20;
+
+**Pipeline**
+
+1. Build step writes `src/data/crossServiceMap.json` (suburb → currentService → `CrossServiceItem[]`). The schema includes `(nearby)` labeling and provenance in `data.source`.&#x20;
+2. Sync accessor:
+
+   * `getCrossServiceItems(suburb, currentService): CrossServiceItem[]`
+   * `getCrossServiceLinks({ suburbSlug, currentService }): { crossServices, localGuides }`&#x20;
+3. Adapter → UI props: `toServiceCards`, `toPopularSuburbs`.&#x20;
+4. Component renders **one** landmark:
+
+   ```html
+   <nav data-relservices aria-label="Other services and guides">…</nav>
+   ```
+
+   Any legacy collections become `<section role="region">`.&#x20;
+
+**Selectors & tests**
+
+* E2E asserts semantics via `[data-relservices]` (nearby vs here). Keep exactly one per page.&#x20;
+
+**Drop-in accessors (TypeScript)**
+
+```ts
+// src/lib/crossService.ts
+import map from '@/data/crossServiceMap.json';
+
+export type CrossServiceItem = {
+  label: string;
+  href: string;
+  here: boolean;            // true if same suburb
+  data?: { service: string; suburb: string; source: 'same-suburb'|'nearby' };
+};
+
+export function getCrossServiceItems(suburb: string, currentService: string): CrossServiceItem[] {
+  return map?.[suburb]?.[currentService] ?? [];
+}
+
+export function getCrossServiceLinks(args: { suburbSlug: string; currentService: string }) {
+  const crossServices = getCrossServiceItems(args.suburbSlug, args.currentService);
+  const localGuides = crossServices.filter(i => i.label.toLowerCase().includes('guide'));
+  return { crossServices, localGuides };
+}
+```
+
+**Adapter to cards**
+
+```ts
+// src/lib/serviceNav.adapter.ts
+export function toServiceCards(items: CrossServiceItem[], { currentSuburb }: { currentSuburb: string }) {
+  return items.map(i => ({
+    title: i.label,
+    desc: i.here ? `Available in ${currentSuburb}` : `Available nearby (${i.data?.suburb})`,
+    href: i.href,
+    icon: i.here ? 'Check' : 'MapPin',
+    nearby: !i.here
+  }));
+}
+```
+
+---
+
+## 3) Accessibility landmarks (axe: “landmark-unique”)
+
+**Policy**
+
+* Exactly one **primary** page nav (header): `<nav aria-label="Primary navigation">`.
+* Cross-service collection is a **region** (or, if it must be a nav, give it a distinct label).
+* Footer nav uses a unique label (e.g., `aria-label="Footer utility"`).&#x20;
+
+**Known rule & cure**
+
+* axe `landmark-unique`: give each `<nav>` a unique accessible name; demote non-navigation blocks to `<section role="region">`.&#x20;
+
+**Practical patch** (header + panel)
+
+```astro
+<!-- Header.astro -->
+<nav class="container ..." aria-label="Primary navigation">
+  <!-- header links -->
+</nav>
+
+<!-- ServiceNav.astro -->
+<nav data-relservices class="related-links mt-10" aria-label="Other services and guides">
+  <!-- service cards -->
+</nav>
+
+<!-- Legacy related links -->
+<section role="region" aria-label="Helpful resources">
+  <!-- no <nav> here -->
+</section>
+```
+
+This aligns the DOM with the stated contract and stops duplicate landmark failures.&#x20;
+
+---
+
+## 4) JSON-LD strategy (single emitter)
+
+**Principles**
+
+* Pure builders in `src/lib/seoSchema.js`; all `@id`/`url` are absolute; **one** emitter component `Schema.astro` outputs a single `@graph` script per page.&#x20;
+
+**Example composition**
+Service spokes include LocalBusiness + Service/Offer + Breadcrumbs; optionally AggregateRating + Review nodes behind the `MIN_REVIEWS_FOR_AGG` gate.&#x20;
+
+**Guards**
+
+* Post-build consolidation merges accidental multiples; schema validator and tests enforce “single script”.&#x20;
+
+**Emitter usage**
+
+```astro
+---
+// src/components/Schema.astro
+const { graph = [] } = Astro.props;
+---
+<script type="application/ld+json">{JSON.stringify({ '@context': 'https://schema.org', '@graph': graph })}</script>
+```
+
+---
+
+## 5) Synonym redirect endpoints (SSR 301)
+
+**Pattern**
+Every synonym page exports `prerender = false` and returns a 301 to the canonical service × suburb path, preserving query/hash and trailing slash.&#x20;
+
+**Examples & mapping**
+
+* `bond-cleaners/[suburb].ts` → bond-cleaning
+* `end-of-lease-cleaning/[suburb].ts` → bond-cleaning
+* `house-cleaning/[suburb].ts` → spring-cleaning
+* `bathroom-cleaning/[suburb].ts` → bathroom-deep-clean&#x20;
+
+**Endpoint skeleton**
+
+```ts
+// src/pages/bond-cleaners/[suburb].ts
+import type { APIRoute } from 'astro';
+export const prerender = false;
+export const GET: APIRoute = ({ params, redirect }) => {
+  const suburb = params.suburb!;
+  return redirect(`/services/bond-cleaning/${suburb}/`, 301);
+};
+```
+
+---
+
+## 6) Redirect parity & local testing
+
+For parity with Netlify, use the emulator that applies `:param` and `:splat` substitutions against `public/_redirects`, so Playwright results mirror prod behavior.&#x20;
+
+```bash
+npm run build
+npm run preview           # or: npm run serve:redirects
+```
+
+Representative rules (cluster rename, legacy service path):&#x20;
+
+```
+/blog/ipswich-region              /blog/ipswich              301
+/areas/ipswich-region/*           /areas/ipswich/:splat      301
+/services/:service/:cluster/:suburb/*  /services/:service/:suburb  301
+```
+
+---
+
+## 7) Edge middleware toggle (`USE_EDGE`)
+
+Keep Edge off in local/CI; when enabled, require `deno` to be present (guard script aborts otherwise). `env:print` helps you verify the effective values.&#x20;
+
+```bash
+# .env
+USE_EDGE=false
+# turn it on intentionally:
+USE_EDGE=true    # with Deno installed
+
+npm run env:print
+node scripts/guard-deno.js
+```
+
+---
+
+## 8) Internal link integrity & coverage
+
+* Build guard crawls `dist/**/*.html` and **fails** on dead internal anchors.
+* Coverage audit requires ≥1 meaningful in-content link per page and emits suggestion snippets under `__ai/internal-link-suggestions/`.&#x20;
+
+```bash
+npm run build || true
+npm run audit:internal-links
+```
+
+---
+
+## 9) Build & guardrails pipeline (practical invocations)
+
+* Pre-build audits for routes; consolidated JSON-LD; related-links caps; sitemap canonical checks; link integrity.&#x20;
+* Quick start & preview commands are documented (dev/build/preview/test).&#x20;
+
+---
+
+## 10) A11y: fast, reliable axe pass
+
+Your a11y section codifies the cures we apply in code and tests—unique labels for every nav and demotion of non-nav collections. Keep the axe harness excluding unstable widgets (maps/iframes/forms) for signal.&#x20;
+
+---
+
+## 11) What to run now (tight, actionable)
+
+1. **Build & preview**
+
+   ```bash
+   npm ci
+   npm run build && npm run preview
+   ```
+2. **Axe + nav invariants** (Playwright)
+
+   * Assert: one `[data-relservices]` per page; header/footer have unique labels.&#x20;
+3. **Redirect parity check**
+
+   * Use emulator; probe a few `:splat`/synonym routes and confirm 301s.&#x20;
+4. **Internal links audit**
+
+   * Ensure zero dead anchors and ≥1 in-content internal link everywhere.&#x20;
+5. **Edge off by default**
+
+   * `USE_EDGE=false` for local/CI; flip to `true` only when Deno is present.&#x20;
+
+---
+
+## 12) “What & Why” quick map (so future readers land fast)
+
+* **Cross-service map build** → determinism & a11y stability; UI consumes `CrossServiceItem[]` with explicit `(nearby)` marking.&#x20;
+* **Single JSON-LD emitter** → consistent `@graph`, absolute IDs/URLs, strictly one script per page.&#x20;
+* **Synonym SSR redirects** → clean index; 301s from popular phrasing to canonicals; prerender off.&#x20;
+* **Redirect emulator** → local tests that match Netlify’s `:param` / `:splat`.&#x20;
+* **Edge toggle** → no local/CI Deno foot-guns; explicit opt-in.&#x20;
+
+---
+
+## 13) Optional polish (high leverage, low risk)
+
+* Add a tiny Vitest spec around the “nearby” fallback to lock semantics (prefer same-cluster, then deterministic global first).&#x20;
+* Extend Playwright to fail if more than one `[data-relservices]` appears or any anonymous `<nav>` is present.&#x20;
+
+---
+
+If you’d like, I can package the adapter + accessor files and a minimal Playwright spec using your selectors so you can drop them straight into `src/lib/` and `tests/e2e/` and run the suite immediately.

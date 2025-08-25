@@ -1,0 +1,418 @@
+Love the brief — it’s tight and your rules line up with how Google wants sites to flow (focused, canonical, low-bloat). Here’s what I’d tweak, plus drop-in code to make it sturdier and more “stage-aware” for your 10-spoke rollout.
+
+Quick verdict
+
+The approach is solid: whitelist + per-service coverage + normalized slugs + tiny related set.
+
+Biggest risks are wrong cluster lookups, self-link in “related”, label/text drift, and accidental link bloat when multiple components render links on the same page.
+
+Add P1/P2 ordering, display-name fidelity (pull the official name, not title-cased slugs), and a build audit to keep N=3 links per placement.
+
+Upgrades that matter
+
+Make self-link optional by placement
+
+Keep it for AcceptanceSlice (so users reconfirm “you’re on Bond Cleaning in Springfield Lakes”), but disable it in “Related” widgets where it wastes a slot.
+
+Add includeSelf flag (default false).
+
+Fix cluster lookup + use official suburb names
+
+Use a precomputed SUBURB_TO_CLUSTER map and SUBURB_DISPLAY map from areas.clusters.json. That preserves punctuation (e.g., Mount Coot-tha, St Lucia).
+
+Prioritise by your coverage grid (P1→P2→rest)
+
+Wire a prioritiseByGrid() hook so Ipswich P1 spokes always float to the top during this first stage.
+
+Deterministic ordering & de-dupe across placements
+
+Ensure “Related”, “Acceptance”, and “Footer” don’t surface the same href twice. Add a tiny in-memory de-duper per render pass.
+
+Service-aware labels
+
+Don’t hardcode “Bond Cleaning …” — map service→friendly label so anchors match the H1 on destination pages (helps CTR and scent).
+
+Hard cap, enforced by a build audit
+
+Keep count=3 in each placement and fail the build if any placement outputs >3 anchors. This prevents quiet link creep over time.
+
+Drop-in internalLinks.js (upgraded)
+// internalLinks.js
+import areas from '~/content/areas.clusters.json';
+import coverage from '~/data/serviceCoverage.json';
+import slugify from '~/utils/slugify.js';
+import { resolveClusterSlug } from '~/utils/geoHandler.js';
+
+const CLUSTERS = Array.isArray(areas?.clusters) ? areas.clusters : [];
+
+// suburb-slug -> canonical cluster slug (e.g., "ipswich" | "brisbane" | "logan")
+const SUBURB_TO_CLUSTER = new Map();
+// suburb-slug -> official display name
+const SUBURB_DISPLAY = new Map();
+for (const c of CLUSTERS) {
+  const canon = resolveClusterSlug(c.slug);
+  for (const name of (c.suburbs || [])) {
+    const s = slugify(name);
+    SUBURB_TO_CLUSTER.set(s, canon);
+    SUBURB_DISPLAY.set(s, name);
+  }
+}
+
+// Optional: service → human label (mirrors your H1s)
+const SERVICE_LABEL = {
+  'bond-cleaning': 'Bond Cleaning',
+  'spring-cleaning': 'Spring Cleaning',
+  'bathroom-deep-clean': 'Bathroom Deep Clean',
+};
+
+function serviceLabel(svc) {
+  return SERVICE_LABEL[svc] || unslugToName(svc);
+}
+function displayNameForSuburb(slug) {
+  return SUBURB_DISPLAY.get(slug) || unslugToName(slug);
+}
+function dedupeByHref(list) {
+  const seen = new Set();
+  return list.filter(x => (seen.has(x.href) ? false : (seen.add(x.href), true)));
+}
+
+/**
+ * getRelatedServiceLinks
+ * Rules:
+ * - optional self-link (current “money” page)
+ * - neighbors: other covered suburbs in same cluster
+ * - fallbacks: service hub, cluster hub
+ */
+export function getRelatedServiceLinks({
+  service = 'bond-cleaning',
+  suburbSlug,
+  count = 3,
+  includeSelf = false,
+  prioritiseByGrid = null,   // (string[] slugs) => string[]
+} = {}) {
+  const links = [];
+  const labelBase = serviceLabel(service);
+  const covered = new Set((coverage?.[service] || []).map(s => s.toLowerCase()));
+
+  // 1) Optional: self (“money”) link
+  if (includeSelf && suburbSlug) {
+    links.push({
+      label: `${labelBase} in ${displayNameForSuburb(suburbSlug)}`,
+      href: `/services/${service}/${suburbSlug}/`,
+    });
+  }
+
+  // 2) Neighbors in same cluster
+  const clusterSlug = suburbSlug ? SUBURB_TO_CLUSTER.get(suburbSlug) : null;
+  if (clusterSlug) {
+    const cluster = CLUSTERS.find(c => resolveClusterSlug(c.slug) === clusterSlug);
+    let neighbors = (cluster?.suburbs || [])
+      .map(n => slugify(n))
+      .filter(s => s !== suburbSlug && covered.has(s));
+
+    if (typeof prioritiseByGrid === 'function') {
+      neighbors = prioritiseByGrid(neighbors);
+    }
+
+    for (const s of neighbors) {
+      if (links.length >= count) break;
+      links.push({
+        label: `${labelBase} ${displayNameForSuburb(s)}`,
+        href: `/services/${service}/${s}/`,
+      });
+    }
+  }
+
+  // 3) Fallbacks
+  if (links.length < count) {
+    links.push({ label: `All ${labelBase}`, href: `/services/${service}/` });
+  }
+  if (clusterSlug && links.length < count) {
+    links.push({ label: `Areas — ${unslugToName(clusterSlug)}`, href: `/areas/${clusterSlug}/` });
+  }
+
+  return dedupeByHref(links).slice(0, count);
+}
+
+// Keep as fallback only; prefer official names from SUBURB_DISPLAY
+export function unslugToName(slug) {
+  if (!slug) return '';
+  const spaced = String(slug).replace(/-/g, ' ');
+  return spaced.replace(/\b\w/g, c => c.toUpperCase());
+}
+
+P1/P2 prioritiser (stage-aware)
+// prioritiseByGrid.js
+const P1 = new Set([
+  'ipswich','springfield','springfield-lakes','redbank-plains','goodna',
+  'yamanto','ripley','raceview','bundamba','booval',
+]);
+const P2 = new Set([]); // add when you unlock the next 10
+
+export function prioritiseByGrid(slugs) {
+  const p1 = slugs.filter(s => P1.has(s));
+  const p2 = slugs.filter(s => P2.has(s) && !P1.has(s));
+  const rest = slugs.filter(s => !P1.has(s) && !P2.has(s));
+  return [...p1, ...p2, ...rest];
+}
+
+
+Usage in consumers:
+
+import { getRelatedServiceLinks } from '~/utils/internalLinks.js';
+import { prioritiseByGrid } from '~/utils/prioritiseByGrid.js';
+
+const links = getRelatedServiceLinks({ service, suburbSlug, count: 3, includeSelf: false, prioritiseByGrid });
+
+Build audit to enforce “no link bloat”
+
+Fail the build if any “related links” block renders >3 anchors. Add a small attribute in your component:
+
+<!-- RelatedLinks.astro -->
+<nav class="related-links" data-relblock>
+  {links.map(l => <a href={l.href}>{l.label}</a>)}
+</nav>
+
+
+Then add this script (e.g., scripts/audit-related-links.mjs) and run it in CI after build:
+
+// scripts/audit-related-links.mjs
+import fs from 'fs';
+import path from 'path';
+
+const DIST = 'dist';
+let failures = 0;
+
+function* walk(dir) {
+  for (const name of fs.readdirSync(dir)) {
+    const fp = path.join(dir, name);
+    const st = fs.statSync(fp);
+    if (st.isDirectory()) yield* walk(fp);
+    else if (name.endsWith('.html')) yield fp;
+  }
+}
+
+for (const file of walk(DIST)) {
+  const html = fs.readFileSync(file, 'utf8');
+  // crude block split; good enough for a guardrail
+  const blocks = html.split('data-relblock').length - 1;
+  if (blocks > 0) {
+    // Count anchors inside each block
+    const relBlocks = html.split(/<nav[^>]*data-relblock[^>]*>/i).slice(1);
+    for (const blockHtml of relBlocks) {
+      const anchors = (blockHtml.match(/<a\s+[^>]*href=/gi) || []).length;
+      if (anchors > 3) {
+        failures++;
+        console.error(`Too many related links (${anchors}) in ${file}`);
+      }
+    }
+  }
+}
+
+if (failures) {
+  console.error(`❌ Related links audit failed: ${failures} block(s) exceed 3 links.`);
+  process.exit(1);
+} else {
+  console.log('✅ Related links audit passed');
+}
+
+
+Add to package.json scripts:
+
+{
+  "scripts": {
+    "build": "astro build",
+    "postbuild": "node scripts/audit-related-links.mjs"
+  }
+}
+
+Optional niceties (small wins)
+
+Scent consistency: Make each link label match the destination H1 exactly (you already will if your H1 uses {serviceLabel} in {Suburb}).
+
+Inbound parity: Ensure every service×suburb page receives ≥2 inbound internal links (cluster hub → page, another suburb page → page). A tiny Playwright check can assert 200 on each target and at least 2 <a href="/services/.../suburb/"> occurrences across the site.
+
+Anchor variety (safe synonyms): If your AI intent rules permit, rotate a tiny set of safe variants for labels (e.g., “End of Lease Cleaning — {Suburb}”) to improve CTR without changing URLs.
+
+reat snippet — you’re close, but there are a few logic traps and polish wins I’d tackle before you wire this into templates.
+
+What’s off (and why)
+
+Mixed areas shapes
+You treat areas as areas.clusters in one place, then as a plain object with Object.entries(areas) later. If your file is areas.clusters.json with { "clusters": [...] }, that second branch will never find the cluster.
+
+Coverage normalization
+toLowerCase() isn’t enough. Your data may be mixed-case (“Forest Lake”) or already slugged. Always slugify coverage entries before comparing.
+
+Hard-coded labels
+Labels say “Bond Cleaning …” even when service is "spring-cleaning" or "bathroom-deep-clean". Use a service slug → title map.
+
+Display names
+unslugToName() guesses casing (“St Lucia”, “Mount Ommaney” etc. can be wrong). Prefer a lookup from your clusters JSON; fall back to prettifying the slug only if unknown.
+
+Duplicates & count
+A suburb can sneak in twice (current + related). Use a set to dedupe before slicing to count.
+
+Small cleanups
+BASE is unused; drop it. Keep resolveClusterSlug in the cluster resolver so aliases (“brisbane-west” → “brisbane”) are honored.
+
+Drop-in improved module
+
+Paste this over your current util (or adapt names to fit your repo). It keeps your signatures but fixes the issues above and makes labels service-aware.
+
+import areas from '~/content/areas.clusters.json';
+import coverage from '~/data/serviceCoverage.json';
+import slugify from '~/utils/slugify.js';
+import { resolveClusterSlug } from '~/utils/geoHandler.js';
+
+/** Map service slugs to human titles for labels */
+const SERVICE_TITLES = {
+  'bond-cleaning': 'Bond Cleaning',
+  'spring-cleaning': 'Spring Cleaning',
+  'bathroom-deep-clean': 'Bathroom Deep Clean',
+};
+
+/** Normalize once */
+function normSlug(s) {
+  return slugify(String(s || ''));
+}
+
+/** Find the canonical cluster slug for a given suburb slug (respects aliases) */
+export function findClusterSlugForSuburb(suburbSlug) {
+  const list = Array.isArray(areas?.clusters) ? areas.clusters : [];
+  for (const c of list) {
+    if ((c.suburbs || []).some((name) => normSlug(name) === suburbSlug)) {
+      return resolveClusterSlug(c.slug); // e.g. brisbane-west -> brisbane
+    }
+  }
+  return null;
+}
+
+/** Return the cluster object (from areas.clusters) for a canonical cluster slug */
+function getClusterByCanonicalSlug(clusterSlug) {
+  const list = Array.isArray(areas?.clusters) ? areas.clusters : [];
+  return list.find((c) => resolveClusterSlug(c.slug) === clusterSlug) || null;
+}
+
+/** Best-effort display name for a suburb slug, using source of truth first */
+export function displayNameForSuburbSlug(suburbSlug) {
+  if (!suburbSlug) return '';
+  const list = Array.isArray(areas?.clusters) ? areas.clusters : [];
+  for (const c of list) {
+    const hit = (c.suburbs || []).find((name) => normSlug(name) === suburbSlug);
+    if (hit) return hit; // use real casing from JSON
+  }
+  return unslugToName(suburbSlug); // fallback prettifier
+}
+
+/** Prettify "forest-lake" -> "Forest Lake" (fallback only) */
+export function unslugToName(slug) {
+  if (!slug) return '';
+  return String(slug)
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/**
+ * Build related internal links for a service/suburb page.
+ * Order:
+ *  1) The current money page (if suburb provided)
+ *  2) Up to N-1 nearby covered suburbs from the same cluster
+ *  3) Fallbacks: service hub, areas hub (cluster)
+ */
+export function getRelatedServiceLinks({
+  service = 'bond-cleaning',
+  suburbSlug,
+  count = 3,
+} = {}) {
+  const links = [];
+  const seen = new Set();
+
+  const serviceTitle = SERVICE_TITLES[service] || 'Service';
+
+  // Normalize coverage list for this service to slugs
+  const covered = new Set(
+    (coverage?.[service] || []).map((s) => normSlug(s))
+  );
+
+  // 1) Primary money page (current)
+  if (suburbSlug) {
+    const name = displayNameForSuburbSlug(suburbSlug);
+    pushUnique(links, seen, {
+      label: `${serviceTitle} in ${name}`,
+      href: `/services/${service}/${suburbSlug}/`,
+    });
+  }
+
+  // 2) Nearby suburbs within same cluster (only those covered for this service)
+  const clusterSlug = suburbSlug ? findClusterSlugForSuburb(suburbSlug) : null;
+  if (clusterSlug && links.length < count) {
+    const cluster = getClusterByCanonicalSlug(clusterSlug);
+    if (cluster?.suburbs?.length) {
+      for (const n of cluster.suburbs) {
+        if (links.length >= count) break;
+        const s = normSlug(n);
+        if (s === suburbSlug) continue;        // skip current
+        if (!covered.has(s)) continue;         // only places you cover for this service
+        pushUnique(links, seen, {
+          label: `${serviceTitle} in ${n}`,
+          href: `/services/${service}/${s}/`,
+        });
+      }
+    }
+  }
+
+  // 3) Fallbacks to round out count
+  if (links.length < count) {
+    pushUnique(links, seen, {
+      label: `All ${serviceTitle} Services`,
+      href: `/services/${service}/`,
+    });
+  }
+  if (clusterSlug && links.length < count) {
+    const cluster = getClusterByCanonicalSlug(clusterSlug);
+    const clusterName = cluster?.name || unslugToName(clusterSlug);
+    pushUnique(links, seen, {
+      label: `Areas — ${clusterName}`,
+      href: `/areas/${clusterSlug}/`,
+    });
+  }
+
+  return links.slice(0, count);
+}
+
+/** Helper: push if href not already present */
+function pushUnique(arr, seen, item) {
+  if (!item?.href) return;
+  if (seen.has(item.href)) return;
+  seen.add(item.href);
+  arr.push(item);
+}
+
+Why this version is safer
+
+Consistent data shape: always reads areas.clusters, and runs slugs through resolveClusterSlug() to honor your Ipswich/Brisbane/Logan alias policy.
+
+Correct coverage check: compares slugified coverage against slugified suburb names.
+
+Service-aware labels: no more “Bond Cleaning …” on Spring/Bathroom pages.
+
+Proper casing: uses the cluster JSON’s exact suburb spelling when available (e.g., “St Lucia”).
+
+No dupes: a tiny pushUnique prevents repeat links even as the list grows.
+
+Quick test ideas (Playwright or unit)
+
+Service label correctness:
+Assert /services/spring-cleaning/kenmore/ produces labels starting “Spring Cleaning …”.
+
+Alias cluster handling:
+A suburb in the old “brisbane-west” config resolves to the canonical brisbane areas hub link.
+
+Coverage filter:
+If a suburb in the cluster isn’t in serviceCoverage[service], it’s not suggested.
+
+Casing:
+“st-lucia” renders “St Lucia”.
+
+If you want, I can also wire a tiny unit test file that runs this against your real JSON to catch regressions when suburbs/coverage change.

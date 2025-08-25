@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Citrus degreaser",
+    "use": "Kitchen oils and oven grease",
+    "dilution": "1:4",
+    "notes": "Low odour; rinse well; avoid bare aluminium"
+  },
+  {
+    "name": "Neutral cleaner",
+    "use": "Final wipe on most surfaces",
+    "dilution": "1:100",
+    "notes": "Good for paintwork, doors, skirtings"
+  },
+  {
+    "name": "Citric acid",
+    "use": "Soap scum and light scale",
+    "dilution": "5–8% w/v",
+    "notes": "Rinse metals quickly; ventilate"
+  },
+  {
+    "name": "Hydrogen peroxide 3%",
+    "use": "Surface mould on silicone/grout",
+    "dilution": "Ready to use",
+    "notes": "Lightens staining; deep subsurface may persist"
+  }
+]

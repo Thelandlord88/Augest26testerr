@@ -1,0 +1,24 @@
+{
+  "hero": {
+    "bond-cleaning": {
+      "h1": "Bond Cleaning in {area} — Bond-Back Focused",
+      "sub": "Agent-aligned checklist, low-odour chemistry, friendly local team.",
+      "cta": "Get my guaranteed quote"
+    },
+    "spring-cleaning": {
+      "h1": "Spring Cleaning in {area} — Fresh Start",
+      "sub": "Top-to-bottom reset tailored to your home.",
+      "cta": "Book a seasonal refresh"
+    },
+    "bathroom-deep-clean": {
+      "h1": "Bathroom Deep Clean in {area}",
+      "sub": "De-soap, descale and de-haze for a like-new finish.",
+      "cta": "Restore my bathroom"
+    }
+  },
+  "difference": [
+    "7-day re-clean support if an agent flags items",
+    "Low-odour, fast-rinse products",
+    "Local family team — Trent & Pandora"
+  ]
+}

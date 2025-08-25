@@ -1,0 +1,2897 @@
+Awesome—here’s a thorough, copy-pasteable plan to harden quality, DX, and CI without breaking what’s already green. It includes exact file changes and “why” for each item. You can apply these in any order, but the sequence below will give you the biggest wins first.
+
+---
+
+# 0) Patch checklist (quick navigation)
+
+* [ ] ESLint: dedupe config, restore safety rules, fix `no-unused-vars` noise
+* [ ] TS ambient types: remove `@ts-ignore` via `global.d.ts` + JSON module decls
+* [ ] CI workflows: remove dupes, cache Playwright browsers, pin action versions
+* [ ] Security: CodeQL, Dependabot (or Renovate), SECURITY.md
+* [ ] Netlify Edge toggle docs: `.env.example` + README snippet
+* [ ] Schema drift guard: JSON-LD hashing test (runs after build)
+* [ ] Redirect parity coverage: data-driven Playwright spec for all synonyms
+* [ ] Lighthouse CI budgets: `lighthouserc.json` + GH workflow
+* [ ] Package hygiene: `engines`, `private`, license consistency
+* [ ] Prebuild vs predev split: faster local cycles
+* [ ] Visual baseline automation: PR artifact + optional manual rebaseline
+* [ ] Cleanup: legacy components removal gate, Cypress removal plan, misc TODO pass
+
+---
+
+## 1) ESLint hardening (quality / correctness)
+
+**Why:** ensure real issues aren’t hidden, and silence intentional unused params cleanly.
+
+### 1.1 Replace duplicated / lenient config
+
+**.eslintrc.cjs** (or `.eslintrc.js`) — use this as a base and remove any trailing/duplicated plugin block you currently have:
+
+```js
+/* eslint-env node */
+module.exports = {
+  root: true,
+  ignorePatterns: [
+    'dist/',
+    'playwright-report/',
+    'test-results/',
+    '**/*.snap',
+  ],
+  env: { es2022: true, browser: true, node: true },
+  parser: '@typescript-eslint/parser',
+  parserOptions: {
+    project: ['./tsconfig.json'],
+    tsconfigRootDir: __dirname,
+    sourceType: 'module',
+    ecmaVersion: 'latest',
+  },
+  plugins: ['@typescript-eslint', 'import', 'unused-imports'],
+  extends: [
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:astro/recommended',
+    // Optionally:
+    // 'plugin:prettier/recommended',
+  ],
+  settings: {
+    'import/resolver': {
+      typescript: { project: ['./tsconfig.json'] },
+      node: { extensions: ['.js', '.jsx', '.ts', '.tsx', '.astro'] },
+    },
+  },
+  overrides: [
+    {
+      files: ['**/*.astro'],
+      parser: 'astro-eslint-parser',
+      parserOptions: { parser: '@typescript-eslint/parser', extraFileExtensions: ['.astro'] },
+      rules: {
+        // Astro-specific tweaks here
+      },
+    },
+    {
+      files: ['tests/**/*.{ts,tsx,js}'],
+      env: { jest: false, node: true },
+      rules: {
+        'no-console': 'off',
+      },
+    },
+    {
+      files: ['scripts/**/*.{js,mjs,ts}'],
+      env: { node: true },
+    },
+  ],
+  rules: {
+    // Prefer catching real undefineds rather than turning the rule off globally
+    'no-undef': 'error',
+
+    // Clean “unused” while allowing intentional placeholders:
+    'no-unused-vars': 'off',
+    '@typescript-eslint/no-unused-vars': 'off',
+    'unused-imports/no-unused-imports': 'error',
+    'unused-imports/no-unused-vars': [
+      'warn',
+      { args: 'after-used', argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true },
+    ],
+
+    // Import hygiene (helps keep order consistent)
+    'import/order': [
+      'warn',
+      {
+        'newlines-between': 'always',
+        alphabetize: { order: 'asc', caseInsensitive: true },
+        groups: [['builtin', 'external'], ['internal'], ['parent', 'sibling', 'index'], ['object', 'type']],
+        pathGroups: [{ pattern: '~/**', group: 'internal' }],
+        pathGroupsExcludedImportTypes: ['builtin'],
+      },
+    ],
+  },
+};
+```
+
+**What to do next:**
+
+* Remove the duplicate plugin section at the end of your current ESLint config.
+* Fix intentional unused params by prefixing with `_` (this clears 90%+ of the noise without hiding real issues).
+
+---
+
+## 2) TS ambient module declarations (remove `@ts-ignore`)
+
+**Why:** eliminate ignore comments; make dynamic JSON imports and optional modules typed.
+
+### 2.1 Global ambient declarations
+
+Create `src/types/global.d.ts`:
+
+```ts
+// src/types/global.d.ts
+
+// Generic JSON import support
+declare module '*.json' {
+  const value: unknown;
+  export default value;
+}
+
+// Project-specific JSON modules (stronger typing improves DX)
+declare module '~/data/cluster_map.json' {
+  export type ClusterMap = Record<string, { suburbs: string[]; cluster?: string }>;
+  const data: ClusterMap;
+  export default data;
+}
+
+// Example: if you import a generated file
+declare module '~/data/crossServiceMap.json' {
+  export type CrossServiceItem = {
+    label: string;
+    href: string;
+    here: boolean;
+    data: { service: string; suburb: string; source?: 'same-suburb' | 'nearby' };
+  };
+  export type CrossServiceMap = Record<string, Record<string, CrossServiceItem[]>>;
+  const map: CrossServiceMap;
+  export default map;
+}
+
+// Optional: declare modules for any “virtual” imports used in guards/tools
+declare module 'virtual:blog-base' {
+  const BLOG_BASE: string;
+  export default BLOG_BASE;
+}
+```
+
+**tsconfig.json** — ensure it includes the types folder:
+
+```json
+{
+  "compilerOptions": {
+    "types": ["node", "vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["src/*"]
+    }
+  },
+  "include": ["src", "scripts", "tests", "astro.config.*", "global.d.ts", "src/types/**/*.d.ts"]
+}
+```
+
+> Now you can delete the `@ts-ignore` lines that existed purely to appease JSON imports / virtual modules.
+
+---
+
+## 3) CI workflows: dedupe, cache, and speed up
+
+**Why:** avoid duplicate runs; cache heavy Playwright browser bits to cut minutes off CI.
+
+### 3.1 Remove duplicates
+
+* If both `.github/workflows/lhci.yml` and `.github/workflows/_lhci.yml` exist, delete the inactive one.
+* If `ci.yml` appears twice under slightly different names, keep one canonical file.
+
+### 3.2 Playwright cache + single build flow
+
+Create/replace `.github/workflows/ci.yml`:
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install Playwright (only if cache miss)
+        run: npx playwright install --with-deps
+
+      - name: Build (once)
+        env:
+          USE_EDGE: 'false'
+        run: npm run build
+
+      - name: Unit tests
+        run: npm run test:unit --silent
+
+      - name: E2E tests
+        run: npm test --silent
+
+      - name: Upload Playwright report (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+```
+
+> This runs a single build, then both unit and E2E. No duplicate builds; Playwright browsers are cached.
+
+---
+
+## 4) Security posture: CodeQL + Dependabot
+
+**Why:** surface security/code issues in the GH Security tab, keep deps current.
+
+### 4.1 CodeQL
+
+`.github/workflows/codeql.yml`:
+
+```yaml
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 3 * * 0' # weekly
+
+jobs:
+  analyze:
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['javascript-typescript']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+      - uses: github/codeql-action/autobuild@v3
+      - uses: github/codeql-action/analyze@v3
+```
+
+### 4.2 Dependabot (or Renovate)
+
+`.github/dependabot.yml`:
+
+```yaml
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: '/'
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    versioning-strategy: increase
+```
+
+(Optional) Add `.github/SECURITY.md` with how to report vulnerabilities.
+
+---
+
+## 5) Document the Netlify Edge toggle
+
+**Why:** prevent local dev/CI failures when Deno isn’t present; keep prod explicit.
+
+### 5.1 `.env.example`
+
+```dotenv
+# Edge middleware is OFF by default locally/CI. Set to "true" to enable.
+USE_EDGE=false
+```
+
+### 5.2 README blurb (paste in “Local development”)
+
+````md
+### Netlify Edge (optional)
+Local dev and CI run without Netlify Edge. To test Edge middleware locally:
+
+```bash
+USE_EDGE=true npm run dev
+````
+
+If Deno isn’t installed, the guard script will error early with a helpful message. On Netlify, set `USE_EDGE=true` in the site’s environment if you intend to run Edge in production.
+
+````
+
+---
+
+## 6) Schema drift guard (JSON-LD hashing)
+
+**Why:** catch accidental structural changes to your JSON-LD `@graph` before they ship.
+
+### 6.1 Deterministic hash script
+
+`scripts/hash-schema.mjs`:
+
+```js
+#!/usr/bin/env node
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+
+function walk(dir) {
+  const out = [];
+  for (const f of fs.readdirSync(dir)) {
+    const p = path.join(dir, f);
+    const s = fs.statSync(p);
+    if (s.isDirectory()) out.push(...walk(p));
+    else if (f.endsWith('.html')) out.push(p);
+  }
+  return out;
+}
+
+function sortKeysDeep(obj) {
+  if (Array.isArray(obj)) return obj.map(sortKeysDeep);
+  if (obj && typeof obj === 'object') {
+    return Object.keys(obj)
+      .sort()
+      .reduce((acc, k) => {
+        acc[k] = sortKeysDeep(obj[k]);
+        return acc;
+      }, {});
+  }
+  return obj;
+}
+
+function extractLd(html) {
+  const re = /<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi;
+  const blocks = [];
+  let m;
+  while ((m = re.exec(html))) {
+    try {
+      const json = JSON.parse(m[1]);
+      blocks.push(json);
+    } catch { /* ignore */ }
+  }
+  if (!blocks.length) return null;
+  // If multiple blocks exist, compose into one big array for hashing
+  return blocks.length === 1 ? blocks[0] : blocks;
+}
+
+const ROOT = 'dist';
+const files = walk(ROOT);
+const hashes = {};
+
+for (const file of files) {
+  const html = fs.readFileSync(file, 'utf8');
+  const ld = extractLd(html);
+  if (!ld) continue;
+  const stable = JSON.stringify(sortKeysDeep(ld));
+  const hash = crypto.createHash('sha256').update(stable).digest('hex').slice(0, 16);
+  hashes[file.replace(/^dist\//, '')] = hash;
+}
+
+const outFile = '__ai/schema-hash.json';
+fs.mkdirSync('__ai', { recursive: true });
+fs.writeFileSync(outFile, JSON.stringify(hashes, null, 2));
+console.log(`[schema-hash] wrote ${outFile} with ${Object.keys(hashes).length} entries`);
+````
+
+Make executable:
+
+```bash
+chmod +x scripts/hash-schema.mjs
+```
+
+### 6.2 Compare against last baseline
+
+`scripts/compare-schema-hash.mjs`:
+
+```js
+#!/usr/bin/env node
+import fs from 'node:fs';
+
+const cur = JSON.parse(fs.readFileSync('__ai/schema-hash.json', 'utf8'));
+let prev = {};
+try { prev = JSON.parse(fs.readFileSync('__ai/schema-hash.baseline.json', 'utf8')); } catch {}
+
+const diffs = [];
+for (const k of Object.keys(cur)) {
+  if (!prev[k]) continue; // new page; ignore
+  if (prev[k] !== cur[k]) diffs.push(k);
+}
+
+if (diffs.length) {
+  console.error('[schema-hash] Drift detected in:\n' + diffs.map((d) => ` - ${d}`).join('\n'));
+  process.exit(1);
+} else {
+  console.log('[schema-hash] OK (no drift vs baseline)');
+}
+```
+
+**package.json** (scripts):
+
+```json
+{
+  "scripts": {
+    "ci:hash-graph": "node scripts/hash-schema.mjs",
+    "ci:verify-graph": "node scripts/compare-schema-hash.mjs"
+  }
+}
+```
+
+**Usage in CI:** after `npm run build`, run `npm run ci:hash-graph && npm run ci:verify-graph`. Check in an initial baseline as `__ai/schema-hash.baseline.json` once you’re happy.
+
+---
+
+## 7) Redirect parity coverage (all synonyms)
+
+**Why:** prevent gaps when you add a new SSR synonym endpoint.
+
+`tests/e2e/synonym-redirects.spec.ts`:
+
+```ts
+import { test, expect } from '@playwright/test';
+
+const cases: Array<{ from: string; to: string }> = [
+  // Keep this DRY: one entry per synonym. Add more as you add pages.
+  { from: '/bond-cleaners/ipswich/', to: '/services/bond-cleaning/ipswich/' },
+  { from: '/end-of-lease-cleaning/ipswich/', to: '/services/bond-cleaning/ipswich/' },
+  { from: '/exit-clean/ipswich/', to: '/services/bond-cleaning/ipswich/' },
+  { from: '/house-cleaning/indooroopilly/', to: '/services/spring-cleaning/indooroopilly/' },
+  { from: '/deep-cleaning/indooroopilly/', to: '/services/spring-cleaning/indooroopilly/' },
+  { from: '/bathroom-cleaning/springfield/', to: '/services/bathroom-deep-clean/springfield/' },
+  { from: '/shower-screen-restoration/springfield/', to: '/services/bathroom-deep-clean/springfield/' },
+];
+
+test.describe('Synonym redirects → canonical', () => {
+  for (const { from, to } of cases) {
+    test(`301: ${from} → ${to}`, async ({ page }) => {
+      const [resp] = await Promise.all([page.waitForResponse(() => true), page.goto(from, { waitUntil: 'domcontentloaded' })]);
+      expect([301, 308]).toContain(resp.status());
+      expect(new URL(page.url()).pathname + (new URL(page.url()).search || '')).toBe(new URL(to, page.url()).pathname);
+    });
+  }
+});
+```
+
+---
+
+## 8) Lighthouse CI budgets
+
+**Why:** ensure performance/a11y/SEO don’t regress.
+
+### 8.1 `lighthouserc.json`
+
+```json
+{
+  "ci": {
+    "collect": {
+      "numberOfRuns": 1,
+      "staticDistDir": "dist",
+      "url": [
+        "/",
+        "/areas/ipswich/",
+        "/services/bond-cleaning/ipswich/",
+        "/blog/ipswich/"
+      ]
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["error", { "minScore": 0.85 }],
+        "categories:accessibility": ["error", { "minScore": 0.95 }],
+        "categories:seo": ["error", { "minScore": 0.95 }],
+        "first-contentful-paint": ["warn", { "maxNumericValue": 2000 }],
+        "total-blocking-time": ["warn", { "maxNumericValue": 300 }]
+      }
+    },
+    "upload": {
+      "target": "temporary-public-storage"
+    }
+  }
+}
+```
+
+### 8.2 Workflow (single file)
+
+`.github/workflows/lhci.yml`:
+
+```yaml
+name: Lighthouse CI
+
+on:
+  pull_request:
+
+jobs:
+  lhci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx @lhci/cli autorun --config=./lighthouserc.json
+```
+
+---
+
+## 9) Package.json hygiene
+
+**Why:** ensure consistent Node, avoid accidental publish, correct license.
+
+`package.json` fields to add/update:
+
+```json
+{
+  "private": true,
+  "license": "MIT",
+  "engines": { "node": ">=20 <21" },
+  "scripts": {
+    "predev": "node scripts/predev.mjs",
+    "dev": "npm run predev && astro dev",
+    "build": "npm run build:faqs && astro build && node scripts/consolidate-ld.mjs && node scripts/audit-related-links.mjs && node scripts/validate-schema.js && node scripts/check-internal-links.mjs",
+    "ci:hash-graph": "node scripts/hash-schema.mjs",
+    "ci:verify-graph": "node scripts/compare-schema-hash.mjs"
+  }
+}
+```
+
+---
+
+## 10) Prebuild vs predev split (faster local)
+
+**Why:** heavy prebuild audits slow down local dev.
+
+`scripts/predev.mjs`:
+
+```js
+#!/usr/bin/env node
+// A lighter subset of prebuild checks for local dev.
+// Add anything quick and safe to run frequently.
+import { execSync } from 'node:child_process';
+
+try {
+  // Quick data validation (fast)
+  execSync('node scripts/validate-data.js', { stdio: 'inherit' });
+  // Optional: feature-flag others via env, or skip entirely for speed
+} catch (e) {
+  console.error('[predev] Non-fatal warning. See above.');
+  // Do not exit 1; keep dev fast/forgiving
+}
+```
+
+Make it executable:
+
+```bash
+chmod +x scripts/predev.mjs
+```
+
+> Keep the heavy audits in your `prebuild` path only (runs before `npm run build`).
+
+---
+
+## 11) Visual baseline automation
+
+**Why:** get diffs on PRs, keep human approval for baseline updates.
+
+`.github/workflows/visual.yml`:
+
+```yaml
+name: Visual snapshots
+
+on:
+  pull_request:
+
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - run: npx playwright install --with-deps
+
+      - run: npm run build
+
+      - name: Run Visual tests (no update)
+        run: npx playwright test tests/e2e/visual.spec.ts --reporter=html
+
+      - name: Upload visual report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-report
+          path: playwright-report/
+```
+
+(Optional) A separate, **manual** workflow that sets `UPDATE=1` to rebaseline after human approval.
+
+---
+
+## 12) Legacy components: removal gate
+
+**Why:** ensure demoted components are retired on schedule.
+
+`scripts/assert-legacy-removed.mjs`:
+
+```js
+#!/usr/bin/env node
+import fs from 'node:fs';
+
+const targets = [
+  'src/components/CrossServiceLinks.astro',
+  'src/components/SomeLegacyThing.notusing.astro',
+];
+
+const deadline = new Date('2025-10-01');
+
+if (new Date() > deadline) {
+  const stillThere = targets.filter((p) => fs.existsSync(p));
+  if (stillThere.length) {
+    console.error('[legacy-removal] Deadline passed. Remove these files:');
+    stillThere.forEach((t) => console.error(' -', t));
+    process.exit(1);
+  }
+}
+console.log('[legacy-removal] OK');
+```
+
+**package.json**:
+
+```json
+{
+  "scripts": {
+    "guard:legacy": "node scripts/assert-legacy-removed.mjs"
+  }
+}
+```
+
+Run `npm run guard:legacy` in CI weekly or before release.
+
+---
+
+## 13) Cypress removal (if still present)
+
+**Why:** less tooling surface area, faster CI.
+
+* Migrate any still-useful Cypress specs to Playwright (you already have parity for a11y/visual/redirects).
+* Remove Cypress devDep and `cypress/` directory.
+* Delete Cypress workflow (if any).
+* Update README to reflect Playwright-only E2E.
+
+---
+
+## 14) Misc quick wins
+
+* **Pin Action versions**: optionally to SHAs for stricter supply-chain safety.
+* **Normalize README slashes**: ensure route examples match actual trailing slash policy.
+* **Refactor “node -e …” one-liners**: move into `scripts/` to improve clarity and cross-platform behavior.
+* **Ambient types for JSON**: you now have them; remove remaining `@ts-ignore` lines around JSON imports.
+* **Small unit for `seoSchema.js`** (entityId consistency):
+
+`tests/unit/seoSchema.entityId.spec.ts`:
+
+```ts
+import { describe, it, expect } from 'vitest';
+// Adjust import path if yours differs
+import { suburbServiceGraph } from '../../src/lib/seoSchema';
+
+describe('seoSchema entity IDs', () => {
+  it('creates stable @id based on canonical URL', () => {
+    const graph = suburbServiceGraph({
+      service: 'bond-cleaning',
+      suburb: 'ipswich',
+      baseUrl: 'https://example.com'
+    });
+    const ids = new Set(graph.map((n: any) => n['@id']).filter(Boolean));
+    // No duplicates
+    expect(ids.size).toBe([...ids].length);
+    // Contains at least LocalBusiness and BreadcrumbList
+    expect([...ids].some((id) => id.includes('/#local-business'))).toBe(true);
+    expect([...ids].some((id) => id.includes('/#breadcrumbs'))).toBe(true);
+  });
+});
+```
+
+---
+
+# Full file list (add/update)
+
+**Add**
+
+* `src/types/global.d.ts`
+* `scripts/hash-schema.mjs`
+* `scripts/compare-schema-hash.mjs`
+* `scripts/predev.mjs`
+* `scripts/assert-legacy-removed.mjs`
+* `.github/workflows/ci.yml` (if you’re consolidating)
+* `.github/workflows/codeql.yml`
+* `.github/workflows/lhci.yml`
+* `.github/workflows/visual.yml`
+* `.github/dependabot.yml`
+* `lighthouserc.json`
+* `tests/e2e/synonym-redirects.spec.ts`
+* `tests/unit/seoSchema.entityId.spec.ts`
+
+**Modify**
+
+* `.eslintrc.cjs` (dedupe, tighten, add unused-imports)
+* `tsconfig.json` (`include` adds `src/types/**/*.d.ts`)
+* `.env.example` (`USE_EDGE=false`)
+* `README.md` (Edge toggle section; optional)
+* `package.json` (`engines`, `private`, scripts listed above)
+
+**Remove**
+
+* Duplicate workflows: `_lhci.yml` or second `ci.yml`, whichever is inactive
+* Cypress (optional, if fully migrated)
+
+---
+
+## Why this order works
+
+1. **Lint/types first** → catches real issues early.
+2. **CI caching + one build** → faster feedback across all PRs.
+3. **Security + budgets** → raise the baseline and keep it there.
+4. **Drift guards** (schema hash, visual artifacts) → prevent subtle regressions.
+5. **Cleanup & docs** → keep the repo legible and safe to evolve.
+
+When you’re ready, I can also provide a single “mega patch” (diff-style) that strings these exact file edits together, but everything above is ready to paste in as-is.
+--
+
+Awesome—here’s a **copy-paste PR pack** that turns your quick audit into concrete, low-risk changes you can land now. It keeps your current build/test surface stable and adds safety, speed, and clarity.
+
+---
+
+# 0) How to apply (suggested flow)
+
+```bash
+git checkout -b chore/repo-health-aug
+# Add files/edits from sections 1–12 below
+npm run lint && npm run test:unit
+npm test -- --grep=Accessibility
+npm run build
+```
+
+---
+
+# 1) ESLint hardening (remove dupes, tighten rules safely)
+
+> Goal: eliminate duplicate config, stop global “no-undef” disable, and convert noisy “unused var” warnings into explicit intent.
+
+### A. Replace your root ESLint config with this
+
+**.eslintrc.cjs**
+
+```js
+/* Root ESLint config — JS + TS, explicit overrides, no global disables */
+module.exports = {
+  root: true,
+  ignorePatterns: [
+    'dist/', 'tmp/', 'coverage/', 'playwright-report/', 'test-results/',
+    '**/*.snap', '**/*.png', '**/*.webm', '__ai/', 'sarif/'
+  ],
+  env: { browser: true, node: true, es2022: true },
+  parserOptions: { ecmaVersion: 'latest', sourceType: 'module' },
+
+  // Base plugins (no duplicate sections)
+  extends: [
+    'eslint:recommended',
+    'plugin:import/recommended'
+  ],
+  plugins: ['import'],
+
+  // JS rules (TS handled below)
+  rules: {
+    'no-console': ['warn', { allow: ['error', 'warn'] }],
+    'no-debugger': 'warn',
+    'import/newline-after-import': ['warn', { count: 1 }],
+    'import/order': ['warn', { 'newlines-between': 'always' }],
+  },
+
+  overrides: [
+    // TypeScript files
+    {
+      files: ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts'],
+      parser: '@typescript-eslint/parser',
+      extends: [
+        'plugin:@typescript-eslint/recommended',
+        'plugin:import/typescript'
+      ],
+      plugins: ['@typescript-eslint'],
+      rules: {
+        // Prefer TS’s understanding of vars; enforce underscore for intentional unused
+        'no-unused-vars': 'off',
+        '@typescript-eslint/no-unused-vars': ['warn', {
+          argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_'
+        }],
+        // No implicit any in new/changed code
+        '@typescript-eslint/no-explicit-any': 'warn',
+        // Safer async
+        '@typescript-eslint/no-misused-promises': ['warn', { checksVoidReturn: { attributes: false } }],
+      }
+    },
+
+    // Node scripts & config files — allow dev-style console usage
+    {
+      files: ['scripts/**/*.{js,mjs,cjs,ts}', '*.config.{js,cjs,ts}', 'vite.config.*', 'astro.config.*'],
+      rules: {
+        'no-console': 'off'
+      }
+    },
+
+    // Test files — relax a bit to reduce noise
+    {
+      files: ['tests/**/*.{ts,tsx,js}', 'cypress/**/*.{ts,js}'],
+      env: { jest: true, node: true },
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }]
+      }
+    }
+  ]
+};
+```
+
+### B. Add a simple ignore file
+
+**.eslintignore**
+
+```
+dist/
+tmp/
+playwright-report/
+test-results/
+__ai/
+sarif/
+*.snap
+*.png
+*.webm
+```
+
+### C. Package scripts (if missing)
+
+**package.json (partial)**
+
+```json
+{
+  "scripts": {
+    "lint": "eslint . --ext .js,.cjs,.mjs,.ts,.tsx",
+    "lint:fix": "npm run lint -- --fix",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}
+```
+
+> **Why:** No duplicate `plugins` blocks; JS v TS rules split via `overrides`; unused variables are now intentional with `_` prefix, reducing noise without hiding mistakes.
+
+---
+
+# 2) Remove `@ts-ignore` around JSON/dynamic imports with ambient types
+
+### A. Global typings for JSON and Vite env
+
+**src/types/global.d.ts**
+
+```ts
+// Allow importing arbitrary JSON (if resolveJsonModule is not enabled everywhere)
+declare module '*.json' {
+  const value: unknown;
+  export default value;
+}
+
+// Example: declare strongly-typed JSON if you have known shapes:
+declare module '~/data/cluster_map.json' {
+  export type CrossServiceMap = Record<string, Record<string, any>>;
+  const map: CrossServiceMap;
+  export default map;
+}
+
+// Vite/Astro ambient env typing (if not already present)
+/// <reference types="vite/client" />
+```
+
+### B. Make sure TS can resolve JSON modules
+
+**tsconfig.json (partial)**
+
+```json
+{
+  "compilerOptions": {
+    "resolveJsonModule": true,
+    "moduleResolution": "Bundler",
+    "module": "ESNext",
+    "types": ["vite/client"]
+  }
+}
+```
+
+> **Why:** The ambient module(s) eliminate the need for `@ts-ignore` on JSON imports and let you gradually tighten types where you care.
+
+---
+
+# 3) Consolidate Lighthouse CI (one workflow, budgets), delete duplicate file
+
+1. **Remove** the stray `._lhci.yml` or duplicate workflow if it exists.
+2. Add budgets + single workflow:
+
+**lighthouserc.json**
+
+```json
+{
+  "ci": {
+    "collect": {
+      "staticDistDir": "dist",
+      "numberOfRuns": 1
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["warn", {"minScore": 0.85}],
+        "categories:accessibility": ["error", {"minScore": 0.95}],
+        "categories:seo": ["warn", {"minScore": 0.90}],
+        "categories:pwa": "off",
+        "uses-rel-preload": "warn",
+        "uses-long-cache-ttl": "warn"
+      }
+    },
+    "upload": { "target": "filesystem", "outputDir": "lhci" }
+  }
+}
+```
+
+**.github/workflows/lhci.yml**
+
+```yaml
+name: Lighthouse CI
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lhci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: LHCI
+        run: npx @lhci/cli autorun --config=lighthouserc.json
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: lhci-report
+          path: lhci/**
+```
+
+> **Why:** One source of truth with budgets; artifacts attach to PRs; avoids duplicate runs.
+
+---
+
+# 4) Playwright cache + CI build consolidation
+
+**.github/workflows/e2e.yml**
+
+```yaml
+name: E2E (Playwright)
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Install Playwright browsers (with cache)
+        id: pw-setup
+        run: npx playwright install --with-deps
+
+      - name: Build once
+        run: npm run build
+
+      - name: Run E2E (reuse build)
+        env:
+          PLAYWRIGHT_TEST_BASE_URL: http://localhost:4322
+        run: |
+          npx playwright test --reporter=line
+```
+
+> **Why:** Avoids re-building in every job; browser cache comes from `playwright install` layer; runs are faster and greener.
+
+---
+
+# 5) Security posture: CodeQL + Dependabot
+
+**.github/workflows/codeql.yml**
+
+```yaml
+name: CodeQL
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '28 2 * * 2'
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript-typescript' ]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with: { languages: ${{ matrix.language }} }
+      - uses: github/codeql-action/autobuild@v3
+      - uses: github/codeql-action/analyze@v3
+```
+
+**.github/dependabot.yml**
+
+```yaml
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    ignore:
+      - dependency-name: "playwright"
+        # You can pin browsers separately if you prefer; otherwise remove this ignore
+```
+
+> **Why:** Surfaces vulnerable deps in Security tab and keeps your tree fresh.
+
+---
+
+# 6) Netlify Edge toggle docs & example env
+
+**.env.example**
+
+```
+# Default off locally/CI; turn on only when you want to test Edge middleware
+USE_EDGE=false
+```
+
+**README snippet (add under Local development)**
+
+````md
+### Netlify Edge (optional)
+Set `USE_EDGE=true` to run middleware locally. Requires Deno. A guard script checks for Deno and exits early with guidance if missing:
+
+```bash
+USE_EDGE=true npm run dev
+````
+
+On CI, Edge stays off unless explicitly enabled to avoid environment drift.
+
+````
+
+> **Why:** Makes the toggle discoverable and keeps local dev/CI stable.
+
+---
+
+# 7) Schema drift guard (hash the single `@graph` after build)
+
+**scripts/hash-ld.mjs**
+```js
+#!/usr/bin/env node
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+
+const DIST = 'dist';
+const results = [];
+
+function* htmlFiles(dir) {
+  for (const entry of fs.readdirSync(dir)) {
+    const p = path.join(dir, entry);
+    const s = fs.statSync(p);
+    if (s.isDirectory()) yield* htmlFiles(p);
+    else if (entry.endsWith('.html')) yield p;
+  }
+}
+
+// stable stringify (sort keys)
+function stableStringify(obj) {
+  if (Array.isArray(obj)) return `[${obj.map(stableStringify).join(',')}]`;
+  if (obj && typeof obj === 'object') {
+    const keys = Object.keys(obj).sort();
+    return `{${keys.map(k => JSON.stringify(k)+':'+stableStringify(obj[k])).join(',')}}`;
+  }
+  return JSON.stringify(obj);
+}
+
+for (const file of htmlFiles(DIST)) {
+  const html = fs.readFileSync(file, 'utf8');
+  const m = html.match(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/i);
+  if (!m) continue;
+
+  let json;
+  try { json = JSON.parse(m[1]); } catch { continue; }
+  const graph = Array.isArray(json?.['@graph']) ? json['@graph'] : [json];
+  const normalized = graph.map(n => JSON.parse(stableStringify(n)));
+  const hash = crypto.createHash('sha256').update(stableStringify(normalized)).digest('hex').slice(0, 12);
+  results.push({ file: file.replace(/^dist\//,''), hash });
+}
+
+const outPath = '__ai/schema-hashes.json';
+fs.mkdirSync(path.dirname(outPath), { recursive: true });
+fs.writeFileSync(outPath, JSON.stringify(results, null, 2));
+console.log(`Wrote ${outPath} with ${results.length} entries.`);
+
+// Optional: fail on drift if a baseline exists
+const baselinePath = '__ai/schema-hashes.baseline.json';
+if (fs.existsSync(baselinePath)) {
+  const before = JSON.parse(fs.readFileSync(baselinePath, 'utf8'));
+  const byFile = new Map(before.map(x => [x.file, x.hash]));
+  const drift = results.filter(x => byFile.get(x.file) && byFile.get(x.file) !== x.hash);
+  if (drift.length) {
+    console.error('Schema hash drift:', drift);
+    process.exit(1);
+  }
+}
+````
+
+**package.json (partial)**
+
+```json
+{
+  "scripts": {
+    "ci:hash-ld": "node scripts/hash-ld.mjs"
+  }
+}
+```
+
+> **First run** commits `__ai/schema-hashes.json` as baseline (rename to `.baseline.json` when stable). Later runs fail on unplanned schema changes.
+
+---
+
+# 8) Redirect parity: cover all synonym endpoints
+
+**tests/e2e/synonym-redirects.full.spec.ts**
+
+```ts
+import { test, expect } from '@playwright/test';
+
+const cases = [
+  ['/bond-cleaners/ipswich', '/services/bond-cleaning/ipswich/'],
+  ['/end-of-lease-cleaning/ipswich', '/services/bond-cleaning/ipswich/'],
+  ['/exit-clean/ipswich', '/services/bond-cleaning/ipswich/'],
+  ['/house-cleaning/indooroopilly', '/services/spring-cleaning/indooroopilly/'],
+  ['/deep-cleaning/indooroopilly', '/services/spring-cleaning/indooroopilly/'],
+  ['/bathroom-cleaning/ipswich', '/services/bathroom-deep-clean/ipswich/'],
+  ['/shower-screen-restoration/ipswich', '/services/bathroom-deep-clean/ipswich/'],
+];
+
+for (const [from, to] of cases) {
+  test(`SSR synonym: ${from} → 301 ${to}`, async ({ page, context, baseURL }) => {
+    const resp = await page.goto(from, { waitUntil: 'domcontentloaded' });
+    expect(resp?.status()).toBe(301);
+    const loc = resp?.headers()['location'];
+    expect(loc).toBe(to);
+    const r2 = await context.request.get(to);
+    expect(r2.ok()).toBeTruthy();
+  });
+}
+```
+
+> **Why:** Every alias gets an explicit test; no silent regressions.
+
+---
+
+# 9) Remove legacy components (time-boxed clean-up)
+
+**scripts/find-legacy.mjs**
+
+```js
+#!/usr/bin/env node
+import fs from 'node:fs';
+import path from 'node:path';
+const root = 'src';
+
+const patterns = [/\.notusing\./i, /CrossServiceLinks\.astro$/i, /legacy/i];
+
+function* files(dir) {
+  for (const e of fs.readdirSync(dir)) {
+    const p = path.join(dir, e);
+    const s = fs.statSync(p);
+    if (s.isDirectory()) yield* files(p);
+    else yield p;
+  }
+}
+
+const suspects = [];
+for (const f of files(root)) {
+  if (patterns.some(rx => rx.test(f))) suspects.push(f);
+}
+
+console.log('Legacy suspects:');
+for (const f of suspects) console.log(' -', f);
+if (!suspects.length) console.log('None.');
+```
+
+**package.json (partial)**
+
+```json
+{
+  "scripts": {
+    "legacy:find": "node scripts/find-legacy.mjs"
+  }
+}
+```
+
+> **Why:** Creates a target list for deletion in the next release cycle. Document the “remove by” date in a `docs/backlog.md`.
+
+---
+
+# 10) Lighthouse in CI with Playwright build reuse (optional merge)
+
+If you prefer a single workflow:
+
+* Make `lhci` job depend on the `e2e` job and download `dist/` artifact instead of rebuilding.
+* Or keep them separate for quicker iteration.
+
+---
+
+# 11) Package.json hygiene
+
+**package.json (add/confirm)**
+
+```json
+{
+  "private": true,
+  "license": "MIT",
+  "engines": { "node": ">=20 <21" },
+  "scripts": {
+    "predev": "node -e \"console.log('[predev] quick checks only')\"",
+    "dev": "npm run predev && astro dev",
+    "health": "node scripts/health.sh || true"
+  }
+}
+```
+
+> **Why:** Prevents accidental publish, locks Node intent, and reserves a slot for faster pre-dev checks.
+
+---
+
+# 12) Visual baseline automation (PR artifact + optional approve flow)
+
+**.github/workflows/playwright-visual.yml**
+
+```yaml
+name: Playwright Visual
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: 'npm' }
+      - run: npm ci
+      - run: npx playwright install --with-deps
+      - run: npm run build
+      - name: Run visual tests
+        run: npx playwright test tests/e2e/visual.spec.ts --reporter=line || true
+      - name: Upload diffs
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-diffs
+          path: test-results/**/*
+```
+
+> **Why:** Always produces diff artifacts for reviewers. Baseline updates remain a manual developer action to keep control.
+
+---
+
+# 13) Ambient JSON types for stricter enforcement (optional)
+
+If you want stricter shapes later, add interfaces per file:
+
+**src/types/data.d.ts**
+
+```ts
+declare module '~/content/areas.clusters.json' {
+  export interface Cluster {
+    slug: string;
+    suburbs: string[];
+    adjacency?: Record<string, string[]>;
+  }
+  const clusters: Cluster[] | { clusters: Record<string, { suburbs: string[], adjacency?: Record<string, string[]> }> };
+  export default clusters;
+}
+
+declare module '~/data/serviceCoverage.json' {
+  export type ServiceCoverage = Record<string, string[] | Record<string, boolean>>;
+  const coverage: ServiceCoverage;
+  export default coverage;
+}
+```
+
+> **Why:** Lets you gradually tighten call sites without a big-bang refactor.
+
+---
+
+# 14) Tiny smoke unit for `seoSchema` (entity ID & absolutes)
+
+**tests/unit/seoSchema.spec.ts**
+
+```ts
+import { describe, it, expect } from 'vitest';
+// adjust import path to your actual seo builders
+import * as seo from '../../src/lib/seoSchema';
+
+describe('seoSchema basics', () => {
+  it('creates absolute URLs and stable IDs', () => {
+    const g = seo.suburbServiceGraph({
+      serviceSlug: 'bond-cleaning',
+      suburbSlug: 'ipswich',
+      siteUrl: 'https://onen-done.example',
+      business: { name: 'One N Done', phone: '+61 400 000 000' }
+    });
+    const json = JSON.stringify(g);
+    expect(json).toMatch(/"https:\/\/onen-done\.example/);
+    // @id stability — sample invariant
+    const ids = (json.match(/"@id":"[^"]+"/g) || []).map(s => s.split(':')[2].replace(/"/g,''));
+    const unique = new Set(ids);
+    expect(unique.size).toBe(ids.length);
+  });
+});
+```
+
+> **Why:** Quick “doesn’t go nil/undefined” sanity that runs in milliseconds.
+
+---
+
+# 15) Quick wins checklist (do these in this PR)
+
+* [ ] Delete `._lhci.yml` (or the duplicate) to ensure one Lighthouse workflow.
+* [ ] Replace `.eslintrc*` with the single config above; run `npm run lint:fix`.
+* [ ] Add `src/types/global.d.ts` and update `tsconfig.json`.
+* [ ] Add CodeQL + Dependabot workflows.
+* [ ] Add `scripts/hash-ld.mjs` and wire `ci:hash-ld` into CI (e.g., after `npm run build`).
+* [ ] Add `tests/e2e/synonym-redirects.full.spec.ts`.
+* [ ] Commit `.env.example` with `USE_EDGE=false`.
+* [ ] (Optional) Add Playwright & Lighthouse workflows as shown.
+
+---
+
+## Notes on your earlier items (mapped to this pack)
+
+* **no-undef**: Instead of globally disabling, we let TS handle TS files and keep JS lint strict. This avoids hiding real typos in plain JS.
+* **“unused vars” (104)**: Now a warning; prefix `unused` parameters with `_` where intentionally ignored (especially in Express-style handlers, scripts).
+* **Workflows “ci.yml” duplication**: If you truly have duplicates, keep the one that owns your build/test; remove the other or rename to a distinct concern (e.g., `qa.yml`).
+* **Cypress removal**: If those specs are outdated, delete `cypress/` + dep; if still valuable, convert to Playwright later (new workflow already handles visual & E2E).
+* **Edge toggle**: Already documented + `.env.example`; safe for CI.
+
+---
+
+## After merging
+
+1. **Run the full suite**:
+
+   ```bash
+   npm run lint && npm run test:unit && npm test
+   npm run build && npm run ci:hash-ld
+   ```
+2. **Check PR artifacts** for Playwright diffs and Lighthouse reports.
+3. **Lock in baseline**: rename `__ai/schema-hashes.json` → `__ai/schema-hashes.baseline.json` once you approve hashes.
+4. **Plan the legacy deletion** by filing a ticket with a “remove by” date and using `npm run legacy:find` to keep the list fresh.
+
+---
+
+If you want this bundled as a single patch (with file paths and ready-to-apply diffs), say the word and I’ll output it in unified-diff format.
+--
+Awesome—here’s a complete, opinionated “next-step” drop-in you can apply to harden quality, CI, security, and DX without disrupting your working site. It implements the priorities you listed (and more) with ready-to-paste configs and scripts.
+
+---
+
+# Overview
+
+**Goals**
+
+* Tighten linting and types without churn.
+* Consolidate CI (build once; cache browsers; add budgets).
+* Add security (CodeQL + dependency updates).
+* Guard structured data with a stable hash test.
+* Remove duplicate/no-op workflows and legacy bits.
+* Keep Edge middleware opt-in and documented.
+
+**What’s included**
+
+* ESLint cleanup (one source of truth, safer defaults).
+* Ambient module declarations to remove `@ts-ignore`.
+* A single CI pipeline (Node cache + Playwright cache + build once + test matrix).
+* Lighthouse CI workflow with score budgets.
+* Visual snapshots workflow with *opt-in* baseline updates.
+* CodeQL workflow + Dependabot config.
+* Schema hash guard (post-build) + minimal unit tests.
+* A few tiny utilities (route examples validator; README link slashes checker).
+* Package.json hygiene examples (engines/private).
+* Guidance to retire Cypress cleanly.
+* Redirect parity test template to ensure every synonym endpoint is covered.
+
+Apply sections incrementally; each is self-contained.
+
+---
+
+## 1) ESLint hardening (remove duplicates, safer defaults)
+
+> Replace your ESLint root config with this. It removes duplicated plugin blocks, re-enables `no-undef`, and softens `no-unused-vars` to allow `_` prefixes.
+
+**`.eslintrc.cjs`**
+
+```js
+/* Root ESLint config */
+module.exports = {
+  root: true,
+  ignorePatterns: [
+    'dist/**',
+    'playwright-report/**',
+    'test-results/**',
+    '.netlify/**',
+    '__ai/**',
+    'sarif/**',
+  ],
+  env: { es2022: true, node: true, browser: true },
+  parser: '@typescript-eslint/parser',
+  parserOptions: { project: ['./tsconfig.json'], tsconfigRootDir: __dirname, sourceType: 'module' },
+  plugins: ['@typescript-eslint', 'import', 'unused-imports'],
+  extends: [
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:@typescript-eslint/recommended-type-checked',
+    'plugin:import/recommended',
+    'plugin:import/typescript',
+    'plugin:astro/recommended',
+    'plugin:astro/jsx-a11y-recommended',
+    'prettier',
+  ],
+  settings: {
+    'import/resolver': { typescript: { project: './tsconfig.json' } },
+  },
+  rules: {
+    // Wake no-undef back up for JS files; TS files are type-checked separately.
+    'no-undef': 'error',
+
+    // Use the dedicated plugin to prune unused imports first.
+    'unused-imports/no-unused-imports': 'warn',
+    // Keep variables, but allow `_` prefixed as intentional.
+    'unused-imports/no-unused-vars': ['warn', { args: 'after-used', argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+
+    // TypeScript – prefer accurate any usage acknowledgement.
+    '@typescript-eslint/no-explicit-any': 'warn',
+    '@typescript-eslint/consistent-type-imports': ['warn', { fixStyle: 'inline-type-imports' }],
+
+    // Import hygiene.
+    'import/no-duplicates': 'warn',
+    'import/order': ['warn', {
+      'newlines-between': 'always',
+      alphabetize: { order: 'asc', caseInsensitive: true },
+      groups: ['builtin', 'external', 'internal', ['parent', 'sibling', 'index']],
+    }],
+  },
+  overrides: [
+    // Astro
+    {
+      files: ['**/*.astro'],
+      parser: 'astro-eslint-parser',
+      parserOptions: { parser: '@typescript-eslint/parser', extraFileExtensions: ['.astro'] },
+      globals: { Astro: 'readonly' },
+      rules: {
+        // Example: flag empty anchors
+        'astro/jsx-a11y/anchor-is-valid': 'warn',
+      },
+    },
+    // Node scripts/tests can be looser
+    {
+      files: ['scripts/**/*.{js,mjs,cjs,ts}', 'tests/**/*.{js,ts}'],
+      rules: {
+        '@typescript-eslint/no-var-requires': 'off',
+      },
+    },
+  ],
+};
+```
+
+**Why**
+
+* One config; fewer surprises.
+* Reintroduces `no-undef` in JS (TS files covered by types).
+* Keeps team velocity (`warn` on most layout issues), but stops dangerous patterns.
+
+---
+
+## 2) Remove `@ts-ignore` with ambient module declarations
+
+> Add a global declarations file that captures your JSON imports, Astro route env, and any custom virtual modules.
+
+**`src/types/global.d.ts`**
+
+```ts
+/* Ambient declarations to de-@ts-ignore JSON and virtual modules. */
+
+declare module '*.json' {
+  // If you prefer strict schemas, override per module below.
+  const value: unknown;
+  export default value;
+}
+
+/** Specific shapes you rely on often (tighten as you wish) */
+declare module '~/content/areas.clusters.json' {
+  export type ClusterEntry = { slug?: string; suburbs?: string[]; adjacency?: Record<string, string[]> };
+  const value: Array<ClusterEntry> | { clusters: Record<string, ClusterEntry> };
+  export default value;
+}
+
+declare module '~/data/serviceCoverage.json' {
+  // Either { service: string[] } or { service: { [suburb]: true } }
+  const value: Record<string, string[] | Record<string, boolean>>;
+  export default value;
+}
+
+/** Example: generated map, if used */
+declare module '~/data/crossServiceMap.json' {
+  export type CrossServiceItem = { label: string; href: string; here: boolean; data: Record<string, unknown> };
+  const value: Record<string, Record<string, CrossServiceItem[]>>;
+  export default value;
+}
+
+/** Vite/Astro env (augment if you use more) */
+interface ImportMetaEnv {
+  readonly BLOG_BASE?: string;
+  readonly USE_EDGE?: string;
+  readonly MIN_REVIEWS_FOR_AGG?: string;
+}
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+```
+
+**Why**
+
+* Deletes `@ts-ignore` patches from `internalLinks.ts`, `emitAnalytics.ts`, etc.
+* Gives editors IntelliSense for high-touch JSON modules.
+
+---
+
+## 3) Consolidated CI (build once + caches + matrix)
+
+> Replace duplicate workflows with **one** main CI. It installs browsers once, caches them, builds once, runs unit + e2e + schema guard, and uploads artifacts.
+
+**`.github/workflows/ci.yml`**
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+env:
+  PLAYWRIGHT_BROWSERS_PATH: ~/.cache/ms-playwright
+  NODE_VERSION: '20.x'
+  USE_EDGE: 'false' # opt-out locally/CI by default
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+          key: pw-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**/playwright.config.*') }}
+          restore-keys: |
+            pw-${{ runner.os }}-
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Install Playwright (only if cache miss)
+        run: npx playwright install --with-deps
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Unit tests
+        run: npm run test:unit --if-present
+
+      - name: Build (single source of truth)
+        run: npm run build
+
+      - name: Schema hash guard
+        run: node scripts/test-schema-hash.mjs
+
+      - name: E2E (headless)
+        run: npm run test:e2e --if-present
+
+      - name: Upload Playwright report (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+          if-no-files-found: ignore
+```
+
+**Why**
+
+* Builds once; everything else reuses the same artifact on the runner.
+* Caches browsers to speed PRs.
+
+> Delete/rename any duplicate `ci.yml` and `_lhci.yml` to avoid double runs.
+
+---
+
+## 4) Lighthouse CI (budgets + preview serve)
+
+> Run Lighthouse against your preview server. Fails PRs if scores dip below thresholds (tune to taste).
+
+**`.github/workflows/lhci.yml`**
+
+```yaml
+name: Lighthouse CI
+
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  lhci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with: { node-version: '20.x', cache: 'npm' }
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Preview (background)
+        run: |
+          npm run preview &> preview.log &
+          echo $! > preview.pid
+          sleep 2
+
+      - name: LHCI
+        run: |
+          npx @lhci/cli autorun --collect.url=http://localhost:4322/ \
+                                 --collect.url=http://localhost:4322/services/bond-cleaning/ipswich/ \
+                                 --collect.url=http://localhost:4322/blog/ipswich/bond-cleaning-checklist/
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Stop preview
+        if: always()
+        run: kill -9 $(cat preview.pid) || true
+
+      - name: Upload LHCI artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lhci
+          path: .lighthouseci
+          if-no-files-found: ignore
+```
+
+**`.lighthouserc.json`**
+
+```json
+{
+  "ci": {
+    "collect": { "numberOfRuns": 1 },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["error", { "minScore": 0.90 }],
+        "categories:accessibility": ["error", { "minScore": 0.98 }],
+        "categories:seo": ["error", { "minScore": 0.95 }],
+        "unused-javascript": "warn",
+        "render-blocking-resources": "warn",
+        "color-contrast": "warn"
+      }
+    }
+  }
+}
+```
+
+**Why**
+
+* Prevents silent regressions; thresholds reflect your recent passing state. Adjust once stable.
+
+---
+
+## 5) Visual snapshots workflow (artifact diffs; opt-in baseline updates)
+
+> Runs Playwright visual tests. Uploads diffs as artifacts. Baseline updates can be gated behind a PR label (`update-visual-baseline`).
+
+**`.github/workflows/visual.yml`**
+
+```yaml
+name: Visual Snapshots
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with: { node-version: '20.x', cache: 'npm' }
+
+      - name: Install
+        run: npm ci
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+
+      - name: Build
+        run: npm run build
+
+      - name: E2E Visual
+        run: npm test -- --grep="Visual snapshots"
+
+      - name: Upload diffs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-diffs
+          path: test-results
+          if-no-files-found: ignore
+
+  update_baseline:
+    if: contains(github.event.pull_request.labels.*.name, 'update-visual-baseline')
+    needs: visual
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: ${{ github.head_ref }} }
+
+      - uses: actions/setup-node@v4
+        with: { node-version: '20.x', cache: 'npm' }
+
+      - run: npm ci
+      - run: npx playwright install --with-deps
+      - run: npm run build
+
+      - name: Re-baseline
+        run: UPDATE=1 npm test -- --grep="Visual snapshots"
+
+      # Intentionally no auto-commit here; keep manual review in PR.
+```
+
+**Why**
+
+* Gets team feedback on diffs without auto-updating snapshots. Safer in PRs.
+
+---
+
+## 6) Security posture: CodeQL + Dependabot
+
+**`.github/workflows/codeql.yml`**
+
+```yaml
+name: CodeQL
+
+on:
+  push: { branches: [ main ] }
+  pull_request: { branches: [ main ] }
+  schedule: [ { cron: '0 2 * * 0' } ] # weekly
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with: { languages: 'javascript-typescript' }
+      - uses: github/codeql-action/analyze@v3
+```
+
+**`.github/dependabot.yml`**
+
+```yaml
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: '/'
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+    reviewers: [ "YOUR_GH_HANDLE_OR_TEAM" ]
+```
+
+**Why**
+
+* Surfaces vuln trends; keeps deps moving safely.
+
+---
+
+## 7) Schema hash guard (post-build)
+
+> Ensures you emit *one* stable `@graph` shape per page and spot drifts. It parses built HTML, extracts JSON-LD, normalizes keys, and compares to a saved baseline hash file.
+
+**`scripts/test-schema-hash.mjs`**
+
+```js
+#!/usr/bin/env node
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+
+const ROOT = process.cwd();
+const DIST = path.join(ROOT, 'dist');
+const OUT = path.join(ROOT, '__schema');
+const BASELINE = path.join(OUT, 'hashes.json');
+
+function* walk(dir) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, entry.name);
+    if (entry.isDirectory()) yield* walk(p);
+    else if (entry.isFile() && entry.name.endsWith('.html')) yield p;
+  }
+}
+
+function normalize(obj) {
+  // Deep sort keys to yield a stable canonical representation
+  if (Array.isArray(obj)) return obj.map(normalize);
+  if (obj && typeof obj === 'object') {
+    return Object.keys(obj).sort().reduce((acc, k) => {
+      acc[k] = normalize(obj[k]);
+      return acc;
+    }, {});
+  }
+  return obj;
+}
+
+function extractGraphs(html) {
+  const scripts = [...html.matchAll(/<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi)];
+  if (!scripts.length) return [];
+  return scripts.map(m => {
+    try {
+      const json = JSON.parse(m[1]);
+      return json?.['@graph'] ? json['@graph'] : json;
+    } catch {
+      return null;
+    }
+  }).filter(Boolean);
+}
+
+function sha256(s) {
+  return crypto.createHash('sha256').update(s).digest('hex');
+}
+
+const hashes = {};
+for (const file of walk(DIST)) {
+  const rel = file.replace(DIST + path.sep, '');
+  const html = fs.readFileSync(file, 'utf8');
+  const graphs = extractGraphs(html);
+
+  // Guard: prefer a single emitter (your arch goal)
+  if (graphs.length > 1) {
+    console.error(`Schema guard: multiple JSON-LD scripts on ${rel}`);
+    process.exitCode = 1;
+  }
+
+  if (graphs.length === 1) {
+    const canon = JSON.stringify(normalize(graphs[0]));
+    hashes[rel] = sha256(canon);
+  }
+}
+
+// Compare with baseline if present
+if (fs.existsSync(BASELINE)) {
+  const prev = JSON.parse(fs.readFileSync(BASELINE, 'utf8'));
+  const diffs = [];
+  for (const [rel, h] of Object.entries(hashes)) {
+    if (prev[rel] && prev[rel] !== h) diffs.push(rel);
+  }
+  if (diffs.length) {
+    console.error(`Schema guard: hash diffs detected:\n- ${diffs.join('\n- ')}`);
+    process.exitCode = 1;
+  }
+} else {
+  // First run: create baseline
+  fs.mkdirSync(OUT, { recursive: true });
+  fs.writeFileSync(BASELINE, JSON.stringify(hashes, null, 2));
+  console.log(`Schema guard: created baseline at ${path.relative(ROOT, BASELINE)}`);
+}
+```
+
+**Add npm scripts**
+
+```json
+{
+  "scripts": {
+    "schema:hash": "node scripts/test-schema-hash.mjs"
+  }
+}
+```
+
+**Why**
+
+* Detects accidental structural drift in your `@graph` when refactoring.
+
+> Tip: Commit `__schema/hashes.json` to version control; diff in PRs.
+
+---
+
+## 8) Redirect parity test (cover every SSR synonym)
+
+> Add one spec that enumerates your SSR endpoints and validates the 301 to canonical (with query/hash preservation).
+
+**`tests/e2e/synonym-redirects.spec.ts`**
+
+```ts
+import { test, expect } from '@playwright/test';
+
+const cases = [
+  // service aliases → canonical suburb
+  ['/bond-cleaners/ipswich/', '/services/bond-cleaning/ipswich/'],
+  ['/end-of-lease-cleaning/ipswich/', '/services/bond-cleaning/ipswich/'],
+  ['/exit-clean/ipswich/', '/services/bond-cleaning/ipswich/'],
+  ['/house-cleaning/indooroopilly/', '/services/spring-cleaning/indooroopilly/'],
+  ['/deep-cleaning/indooroopilly/', '/services/spring-cleaning/indooroopilly/'],
+  ['/bathroom-cleaning/new-farm/', '/services/bathroom-deep-clean/new-farm/'],
+  ['/shower-screen-restoration/new-farm/', '/services/bathroom-deep-clean/new-farm/'],
+];
+
+for (const [from, to] of cases) {
+  test(`SSR synonym ${from} → ${to}`, async ({ page, context, baseURL }) => {
+    const res = await page.goto(from + '?q=1#frag', { waitUntil: 'domcontentloaded' });
+    // Playwright follows redirects by default; check the final URL:
+    expect(new URL(page.url()).pathname + '/').toBe(new URL(to, baseURL).pathname + '/');
+    // Optionally assert that server sent a 301 (requires intercept or separate fetch):
+    const reqs = context.request;
+    const r = await reqs.get(new URL(from + '?q=1', baseURL).toString(), { maxRedirects: 0 }).catch(e => e);
+    expect(r.status()).toBe(301);
+    expect(r.headers()['location']).toContain(to);
+  });
+}
+```
+
+**Why**
+
+* Makes sure every alias stays in lockstep with canonicals as content evolves.
+
+---
+
+## 9) Package.json hygiene
+
+> Add engines, keep it private (if not a library), and ensure license is explicit.
+
+**`package.json` (excerpt)**
+
+```json
+{
+  "private": true,
+  "license": "MIT",
+  "engines": { "node": ">=20 <21" },
+  "scripts": {
+    "lint": "eslint . --ext .js,.ts,.mjs,.cjs,.astro",
+    "test": "playwright test",
+    "test:e2e": "playwright test",
+    "test:unit": "vitest run",
+    "build": "npm run build:faqs && astro build && node scripts/consolidate-ld.mjs && node scripts/audit-related-links.mjs && node scripts/validate-schema.js && node scripts/check-internal-links.mjs",
+    "preview": "astro preview --port 4322"
+  }
+}
+```
+
+**Why**
+
+* Prevents accidental publish; pins Node range used by CI and Netlify.
+
+---
+
+## 10) Opt-in Edge docs + .env example
+
+> Document `USE_EDGE` and ensure it’s **false** by default.
+
+**`.env.example`**
+
+```
+# Edge middleware is opt-in locally and in CI.
+USE_EDGE=false
+
+# BLOG base for blog routes (keep slashes)
+BLOG_BASE=/blog/
+
+# Optional: reviews gating
+MIN_REVIEWS_FOR_AGG=15
+```
+
+**README snippet (insert under Local dev / Environment)**
+
+````md
+### Edge middleware (optional)
+Edge is disabled by default. To run with Edge locally:
+
+```bash
+USE_EDGE=true npm run dev
+````
+
+The guard script checks for Deno and fails fast with a clear message if not installed. CI keeps `USE_EDGE=false`.
+
+````
+
+**Why**
+- Prevents accidental crashes when local environments don’t have Deno.
+
+---
+
+## 11) Unit tests for seoSchema basics
+
+> Add minimal tests to ensure stable IDs and non-empty fields.
+
+**`tests/unit/seoSchema.spec.ts`**
+```ts
+import { describe, it, expect } from 'vitest';
+import * as seo from '../../src/lib/seoSchema.js'; // adjust path if needed
+
+describe('seoSchema', () => {
+  it('entityId is stable for the same path', () => {
+    const id1 = (seo as any).entityId?.('/services/bond-cleaning/ipswich/');
+    const id2 = (seo as any).entityId?.('/services/bond-cleaning/ipswich/');
+    expect(id1).toBeTruthy();
+    expect(id1).toBe(id2);
+  });
+
+  it('suburbServiceGraph produces required nodes', () => {
+    const graph = (seo as any).suburbServiceGraph?.({
+      serviceSlug: 'bond-cleaning',
+      suburbSlug: 'ipswich',
+      business: { name: 'One N Done', url: 'https://example.com' },
+      canonical: 'https://example.com/services/bond-cleaning/ipswich/'
+    });
+    expect(Array.isArray(graph)).toBe(true);
+    const types = new Set(graph.map((n: any) => n['@type']));
+    expect(types.has('LocalBusiness')).toBe(true);
+    expect(types.has('Service')).toBe(true);
+    expect(types.has('BreadcrumbList')).toBe(true);
+  });
+});
+````
+
+**Why**
+
+* Quick confidence the builders output expected minimal graph.
+
+---
+
+## 12) Retire Cypress safely (if you’re done with it)
+
+1. Remove Cypress scripts:
+
+```diff
+- "cypress:run": "cypress run"
+```
+
+2. Remove deps (in your next dependency upgrade PR):
+
+```bash
+npm rm cypress @cypress/*
+```
+
+3. Delete `cypress/` folder and `cypress.config.*` once no longer useful.
+
+**Why**
+
+* Shrinks CI image; one E2E runner to maintain.
+
+---
+
+## 13) Lighter “predev” vs “prebuild”
+
+> Keep `prebuild` heavy for CI; add a “predev” subset for local iteration speed.
+
+**`package.json` (scripts excerpt)**
+
+```json
+{
+  "scripts": {
+    "predev": "node scripts/build-faqs.mjs",
+    "dev": "npm run predev && astro dev --port 4322",
+    "prebuild": "node scripts/audit-routes.mjs"
+  }
+}
+```
+
+**Why**
+
+* Don’t run heavy audits every `npm run dev`.
+
+---
+
+## 14) README and route examples slash normalizer (optional helper)
+
+**`scripts/validate-readme-routes.mjs`**
+
+```js
+import fs from 'node:fs';
+const md = fs.readFileSync('README.md', 'utf8');
+const offenders = [...md.matchAll(/\/services\/[a-z-]+\/[a-z-]+(?!\/|\))/g)].map(m => m[0]);
+if (offenders.length) {
+  console.error('README route examples missing trailing slash:\n' + offenders.join('\n'));
+  process.exit(1);
+}
+console.log('README route examples OK');
+```
+
+**Why**
+
+* Keeps docs consistent with canonical URLs your tests expect.
+
+---
+
+## 15) Ambient JSON types (project-wide)
+
+> If you prefer a single place (instead of module-specific), you can add:
+
+**`src/types/json.d.ts`**
+
+```ts
+declare module '*.json' {
+  const value: Record<string, unknown> | unknown[] | string | number | boolean | null;
+  export default value;
+}
+```
+
+**Why**
+
+* Helps anywhere you import JSON while allowing more precise module overrides in `global.d.ts`.
+
+---
+
+## 16) Remove duplicate or dead workflows
+
+* If both `lhci.yml` and `_lhci.yml` exist, delete `_lhci.yml` (underscore files are ignored by Actions and add confusion).
+* If `ci.yml` exists twice (case or path variants), keep only the root one in `.github/workflows/ci.yml`.
+
+**Why**
+
+* Prevents double runs or confusion when browsing Actions.
+
+---
+
+## 17) Visual test upgrade (strict nav landmark check you wanted)
+
+If not already present, add a tiny spec that ensures there’s exactly one `[data-relservices]` landmark and all navs have unique accessible names.
+
+**`tests/e2e/nav-landmarks.spec.ts`**
+
+```ts
+import { test, expect } from '@playwright/test';
+
+test('Unique navigations', async ({ page }) => {
+  await page.goto('/services/bond-cleaning/ipswich/');
+  const navs = page.locator('nav');
+  const count = await navs.count();
+
+  // Look for [data-relservices] exactly once
+  await expect(page.locator('nav[data-relservices]')).toHaveCount(1);
+
+  // Ensure each nav has a unique accessible name or is intentionally unnamed and unique by role.
+  const names = [];
+  for (let i = 0; i < count; i++) {
+    const n = navs.nth(i);
+    names.push(await n.getAttribute('aria-label') || '');
+  }
+  const filtered = names.filter(Boolean);
+  const set = new Set(filtered);
+  expect(set.size).toBe(filtered.length);
+});
+```
+
+**Why**
+
+* Locks in the a11y invariant that fixed your earlier Axe issue.
+
+---
+
+## 18) One-line scripts → named files (example replacement)
+
+If you had a handy `node -e` that counted JSON-LD emitters, replace it:
+
+**`scripts/scan-jsonld.mjs`**
+
+```js
+import fs from 'node:fs';
+import path from 'node:path';
+
+let pages = 0, multi = [];
+function* walk(d){ for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+  const p = path.join(d, e.name);
+  if (e.isDirectory()) yield* walk(p);
+  else if (e.isFile() && e.name.endsWith('.html')) yield p;
+}}
+
+for (const f of walk('dist')) {
+  const h = fs.readFileSync(f, 'utf8');
+  const count = [...h.matchAll(/type="application\/ld\+json"/g)].length;
+  if (count) { pages++; if (count > 1) multi.push(f.replace(/^dist\//, '')); }
+}
+console.log(`pages with JSON-LD: ${pages}`);
+if (multi.length) {
+  console.warn('Multiple JSON-LD scripts on:\n' + multi.join('\n'));
+  process.exitCode = 1;
+}
+```
+
+**Why**
+
+* Improves readability and reusability.
+
+---
+
+## 19) Dependable Playwright cache across runners
+
+You can also extract the cache path into `.npmrc`/env; above workflow already sets `PLAYWRIGHT_BROWSERS_PATH`. For self-hosted runners, consider persisting the folder globally to shave minutes per run.
+
+---
+
+## 20) (Optional) Monorepo readiness
+
+If you plan to grow, create a small structure now:
+
+```
+scripts/
+  guards/
+    test-schema-hash.mjs
+    validate-readme-routes.mjs
+  ci/
+    setup-playwright.mjs   # if you centralize install/caching logic later
+```
+
+Update npm scripts to reference `scripts/guards/*` so intent is obvious.
+
+---
+
+# Quick wins to do today
+
+1. **Delete** `_lhci.yml` (if present) and any duplicate `ci.yml`.
+2. **Replace** `.eslintrc` with the one above, then:
+
+   ```bash
+   npm run lint -- --fix
+   ```
+
+   Rename unused function args to `_arg` where intentional.
+3. **Add** `src/types/global.d.ts` and remove `@ts-ignore` from JS/TS that import JSON.
+4. **Commit** `scripts/test-schema-hash.mjs` and run:
+
+   ```bash
+   npm run build && npm run schema:hash
+   ```
+
+   Commit `__schema/hashes.json` (baseline).
+5. **Add** CI, Lighthouse, Visual, CodeQL, and Dependabot workflows as shown.
+6. **Document** `USE_EDGE` in `.env.example` and README snip above.
+
+---
+
+# What this buys you
+
+* **Fewer flakes** (single build, cached browsers, explicit budgets).
+* **Earlier failures** (schema drift, a11y/nav invariants, redirect parity).
+* **Less noise** (lint true positives reduced, no more `@ts-ignore`).
+* **Better security posture** (CodeQL + up-to-date deps).
+* **Cleaner DX** (named scripts, documented env toggles).
+
+If you want, I can tailor the budgets and test URLs to your exact top pages, or add a GitHub label-based gate to *skip* Lighthouse on docs-only changes.
+--
+Awesome—here’s a concrete, copy-pasteable “next steps” pack that implements the most valuable fixes from your audit **without breaking current behavior**. It includes hardened ESLint, ambient types to remove `@ts-ignore`, CodeQL + Dependabot, a Playwright cache-aware CI, a JSON-LD structural guard, and redirect parity tests. Each snippet says **what/why** and the **exact file path**.
+
+---
+
+# 1) ESLint hardening (dedupe config, re-enable `no-undef`, tame `no-unused-vars`)
+
+## `./.eslintrc.cjs`
+
+```js
+/* Root ESLint config: deduped, type-aware, works for Astro + TS */
+module.exports = {
+  root: true,
+  env: {
+    es2022: true,
+    browser: true,
+    node: true,
+  },
+  parser: "@typescript-eslint/parser",
+  parserOptions: {
+    ecmaVersion: "latest",
+    sourceType: "module",
+    project: false,
+  },
+  plugins: ["@typescript-eslint", "astro"],
+  extends: [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:astro/recommended",
+  ],
+  overrides: [
+    {
+      // Astro files
+      files: ["**/*.astro"],
+      parser: "astro-eslint-parser",
+      parserOptions: {
+        parser: "@typescript-eslint/parser",
+        extraFileExtensions: [".astro"],
+      },
+      rules: {
+        // Keep Astro-specific best practices; tweak as needed
+      },
+    },
+    {
+      // Node scripts
+      files: ["scripts/**/*.{js,mjs,cjs,ts}"],
+      env: { node: true },
+      rules: {},
+    },
+    {
+      // Tests (Playwright/Vitest)
+      files: ["tests/**/*.{ts,tsx,js,mjs}", "js/__tests__/**/*.{ts,js}"],
+      env: { node: true, browser: true },
+    },
+  ],
+  rules: {
+    // Re-enable correctness
+    "no-undef": "error",
+
+    // Prefer the TS-aware rule; ignore _intentionally_ unused
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": ["warn", {
+      argsIgnorePattern: "^_",
+      varsIgnorePattern: "^_",
+      destructuredArrayIgnorePattern: "^_",
+      ignoreRestSiblings: true,
+    }],
+
+    // Helpful but not noisy defaults
+    "@typescript-eslint/consistent-type-imports": ["warn", { prefer: "type-imports" }],
+    "@typescript-eslint/no-explicit-any": "off", // loosen until types are fully modeled
+  },
+};
+```
+
+## `./.eslintignore`
+
+```gitignore
+dist/
+playwright-report/
+test-results/
+coverage/
+__ai/
+sarif/
+tmp/
+```
+
+**Why:** removes duplicate sections, restores `no-undef` for correctness, and quiets intentional unused variables via `_` prefix instead of disabling rules wholesale.
+
+---
+
+# 2) Ambient declarations for JSON/modules (removes `@ts-ignore` in helpers)
+
+## `./types/global.d.ts`
+
+```ts
+// Global ambient module declarations and env typings
+
+// Generic JSON import (fallback)
+declare module "*.json" {
+  const value: unknown;
+  export default value;
+}
+
+// Known data modules used dynamically across utils/adapters
+declare module "~/data/cluster_map.json" {
+  const value: unknown;
+  export default value;
+}
+declare module "~/data/crossServiceMap.json" {
+  const value: unknown;
+  export default value;
+}
+
+// If you import JSON via relative paths in scripts, keep a generic so TS doesn't complain.
+// Add more precise module decls above as needed.
+
+// Vite/Astro envs (extend with your actual variables)
+interface ImportMetaEnv {
+  readonly USE_EDGE?: string;
+  readonly BLOG_BASE?: string;
+  readonly MIN_REVIEWS_FOR_AGG?: string;
+}
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+```
+
+**Why:** lets TS recognize the JSON imports so you can delete scattered `@ts-ignore` in `internalLinks.ts`, `emitAnalytics.ts`, and any adapters.
+
+---
+
+# 3) JSON-LD structural guard (post-build hash + diff)
+
+Adds a **post-build** validator that extracts every JSON-LD script, normalizes it (stable key order), hashes it per page, and compares against a baseline. If the structure drifts unexpectedly, CI fails with a readable diff.
+
+## `./scripts/hash-jsonld.mjs`
+
+```js
+#!/usr/bin/env node
+import fs from "node:fs";
+import path from "node:path";
+import crypto from "node:crypto";
+
+const DIST = "dist";
+const OUT = "dist/__jsonld-hashes.txt";
+const BASELINE = "tests/baselines/jsonld.hashes.txt";
+
+// Stable stringify: sort object keys recursively
+function stable(v) {
+  if (Array.isArray(v)) return v.map(stable);
+  if (v && typeof v === "object") {
+    const out = {};
+    for (const k of Object.keys(v).sort()) out[k] = stable(v[k]);
+    return out;
+  }
+  return v;
+}
+
+function* allHtml(dir) {
+  for (const name of fs.readdirSync(dir)) {
+    const full = path.join(dir, name);
+    const stat = fs.statSync(full);
+    if (stat.isDirectory()) yield* allHtml(full);
+    else if (name.endsWith(".html")) yield full;
+  }
+}
+
+function extractJsonLd(html) {
+  const scripts = [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
+  return scripts.map((m) => m[1].trim()).filter(Boolean);
+}
+
+function hashStr(s) {
+  return crypto.createHash("sha256").update(s).digest("hex").slice(0, 16);
+}
+
+const lines = [];
+for (const file of allHtml(DIST)) {
+  const rel = file.replace(/^dist[\\/]/, "");
+  const html = fs.readFileSync(file, "utf8");
+  const blocks = extractJsonLd(html);
+  if (!blocks.length) continue;
+  // Merge multiple <script> blocks into one payload to avoid false positives
+  const merged = blocks.map((b) => {
+    try { return JSON.parse(b); } catch (_e) { return null; }
+  }).filter(Boolean);
+
+  const stablePayload = stable(merged);
+  const digest = hashStr(JSON.stringify(stablePayload));
+  lines.push(`${rel}\t${digest}`);
+}
+
+lines.sort((a, b) => a.localeCompare(b));
+fs.writeFileSync(OUT, lines.join("\n") + "\n", "utf8");
+
+// Compare with baseline if exists
+if (fs.existsSync(BASELINE)) {
+  const cur = fs.readFileSync(OUT, "utf8").trim().split("\n");
+  const base = fs.readFileSync(BASELINE, "utf8").trim().split("\n");
+  const curSet = new Set(cur);
+  const baseSet = new Set(base);
+
+  const added = cur.filter((l) => !baseSet.has(l));
+  const removed = base.filter((l) => !curSet.has(l));
+  if (added.length || removed.length) {
+    console.error("[jsonld] Structural diff detected:");
+    if (added.length) console.error("  + Added/Changed:\n   ", added.join("\n    "));
+    if (removed.length) console.error("  - Removed:\n   ", removed.join("\n    "));
+    process.exit(1);
+  }
+}
+```
+
+## `./tests/baselines/jsonld.hashes.txt`
+
+```
+# (Create this file after your first good build by copying dist/__jsonld-hashes.txt)
+# Keep in Git; changes indicate a structural shift that should be reviewed.
+```
+
+## `package.json` (script additions)
+
+```json
+{
+  "scripts": {
+    "build": "npm run build:faqs && astro build && node scripts/consolidate-ld.mjs && node scripts/audit-related-links.mjs && node scripts/validate-schema.js && node scripts/assert-sitemap-blog-canonicals.mjs && node scripts/check-internal-links.mjs && node scripts/hash-jsonld.mjs",
+    "ci:verify-graph": "node scripts/hash-jsonld.mjs"
+  }
+}
+```
+
+**Why:** guards against accidental schema drift; you control the baseline file in `tests/baselines/`.
+
+---
+
+# 4) GitHub security & dependency hygiene
+
+## `./.github/workflows/codeql.yml`
+
+```yaml
+name: "CodeQL"
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: "0 6 * * 1"
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+      - uses: github/codeql-action/analyze@v3
+```
+
+## `./.github/dependabot.yml`
+
+```yaml
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule: { interval: "weekly" }
+    open-pull-requests-limit: 10
+    assignees: []
+    reviewers: []
+    labels: ["deps"]
+```
+
+**Why:** surfaces security/code issues in the Security tab and keeps deps fresh with minimal toil.
+
+---
+
+# 5) CI: cache Playwright browsers + single build
+
+Unify E2E CI with npm + Playwright browser cache to speed runs. Also run the JSON-LD guard post-build.
+
+## `./.github/workflows/e2e.yml`
+
+```yaml
+name: E2E
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+      # Edge middleware opt-out by default
+      USE_EDGE: "false"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+
+      - name: Install
+        run: npm ci
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Build (single build for all tests)
+        run: npm run build
+
+      - name: JSON-LD structural guard
+        run: npm run ci:verify-graph
+
+      - name: Run E2E (all)
+        run: npm test --silent
+```
+
+> If you have both `lhci.yml` and `_lhci.yml`, **delete one** (keep the one you actually use). If your `ci.yml` duplicates the same steps, fold that into this workflow so the build runs only once per push.
+
+---
+
+# 6) Package metadata hygiene
+
+## `./package.json` (selected fields)
+
+```json
+{
+  "private": true,
+  "license": "MIT",
+  "engines": { "node": ">=20 <21" },
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  }
+}
+```
+
+**Why:** prevents accidental publish; communicates engine expectations; adds handy lint scripts.
+
+---
+
+# 7) Redirect parity (synonym routes) — add explicit E2E
+
+Covers the SSR endpoints like `bond-cleaners`, `end-of-lease-cleaning`, etc., asserting **301** and **canonical** location while preserving **query/hash**.
+
+## `./tests/e2e/synonyms.spec.ts`
+
+```ts
+import { test, expect } from "@playwright/test";
+
+const cases: Array<{ from: string; to: string }> = [
+  // add / adjust to match your real cluster/suburb slugs
+  { from: "/bond-cleaners/ipswich/", to: "/services/bond-cleaning/ipswich/" },
+  { from: "/end-of-lease-cleaning/ipswich/?q=x#frag", to: "/services/bond-cleaning/ipswich/?q=x#frag" },
+  { from: "/exit-clean/ipswich/", to: "/services/bond-cleaning/ipswich/" },
+  { from: "/house-cleaning/indooroopilly/", to: "/services/spring-cleaning/indooroopilly/" },
+  { from: "/deep-cleaning/indooroopilly/", to: "/services/spring-cleaning/indooroopilly/" },
+  { from: "/bathroom-cleaning/indooroopilly/", to: "/services/bathroom-deep-clean/indooroopilly/" },
+  { from: "/shower-screen-restoration/indooroopilly/", to: "/services/bathroom-deep-clean/indooroopilly/" },
+];
+
+test.describe("Synonym redirect endpoints", () => {
+  for (const { from, to } of cases) {
+    test(`301 ${from} -> ${to}`, async ({ page, request, baseURL }) => {
+      const res = await request.get(from, { maxRedirects: 0 });
+      expect(res.status()).toBe(301);
+      const loc = res.headers()["location"];
+      expect(loc).toBe(to.replace(/^(?!https?:)/, "")); // plain path w/ query/hash
+      // Follow to confirm final renders 200
+      await page.goto(to);
+      await expect(page.locator("main")).toBeVisible();
+    });
+  }
+});
+```
+
+**Why:** ensures every synonym endpoint stays wired and parity-tested.
+
+---
+
+# 8) (Optional but recommended) Lighthouse CI with budgets
+
+If you already have LHCI, keep **one** workflow and add minimal budgets to prevent regressions.
+
+## `./lighthouserc.json` (example budget)
+
+```json
+{
+  "ci": {
+    "collect": {
+      "staticDistDir": "./dist",
+      "numberOfRuns": 1,
+      "url": ["/", "/areas/ipswich/", "/services/bond-cleaning/ipswich/"]
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["warn", { "minScore": 0.90 }],
+        "categories:accessibility": ["error", { "minScore": 1.00 }],
+        "categories:seo": ["warn", { "minScore": 0.95 }],
+        "unused-javascript": ["warn", { "maxNumericValue": 128000 }]
+      }
+    }
+  }
+}
+```
+
+**Why:** fails PRs when performance/a11y/SEO drift below guardrails.
+
+---
+
+# 9) Edge toggle docs (README/.env)
+
+## `./.env.example`
+
+```dotenv
+# Netlify Edge middleware is opt-in locally/CI
+USE_EDGE=false
+
+# Blog base (default "/blog/"); used by guards/routers/scripts
+BLOG_BASE=/blog/
+
+# Minimum reviews required to emit AggregateRating
+MIN_REVIEWS_FOR_AGG=10
+```
+
+**Why:** makes `USE_EDGE` explicit so dev/CI don’t accidentally start Deno/Edge locally.
+
+---
+
+# 10) (Optional) Remove Cypress (once Playwright fully covers)
+
+* Remove deps:
+
+  ```bash
+  npm rm cypress @cypress/webpack-dev-server @cypress/code-coverage
+  ```
+* Delete `cypress/` and `cypress.config.*` if no longer used.
+* Strip `cypress:*` scripts from `package.json`.
+
+**Why:** speeds up CI and simplifies test surface; do this only after confirming coverage parity.
+
+---
+
+## Runbook (apply + verify)
+
+```bash
+# 1) Add files/changes above (paths as listed)
+
+# 2) Install & lint
+npm ci
+npm run lint
+npm run lint:fix
+
+# 3) Build + run JSON-LD guard
+npm run build
+# First time only: capture baseline
+cp dist/__jsonld-hashes.txt tests/baselines/jsonld.hashes.txt
+
+# 4) Run tests
+npm test --silent
+npx playwright test tests/e2e/synonyms.spec.ts --reporter=line
+
+# 5) Push to a branch and open a PR
+#    - CodeQL should run
+#    - E2E should reuse cached Playwright browsers
+#    - LHCI (if enabled) should enforce budgets
+```
+
+---
+
+## Why these choices (short version)
+
+* **ESLint**: removes contradictions, catches real errors again, and fixes the deluge of false positives with `_` conventions.
+* **Ambient types**: wipes out `@ts-ignore` around JSON/module imports for a cleaner, safer codebase.
+* **JSON-LD guard**: schema is a ranking lever—this ensures structure changes are intentional.
+* **Security & deps**: CodeQL + Dependabot bring your repo in line with modern safety practices.
+* **CI performance**: caching Playwright browsers saves minutes per run; single build prevents duplication.
+* **Redirect tests**: synonym parity stays locked, preventing regressions around critical marketing routes.
+* **Edge docs**: future-proof toggle makes “works on my machine” consistent with CI.
+
+If you want, I can also provide a **PR order** (lint/types → CI/workflows → guards → tests) or tailor these snippets to match your exact folder layout.
+--

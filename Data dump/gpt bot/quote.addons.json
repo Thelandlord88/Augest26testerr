@@ -1,0 +1,23 @@
+[
+  {
+    "slug": "carpet-steam-clean",
+    "label": "Carpet Steam Clean",
+    "desc": "Hot water extraction for listed rooms.",
+    "notes": "Priced per room; drying time varies",
+    "licensedPartner": false
+  },
+  {
+    "slug": "flea-treatment",
+    "label": "Flea Treatment (Licensed Partner)",
+    "desc": "End-of-lease pest treatment as required by some leases.",
+    "notes": "External partner provides invoice",
+    "licensedPartner": true
+  },
+  {
+    "slug": "blinds-detailing",
+    "label": "Blinds Detailing",
+    "desc": "Venetians and rollers dusted and wiped.",
+    "notes": "Some fabrics are dry-clean only",
+    "licensedPartner": false
+  }
+]

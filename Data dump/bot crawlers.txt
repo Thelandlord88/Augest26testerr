@@ -1,0 +1,391 @@
+# AU Geo Audit Bots — Crawl + Lint Toolkit
+
+This toolkit adds **crawl-time linting** for Australian-localised pages (Ipswich, Brisbane, Logan) and service-intent checks (bond vs spring vs bathroom). It emits **SARIF** so GitHub annotates PRs, and it’s designed to plug straight into your Astro/Netlify repo.
+
+> Uses your existing `sarif.js` helpers. Requires **Playwright**.
+
+---
+
+## 1) data/geo.au.json (LGA + suburb mapping)
+
+```json
+{
+  "lga": {
+    "ipswich": {
+      "label": "Ipswich",
+      "suburbs": ["Redbank Plains", "Springfield Lakes", "Brookwater", "Goodna", "Camira"]
+    },
+    "brisbane": {
+      "label": "Brisbane",
+      "suburbs": ["Forest Lake", "Indooroopilly", "Kenmore"]
+    },
+    "logan": {
+      "label": "Logan",
+      "suburbs": ["Springwood", "Browns Plains"]
+    }
+  },
+  "service_intent": {
+    "bond-cleaning": {
+      "must": ["bond clean", "agent-ready", "entry/exit report"],
+      "forbid": ["spring clean"]
+    },
+    "spring-cleaning": {
+      "must": ["spring clean"],
+      "forbid": ["bond clean", "bond back", "end of lease"]
+    },
+    "bathroom-deep-clean": {
+      "must": ["tiles", "shower screen", "grout"],
+      "forbid": ["bond clean"]
+    }
+  },
+  "blog_hubs": [
+    "/blog/ipswich/",
+    "/blog/brisbane/",
+    "/blog/logan/"
+  ]
+}
+```
+
+> If you keep legacy paths like `/blog/ipswich-region/`, add redirects and include them here until migrated.
+
+---
+
+## 2) scripts/au-geo-audit.js (crawler + multi-lint → SARIF)
+
+```js
+#!/usr/bin/env node
+import { chromium } from 'playwright';
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
+import { createSarif, rule, result, writeSarif } from './sarif.js';
+
+const ORIGIN = process.env.SITE_ORIGIN || 'https://ondlive3.netlify.app';
+const OUT = process.env.AI_SARIF_GEO || 'sarif/ai-geo-intent.sarif';
+const GEO_PATH = process.env.GEO_JSON || 'data/geo.au.json';
+const MAX_PAGES = Number(process.env.MAX_PAGES || 200);
+
+function norm(u){ try { return new URL(u, ORIGIN).pathname.replace(/\/+/g,'/'); } catch { return '/'; } }
+function uniq(arr){ return [...new Set(arr)]; }
+
+function textCount(hay, term){
+  if (!term) return 0;
+  const re = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\\]\\]/g,'\\$&')}\\b`, 'gi');
+  return (hay.match(re) || []).length;
+}
+
+function containsAny(hay, terms){
+  const lower = hay.toLowerCase();
+  return terms.some(t => lower.includes(t.toLowerCase()));
+}
+
+async function fetchSitemap(page){
+  try {
+    const url = new URL('/sitemap.xml', ORIGIN).toString();
+    await page.goto(url, { waitUntil: 'domcontentloaded' });
+    const xml = await page.content();
+    const urls = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map(m => m[1]);
+    return urls.map(norm);
+  } catch { return []; }
+}
+
+async function crawlRoutes(){
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  const found = new Set();
+
+  // 1) From sitemap if present
+  const fromMap = await fetchSitemap(page);
+  fromMap.forEach(u => found.add(u));
+
+  // 2) Seed routes if sitemap is thin
+  const seeds = [
+    '/',
+    '/services/bond-cleaning/',
+    '/services/spring-cleaning/',
+    '/services/bathroom-deep-clean/',
+    '/blog/ipswich/', '/blog/brisbane/', '/blog/logan/'
+  ];
+  seeds.forEach(u => found.add(u));
+
+  // 3) Simple breadth crawl (same-origin) to discover more
+  const queue = [...found];
+  while (queue.length && found.size < MAX_PAGES){
+    const route = queue.shift();
+    try {
+      await page.goto(new URL(route, ORIGIN).toString(), { waitUntil: 'networkidle' });
+      await page.addStyleTag({ content: `*{animation:none!important;transition:none!important;}` });
+      const links = await page.$$eval('a[href^="/"]', as => as.map(a => a.getAttribute('href')));
+      for (const href of links) {
+        const p = norm(href);
+        if (p && !found.has(p) && !p.startsWith('/_') && !p.includes('#')){
+          found.add(p); queue.push(p);
+        }
+      }
+    } catch {}
+  }
+  await browser.close();
+  return [...found].sort();
+}
+
+async function extractSnapshot(page, route){
+  const url = new URL(route, ORIGIN).toString();
+  await page.goto(url, { waitUntil: 'networkidle' });
+  await page.addStyleTag({ content: `*{animation:none!important;transition:none!important;}` });
+  const data = await page.evaluate(() => {
+    const get = sel => document.querySelector(sel)?.textContent?.trim() || '';
+    const h1 = get('h1');
+    const title = document.title || '';
+    const desc = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
+    const crumbs = [...document.querySelectorAll('nav[aria-label*="breadcrumb" i] a, .breadcrumb a')].map(a => a.textContent?.trim()).filter(Boolean);
+    const headings = [...document.querySelectorAll('h2,h3,summary')].map(n => n.textContent?.trim()).slice(0, 50);
+    const body = document.body?.innerText?.replace(/\s+/g,' ').trim() || '';
+    const scripts = [...document.querySelectorAll('script[type="application/ld+json"]')].map(s => s.textContent||'').join('\n');
+    return { h1, title, desc, crumbs, headings, body, scripts };
+  });
+  return data;
+}
+
+function lgaForSuburb(geo, suburb){
+  const entries = Object.entries(geo.lga);
+  for (const [key, val] of entries){
+    if (val.suburbs.some(s => s.toLowerCase() === suburb.toLowerCase())) return key;
+  }
+  return null;
+}
+
+function lintGeo(route, snap, geo){
+  const rules = [];
+  const lower = snap.body.toLowerCase();
+
+  // Region name presence checks
+  const NAMES = { ipswich: 'ipswich', brisbane: 'brisbane', logan: 'logan' };
+
+  // Hub pages: /blog/{lga}/
+  const hub = route.match(/^\/blog\/(ipswich|brisbane|logan)\/?$/);
+  if (hub){
+    const lga = hub[1];
+    const badNames = Object.values(NAMES).filter(n => n !== lga);
+    if (containsAny(lower, badNames)){
+      rules.push({ id:'blog.meta.region_reference', level:'warning', msg:`Blog hub mentions other LGA terms (${badNames.join(', ')})`, file:`route:${route}` });
+    }
+  }
+
+  // Suburb pages: e.g., /services/bond-cleaning/redbank-plains/
+  const sub = route.match(/^\/(?:services|blog)\/([^\/]+)\/([a-z0-9-]+)\/?$/);
+  if (sub){
+    const [, section, suburbSlug] = sub;
+    const suburb = suburbSlug.replace(/-/g, ' ');
+    const expectedLga = lgaForSuburb(geo, suburb);
+    if (!expectedLga){
+      rules.push({ id:'geo.suburb.unknown', level:'note', msg:`Suburb “${suburb}” not in geo map`, file:`route:${route}` });
+    } else {
+      // Heuristic: body should mention the correct LGA name at least once
+      if (!lower.includes(NAMES[expectedLga])){
+        rules.push({ id:'geo.suburb.lga_missing', level:'warning', msg:`Suburb “${suburb}” page does not mention its LGA (“${geo.lga[expectedLga].label}”).`, file:`route:${route}` });
+      }
+      // And should not over-mention other LGAs
+      const others = Object.keys(NAMES).filter(k => k !== expectedLga).map(k => NAMES[k]);
+      if (containsAny(lower, others)){
+        rules.push({ id:'geo.suburb.cross_region', level:'warning', msg:`Suburb “${suburb}” page references other LGAs (${others.join(', ')}).`, file:`route:${route}` });
+      }
+    }
+  }
+
+  return rules;
+}
+
+function lintServiceIntent(route, snap, geo){
+  const out = [];
+  const body = snap.body.toLowerCase();
+
+  const svcMatch = route.match(/^\/services\/([^\/]+)/);
+  if (!svcMatch) return out;
+  const key = svcMatch[1];
+  const intent = geo.service_intent[key];
+  if (!intent) return out;
+
+  for (const t of intent.must){
+    if (!body.includes(t.toLowerCase())){
+      out.push({ id:'intent.missing', level:'warning', msg:`Missing expected term "${t}" for ${key} page`, file:`route:${route}` });
+    }
+  }
+  for (const t of intent.forbid){
+    if (body.includes(t.toLowerCase())){
+      const count = textCount(body, t);
+      out.push({ id:'intent.forbidden', level:'error', msg:`Forbidden term "${t}" appears ${count}× on ${route}`, file:`route:${route}` });
+    }
+  }
+
+  // Mismatch heuristic: H1/title say Spring, body says Bond, etc.
+  if (/spring/.test(snap.h1.toLowerCase()+snap.title.toLowerCase()) && containsAny(body, ['bond clean','end of lease','bond back'])){
+    out.push({ id:'intent.mismatch', level:'error', msg:'Page signals Spring Cleaning but contains bond-clean language. Replace FAQ/copy with spring-specific content.', file:`route:${route}` });
+  }
+
+  return out;
+}
+
+function lintEnrichment(route, snap){
+  const res = [];
+  const wc = snap.body.split(/\s+/).length;
+  const hasCTA = /(get a quote|book now|call)/i.test(snap.body);
+  const hasSchema = /Service|LocalBusiness/.test(snap.scripts || '');
+
+  if (wc < 250) res.push({ id:'enrich.plain', level:'warning', msg:`Low copy depth (${wc} words). Target 500–800 for service pages.`, file:`route:${route}` });
+  if (!hasCTA) res.push({ id:'enrich.missing', level:'warning', msg:'No clear CTA detected (e.g., “Get a Quote”).', file:`route:${route}` });
+  if (!hasSchema && route.startsWith('/services/')) res.push({ id:'enrich.schema', level:'note', msg:'No Service/LocalBusiness JSON‑LD found.', file:`route:${route}` });
+  return res;
+}
+
+async function run(){
+  const geo = JSON.parse(await fs.readFile(GEO_PATH, 'utf8'));
+  const routes = await crawlRoutes();
+  const rules = [
+    rule({ id:'intent.missing', name:'Required terms missing' }),
+    rule({ id:'intent.forbidden', name:'Forbidden terms present' }),
+    rule({ id:'intent.mismatch', name:'Page intent mismatch' }),
+    rule({ id:'blog.meta.region_reference', name:'Hub references other LGA' }),
+    rule({ id:'geo.suburb.unknown', name:'Suburb not in geo map' }),
+    rule({ id:'geo.suburb.lga_missing', name:'Suburb page missing LGA mention' }),
+    rule({ id:'geo.suburb.cross_region', name:'Suburb page references other LGA' }),
+    rule({ id:'enrich.plain', name:'Thin/plain page' }),
+    rule({ id:'enrich.missing', name:'Missing CTA' }),
+    rule({ id:'enrich.schema', name:'Missing JSON‑LD' })
+  ];
+  const results = [];
+
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+
+  for (const route of routes){
+    try {
+      const snap = await extractSnapshot(page, route);
+      const a = lintServiceIntent(route, snap, geo);
+      const b = lintGeo(route, snap, geo);
+      const c = lintEnrichment(route, snap);
+      for (const f of [...a, ...b, ...c]){
+        results.push(result({ ruleId: f.id, level: f.level, message: f.msg, file: f.file, startLine:1, startColumn:1 }));
+      }
+    } catch (e) {
+      results.push(result({ ruleId:'crawl.error', level:'note', message:`Failed ${route}: ${e.message||e}`, file:`route:${route}`, startLine:1, startColumn:1 }));
+    }
+  }
+
+  await browser.close();
+  await fs.mkdir(path.dirname(OUT), { recursive: true });
+  await writeSarif(OUT, createSarif({ toolName: 'AU Geo Audit', rules, results }));
+  console.log(`[au-geo-audit] Routes: ${routes.length} → Findings: ${results.length} → ${OUT}`);
+}
+
+run().catch(e => { console.error(e); process.exit(1); });
+```
+
+---
+
+## 3) ai-rules.json (service intent + route guardrails)
+
+```json
+{
+  "routes": [
+    { "glob": "/services/bond-cleaning/**", "must": ["bond clean", "agent-ready"], "forbid": ["spring clean"] },
+    { "glob": "/services/spring-cleaning/**", "must": ["spring clean"], "forbid": ["bond clean", "bond back", "end of lease"] },
+    { "glob": "/services/bathroom-deep-clean/**", "must": ["tiles", "shower screen", "grout"], "forbid": ["bond clean"] }
+  ]
+}
+```
+
+---
+
+## 4) GitHub Actions (CI wiring)
+
+```yaml
+name: AU Geo Audit
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Install deps
+        run: |
+          npm i -D playwright @playwright/test
+          npx playwright install --with-deps
+      - name: Start preview server
+        run: |
+          npm run build || true
+          npm run dev &
+          sleep 5
+      - name: AU Geo Audit
+        env:
+          SITE_ORIGIN: ${{ vars.SITE_ORIGIN || 'http://localhost:4322' }}
+        run: |
+          node scripts/au-geo-audit.js
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: sarif
+```
+
+> For Netlify Previews in PRs, set `SITE_ORIGIN` to the preview URL via an env or PR comment bot, then run the audit against the preview instead of localhost.
+
+---
+
+## 5) Optional: Auto-fix suggestions (JSON)
+
+Generate a companion JSON with remediation suggestions per finding. In `au-geo-audit.js`, after computing results, also write `ai-reports/geo-fixes.json` like:
+
+```json
+{
+  "route:/services/spring-cleaning/": {
+    "replace_faq": "spring-specific",
+    "add_terms": ["spring clean"],
+    "remove_terms": ["bond clean", "bond back"]
+  },
+  "route:/services/bathroom-deep-clean/": {
+    "add_terms": ["tiles", "shower screen", "grout"],
+    "remove_terms": ["bond clean"]
+  }
+}
+```
+
+Then your content scripts (or a small codemod) can consume this and open a PR with content diffs.
+
+---
+
+## 6) Running locally
+
+```bash
+# 1) Install once
+npm i -D playwright @playwright/test
+npx playwright install
+
+# 2) Ensure your site is running (Astro dev on 4322)
+npm run dev
+
+# 3) Crawl + lint against localhost
+SITE_ORIGIN=http://localhost:4322 \
+node scripts/au-geo-audit.js
+
+# 4) See results in SARIF
+cat sarif/ai-geo-intent.sarif | head
+```
+
+---
+
+## 7) Migration advice — from “regions” to Aussie LGAs
+
+* Replace “Ipswich Region / Brisbane West / Logan” wording with **Ipswich**, **Brisbane**, **Logan** (LGAs most residents recognise).
+* Use the `geo.au.json` to drive **breadcrumbs, H1 suffixes, and blog hubs.**
+* Redirect old `/blog/ipswich-region/` → `/blog/ipswich/` etc. Update internal links via a codemod.
+
+---
+
+## 8) Next steps
+
+* Add an **allowlist** for legacy terms (e.g., “Brisbane West”) while migrating.
+* Extend the crawler to extract **link graphs** and ensure suburb pages link to their **LGA hub** and relevant **service pages**.
+* Wire this into your existing **intent/copy/enrichment** bots so every deploy is guarded.

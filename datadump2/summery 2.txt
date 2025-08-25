@@ -1,0 +1,501 @@
+# One N Done Bond Clean — Engineering Chronicle & Playbook
+
+A comprehensive, end-to-end record of the architecture, decisions, files, tests, guardrails, and fixes that took us from early experiments to a production-ready Astro + Netlify stack. This is meant to be a living “flight manual” for maintainers, reviewers, and new teammates.
+
+---
+
+## Executive summary
+
+* **Goal:** Fast, SEO-sound lead-gen site with service×suburb pages, consistent canonicals, reliable redirects for synonyms, single JSON-LD graph, strong a11y, and deterministic E2E tests.
+* **Core stance:** Prefer **static generation** + CDN for all public pages. Use **SSR/Edge only when a route truly needs per-request logic** (none of the money pages do).
+* **Key outcomes:**
+
+  * Single canonical routes for services/areas/blog (**no alias pages**).
+  * **Pattern-based static redirects** for service synonyms (e.g., `/bond-cleaners/:suburb → /services/bond-cleaning/:suburb/ 301!`).
+  * **Single JSON-LD emitter** with consolidated `@graph` and a **hash guard** to catch accidental schema drift.
+  * **A11y landmarks normalized** to avoid duplicate `<nav>` issues (axe `landmark-unique`).
+  * **Redirect-aware static dev server** so Playwright mimics Netlify behavior locally.
+  * Optional **Edge** is now **opt-in** and guarded; local dev/CI run without Deno.
+
+---
+
+## Timeline: Past → Present → Future
+
+### Past (pain points & initial state)
+
+* **Duplicate nav landmarks** (header nav, legacy cross-service, related links) → axe `landmark-unique` failures.
+* **SSR synonym endpoints** to map variants (e.g., `/bond-cleaners/*`) to canonicals; added infra friction.
+* **Redirect emulator** returned literal `:splat` in paths → local E2E mismatch with Netlify.
+* **JSON-LD emitted from multiple components** → risk of duplicate scripts, hard to reason about.
+* **Edge middleware** assumed present → local/CI crashes when Deno absent.
+* Visual snapshots flaked due to layout churn.
+* ESLint over-permissive in places; duplicated config blocks.
+
+### Present (stabilized, production-ready)
+
+* **Static by default.** SSR synonym endpoints removed.
+* **Pattern redirects** in `public/_redirects` generated from a small JSON map.
+* **Single JSON-LD emitter** (`Schema.astro`) + post-build consolidator (safety net) + **schema hash test**.
+* **A11y: one primary `<nav>`, supporting collections promoted to regions** with unique ARIA names.
+* **serve-with-redirects.mjs** emulates Netlify-style `:param`/`:splat` with query/hash preservation.
+* **USE\_EDGE** env flag and Deno guard; Edge off by default locally & CI.
+* **Playwright suite**: redirects, a11y canaries, visual snapshots (rebaselined), cross-service semantics.
+* **Guards**: no legacy folders, no SSR synonym pages, `_redirects` verifier, internal link audits.
+
+### Future (backlog & polish)
+
+* Delete demoted **legacy CrossServiceLinks** component after a full release cycle.
+* Tighten **ESLint** (zero-warn policy), add **CodeQL**, and enable **Dependabot/Renovate**.
+* Add **Lighthouse budgets** to CI.
+* Optional: schema “diff” visualization, and deprecate consolidator once confidence is high.
+* Redirect sunsetting policy codified (e.g., automatic 301→410 after N days if zero hits).
+
+---
+
+## System overview
+
+### Routing & canonicals
+
+* **Services**
+
+  * Hubs: `/services/[service]/`
+  * Spokes (canonical): `/services/[service]/[suburb]/`
+* **Areas**
+
+  * Index: `/areas/`
+  * Hubs: `/areas/[cluster]/`
+  * Optional suburb: `/areas/[cluster]/[suburb]/`
+* **Blog**
+
+  * Cluster: `/blog/[cluster]/`
+  * Category: `/blog/[cluster]/category/[category]/`
+  * Posts: `/blog/[cluster]/[slug]/`
+
+**No alias cluster** like `brisbane-west` is built. If it ever leaked, it’s handled via redirect policy (see Redirects).
+
+### Redirects (synonyms only)
+
+* Clean slate launch with **Option B** (recommended): **only synonym rules**; **no legacy cluster rules**.
+* Static pattern lines in `_redirects` such as:
+
+  ```
+  /bond-cleaners/:suburb              /services/bond-cleaning/:suburb/        301!
+  /end-of-lease-cleaning/:suburb      /services/bond-cleaning/:suburb/        301!
+  /vacate-clean/:suburb               /services/bond-cleaning/:suburb/        301!
+  /house-cleaning/:suburb             /services/spring-cleaning/:suburb/      301!
+  /deep-cleaning/:suburb              /services/spring-cleaning/:suburb/      301!
+  /bathroom-cleaning/:suburb          /services/bathroom-deep-clean/:suburb/  301!
+  /shower-screen-restoration/:suburb  /services/bathroom-deep-clean/:suburb/  301!
+  ```
+
+### SEO & JSON-LD
+
+* **Single emitter component** outputs a consolidated `@graph` per page.
+* Builders return **pure objects** (no Astro/DOM in utilities).
+* Post-build consolidator remains as a **safety net**, but the intent is single-source schema.
+* **Schema hash** test snapshots structure to detect drift.
+
+### Accessibility
+
+* **Exactly one `<nav>` landmark** for site navigation and one for the cross-service/guide panel (if used).
+* Any “related” blocks that look like navs are **regions** with unique `aria-label`.
+* Axe `landmark-unique` rule passes in CI.
+
+### Edge/SSR strategy
+
+* **Edge** is **off by default** (`USE_EDGE=false`); guard script ensures Deno exists before trying to start Edge.
+* **SSR synonym** pages removed; redirects are fully static.
+* No public pages depend on per-request logic; build outputs are deterministic.
+
+---
+
+## “Tree of life” — data flows & dependencies
+
+```
+                +-------------------------------+
+                | src/data/synonyms.map.json   |
+                +---------------+---------------+
+                                |
+                 (generate-synonym-redirects.mjs)
+                                |
+                                v
++-------------------+    writes between markers     +--------------------+
+|   public/_redirects| <---------------------------- |   verify-redirects |
++----------+---------+                               +--------------------+
+           |                                                   ^
+           | used by                                           |
+           v                                                   |
++----------------------------+                          Playwright E2E
+| scripts/serve-with-...mjs  |----> local test server -------+
++----------------------------+
+
+
++-------------------------------+          +----------------------------+
+| src/data/serviceCoverage.json |          | src/content/areas.clusters |
++---------------+---------------+          +---------------+------------+
+                |                                          |
+                |                                    (build & pages)
+                v                                          v
+         service routes                        /services/* pages & area hubs
+                |                                          |
+                |                              +-----------+----------+
+                |                              |  Schema.astro (emit) |
+                |                              +-----------+----------+
+                |                                          |
+                v                                          v
+      +-------------------+                    +------------------------+
+      |  seoSchema.js     | --builders-->      | consolidate-ld.mjs     |
+      +-------------------+                    +------------------------+
+                                                     |
+                                                     v
+                                           __schema/current.json (hash)
+
+
++----------------------------------------+
+| src/utils/internalLinks (existing)     |
+|  - isServiceCovered, getSuburbCross... |
+|  - getRelatedServiceLinks, getLocal... |
++----------------+-----------------------+
+                 |
+                 v
++------------------------------------------+
+| src/utils/internalLinksAdapter.ts        |
+|  - getCrossServiceItems (async)          |
+|  - getCrossServiceLinks (sync)           |
+|  - getLocalGuidesLink (sync)             |
+|  - passthrough exports                   |
++----------------------+-------------------+
+                       |
+                       v
+             CrossServiceLinks / ServiceNav
+             (exactly one landmark on page)
+```
+
+---
+
+## File inventory (what, why, who consumes, outputs)
+
+> Not every file existed at the same time—this lists the **current model** and notes any deprecations.
+
+### Redirects & local emulation
+
+* **`src/data/synonyms.map.json`**
+  **What:** Map of `aliasSlug → canonicalServiceId`.
+  **Why:** Single source for synonym→canonical redirect lines.
+  **Consumed by:** `scripts/generate-synonym-redirects.mjs`, `tests/e2e/synonym-redirects.spec.ts`.
+  **Outputs:** Drives lines inside `public/_redirects`.
+
+* **`scripts/generate-synonym-redirects.mjs`**
+  **What:** Inserts/updates pattern redirect block between markers in `_redirects`.
+  **Why:** Keep `_redirects` canonical and tiny.
+  **Consumed by:** `npm run redirects:generate`, `prebuild` and CI.
+  **Outputs:** `_redirects` block. (Optional **expanded** mode available behind `SYNONYM_MODE=expanded`.)
+
+* **`scripts/verify-redirects-block.mjs`**
+  **What:** Ensures the `_redirects` synonym block exists and matches expected format.
+  **Why:** Prevent drift and accidental edits.
+  **Consumed by:** `npm run redirects:verify`, `prebuild` and CI.
+  **Outputs:** Fails CI/prebuild if malformed.
+
+* **`public/_redirects`**
+  **What:** Netlify rules file (final source for CDN).
+  **Why:** Production redirects (synonyms only; no legacy cluster lines).
+  **Consumed by:** Netlify at runtime; `serve-with-redirects.mjs` locally.
+  **Outputs:** Actual redirect behavior in prod; used by tests.
+
+* **`scripts/serve-with-redirects.mjs`**
+  **What:** Static dev server with Netlify-style redirects (`:param`, `:splat`, trailing slash, preserves query/hash).
+  **Why:** Make local E2E reflect prod behavior (no SSR).
+  **Consumed by:** Playwright tests (via `playwright.config.ts` or manual start).
+  **Outputs:** Local HTTP server for tests.
+
+* **Guard scripts**
+
+  * `scripts/assert-no-legacy-folders.mjs` — bans old cluster dirs like `brisbane-west`.
+  * `scripts/assert-no-ssr-synonym-pages.mjs` — bans SSR routes for synonyms (forces static redirects).
+
+### Cross-service links & adapters
+
+* **`src/utils/internalLinksAdapter.ts`**
+  **What:** Unified adapter exposing:
+
+  * `getCrossServiceItems(suburbSlug)` → **async**, creates two items (“spring-cleaning”, “bathroom-deep-clean”) with a **nearby fallback** when uncovered.
+  * `getCrossServiceLinks(suburbSlug)` → **sync**, returns same-suburb related links via existing internal helpers.
+  * `getLocalGuidesLink(suburbSlug)` → **sync**, returns a cluster blog link (BLOG\_BASE-aware).
+  * Passthrough: `getRelatedServiceLinks`, `unslugToName`.
+    **Why:** One place to fetch/link cross-service CTAs without duplicating logic.
+    **Consumes:** `~/utils/internalLinks` (existing helpers), `~/utils/nearbyCovered` (async neighbor finder).
+    **Outputs:** Props used by `ServiceNav` or `CrossServiceLinks` (the latter now demoted/retiring).
+
+* **`src/layouts/ServiceLayout.astro`**
+  **What:** Service layout shell.
+  **Why:** Hosts single cross-service region.
+  **Notes:** **Fixed** to avoid injecting duplicate nav landmarks. Ensure only one `[data-relservices]` region is rendered.
+
+* **(Deprecated soon) `src/components/CrossServiceLinks.astro`**
+  **What:** Legacy nav block (now a **region** with unique aria name).
+  **Why:** Backcompat during transition.
+  **Plan:** Delete after one release cycle.
+
+> Some teams also introduced build-time cross-service maps (`scripts/build-cross-service-map.mjs`, `src/lib/crossService.ts`, `src/lib/serviceNav.adapter.ts`). Where present, they **precompute** cross-service items to make UI **fully synchronous**. Our current adapter is compatible either way (async or precomputed).
+
+### Schema & SEO
+
+* **`src/lib/seoSchema.js`**
+  **What:** Pure JSON-LD builders (`localBusinessNode`, `serviceAndOfferNodes`, `breadcrumbList`, `faqPageNode`, `aggregateRatingNode`, `reviewNodes`, `suburbServiceGraph`, `absoluteUrl`, etc.).
+  **Why:** Compose schema consistently; no DOM coupling.
+  **Consumed by:** Page routes building a graph before render.
+
+* **`src/components/Schema.astro`**
+  **What:** **Single emitter** of `{ "@context": "...", "@graph": [...] }`.
+  **Why:** Centralize script emission; prevents duplicates.
+  **Consumed by:** Service, area, blog pages.
+
+* **`scripts/consolidate-ld.mjs`**
+  **What:** Post-build safety net that merges accidental multiple JSON-LD scripts into a single `@graph`.
+  **Why:** Defensive; target remains one emitter at source.
+  **Outputs:** Cleaned JSON-LD in built HTML.
+
+* **`scripts/extract-ld-hashes.mjs`**
+  **What:** Reads built pages, extracts JSON-LD graphs, **sorts keys**, and writes a fingerprint `__schema/current.json`.
+  **Why:** Used by tests to detect structural schema drift.
+
+* **`tests/e2e/schema-hash.spec.ts`** + **`baseline.json`**
+  **What:** Compares current schema hash against baseline.
+  **Why:** Prevent silent schema changes.
+
+### A11y & tests
+
+* **`tests/e2e/a11y.spec.ts`**
+  **What:** Axe checks for a small set of core routes.
+  **Why:** Catch `landmark-unique` and other regressions.
+  **Fix history:** Resolved by ensuring unique `<nav>` names and demoting non-primary collections to regions.
+
+* **`tests/e2e/synonym-redirects.spec.ts`**
+  **What:** Data-driven redirects spec; reads `synonyms.map.json` and **actual coverage** to pick sample suburb slugs.
+  **Why:** Guarantees 301 + preservation of `?query#hash`, and that targets exist (no 404 sampling).
+
+* **`tests/e2e/visual.spec.ts`**
+  **What:** Screenshot diffs for key templates.
+  **Why:** Catch layout/regression; re-baseline after structural fixes.
+
+* **(Optional)** `tests/e2e/redirects-legacy.spec.ts`
+  **What:** Asserts that banned aliases (e.g., `brisbane-west`, `ipswich-region`) are not present in `_redirects`.
+  **Why:** Keep redirect surface clean.
+
+### Edge & environment
+
+* **`guard-deno.js`**
+  **What:** Small guard to check for Deno **when** `USE_EDGE=true`.
+  **Why:** Prevent crashes in local/CI if Edge is off.
+
+* **`check-env.js`**
+  **What:** Convenience script to print env state.
+  **Why:** Debug toggles like `USE_EDGE`, `BLOG_BASE`.
+
+* **`.env.example`**
+  **What:** Documents `USE_EDGE=false` default; other envs like `MIN_REVIEWS_FOR_AGG`, `BLOG_BASE`.
+  **Why:** Team alignment.
+
+### CI / Git hygiene
+
+* **`.github/workflows/ci.yml`**
+  **What:** Single job that installs, generates & verifies redirects, **builds**, and runs Playwright against the **static redirect server**.
+  **Why:** One clear source of truth; SSR/Edge excluded by default.
+
+* **Husky hooks**
+
+  * `pre-commit`: re-generate & verify redirects when relevant files change.
+  * `pre-push`: quick redirect smoke.
+
+* **(Recommended)** CodeQL, Dependabot, Lighthouse CI (budgets) — to be added/kept aligned.
+
+---
+
+## Runbooks & commands
+
+### Local dev
+
+```bash
+npm i
+npm run dev         # Astro dev (port 4322)
+npm run build
+npm run preview
+```
+
+### Redirects lifecycle
+
+```bash
+# Edit synonyms
+vi src/data/synonyms.map.json
+
+# Update _redirects
+npm run redirects:generate
+npm run redirects:verify
+
+# Local redirect server (mimics Netlify)
+npm run serve:redirects
+```
+
+### Tests
+
+```bash
+# Full Playwright
+npm test
+
+# Focused
+npx playwright test tests/e2e/synonym-redirects.spec.ts --reporter=line
+npx playwright test tests/e2e/a11y.spec.ts --grep "axe @ /" --reporter=line
+npx playwright test tests/e2e/visual.spec.ts --update-snapshots     # rebaseline when intended
+```
+
+### Schema guard
+
+```bash
+npm run build
+node scripts/extract-ld-hashes.mjs   # writes __schema/current.json
+# Manually review then update baseline.json if changes are intentional
+```
+
+### Edge toggle
+
+```bash
+# Edge OFF (default)
+USE_EDGE=false npm run dev
+
+# Edge ON (requires Deno installed)
+USE_EDGE=true node guard-deno.js && npm run dev
+```
+
+---
+
+## Checklist of problems & fixes (start → end)
+
+1. **Axe `landmark-unique` failures**
+   **Cause:** Multiple `<nav>` landmarks (header + legacy cross-service + related links), unlabeled duplicates.
+   **Fix:**
+
+   * Keep exactly one cross-service landmark (`[data-relservices]`).
+   * Demote non-primary collections to `<section role="region">` with unique `aria-label`.
+   * Remove duplicate injections from `ServiceLayout.astro`.
+   * Assert in tests: at most one `[data-relservices]` and all landmarks have unique names.
+
+2. **Redirects emulation mismatch**
+   **Cause:** Local server copied literal `:splat` to target; no param substitution; trailing slash inconsistencies.
+   **Fix:** Upgrade `serve-with-redirects.mjs` to parse `:param` and `:splat`, preserve `?query#hash`, normalize slashes, and add a root fallback.
+
+3. **SSR synonym endpoints added infra friction**
+   **Cause:** Each synonym needed an SSR handler; local/CI complexity increased; Edge attempted to start.
+   **Fix:** Replace with **pattern-based static `_redirects`** generated from a single JSON map; add guard to **ban SSR synonym pages**.
+
+4. **Edge middleware crashes in local/CI**
+   **Cause:** Deno not present; Edge initialized by default.
+   **Fix:** `USE_EDGE` env toggle **off by default**; `guard-deno.js` validates Edge preconditions.
+
+5. **Visual snapshot churn**
+   **Cause:** Real markup changes (landmarks, layout).
+   **Fix:** Rebaseline after stabilized layout; ensure snapshots run only after structural changes are merged.
+
+6. **Schema duplication & drift risk**
+   **Cause:** Multiple components emitted JSON-LD; hard to reason about exact graph structure.
+   **Fix:** Single `Schema.astro` emitter; keep `consolidate-ld.mjs` as safety net; add `extract-ld-hashes.mjs` + test to lock graph shape.
+
+7. **Dynamic cross-service logic flakiness**
+   **Cause:** Async fetch at runtime, duplicates, sometimes missing.
+   **Fix:** Central `internalLinksAdapter.ts` + (optional) **build-time precompute** model. Ensure exactly one panel renders.
+
+8. **Legacy clusters (e.g., `brisbane-west`)**
+   **Cause:** Unwanted aliases and pages.
+   **Fix:** **Do not build** any alias pages; **no** alias rules in `_redirects`; guard scripts ensure they don’t reappear.
+
+9. **ESLint config duplication / leniency**
+   **Cause:** Duplicated plugin blocks & relaxed rules hidden issues.
+   **Fix (planned):** Remove duplicates; enable zero-warn policy progressively; add ambient types to remove `@ts-ignore`.
+
+---
+
+## Decision log
+
+* **Static > SSR** for all public pages (fastest, simplest, testable). **Status:** Adopted.
+* **Synonyms via static patterns**, not SSR routes. **Status:** Adopted.
+* **Single JSON-LD emitter** + hash guard. **Status:** Adopted.
+* **Edge opt-in** (`USE_EDGE=false` by default). **Status:** Adopted.
+* **No legacy clusters** (no pages, no redirects). **Status:** Adopted; guard in place.
+* **A11y: unique landmarks** enforced. **Status:** Adopted; tested.
+
+---
+
+## Backlog & ownership
+
+* **Delete legacy CrossServiceLinks** (and any `.notusing.` artifacts) after one stable release. **Owner:** Web team.
+* **ESLint zero-warn** and remove ignores; add `global.d.ts` for JSON imports. **Owner:** Platform.
+* **CodeQL + Dependabot/Renovate**. **Owner:** DevOps.
+* **Lighthouse budgets** in CI (perf/a11y/SEO). **Owner:** Web team.
+* **Redirect sunsetting policy** (automatic 301→410 after N days with 0 hits). **Owner:** SEO.
+
+---
+
+## Glossary
+
+* **Canonical**: The single “official” URL for a piece of content.
+* **Synonym redirect**: Human phrasing variants (e.g., “vacate clean”) that 301 to the canonical service page.
+* **Pattern redirect**: Redirect rule with path params (e.g., `:suburb`) instead of enumerating every row.
+* **JSON-LD `@graph`**: Consolidated structured data snippet per page.
+* **Axe `landmark-unique`**: A11y rule requiring unique role/label/title combinations for landmarks.
+
+---
+
+## Acceptance checks (what “good” looks like)
+
+* **/services/bond-cleaning/ipswich/** returns 200; axe passes; one cross-service landmark; JSON-LD has a single `@graph`.
+* **/bond-cleaners/ipswich** returns **301!** to `/services/bond-cleaning/ipswich/` (query/hash preserved).
+* **\_redirects** has **only** the synonym pattern block between markers; no legacy cluster tokens.
+* **Playwright** passes E2E (redirects + a11y) on the **redirect-aware static server**.
+* **Edge** does not start unless `USE_EDGE=true` and Deno is installed.
+* **Schema hash** matches baseline or baseline is intentionally updated after review.
+
+---
+
+## Appendices
+
+### A. Environment variables
+
+* `USE_EDGE` — `false` by default. Toggle Edge/Netlify middleware in dev.
+* `BLOG_BASE` — Blog base path (default `/blog/`). Guard scripts verify you don’t hard-code `/blog/`.
+* `MIN_REVIEWS_FOR_AGG` — Threshold for emitting `AggregateRating` + top `Review` nodes.
+* `SYNONYM_MODE` — Optional: `pattern` (default) or `expanded` for redirect generation.
+
+### B. Quick file map
+
+```
+public/
+  _redirects                     # FINAL redirect rules (synonyms only; pattern block)
+src/
+  components/Schema.astro        # Single JSON-LD emitter
+  layouts/ServiceLayout.astro    # Hosts single cross-service region (no duplicate nav)
+  lib/seoSchema.js               # JSON-LD builders (pure)
+  utils/internalLinksAdapter.ts  # Adapter for cross-service items/links/guides
+  data/serviceCoverage.json      # Service→suburb coverage (build/pages/tests)
+  data/synonyms.map.json         # Alias→canonical service for redirects
+scripts/
+  serve-with-redirects.mjs       # Static server with Netlify-style redirect emulation
+  generate-synonym-redirects.mjs # Writes pattern block to _redirects
+  verify-redirects-block.mjs     # Validates the block format & markers
+  consolidate-ld.mjs             # Safety net: merges multiple JSON-LD into a single @graph
+  extract-ld-hashes.mjs          # Produces __schema/current.json fingerprint
+  assert-no-legacy-folders.mjs   # Guard: ban 'brisbane-west' etc
+  assert-no-ssr-synonym-pages.mjs# Guard: ban SSR synonym routes
+  guard-deno.js                  # Validates Edge preconditions if USE_EDGE=true
+tests/e2e/
+  a11y.spec.ts                   # Axe canary
+  synonym-redirects.spec.ts      # Data-driven redirects test from map+coverage
+  visual.spec.ts                 # Snapshots (rebaseline as needed)
+  redirects-legacy.spec.ts       # (optional) asserts legacy aliases absent
+__schema/
+  current.json                   # Generated schema fingerprint
+baseline.json                    # Approved schema baseline
+```
+
+---
+
+**This document is the project’s memory.** Treat it as the place to record meaningful decisions, add or retire guardrails, and capture why a file exists and who relies on it. With the above, anyone on the team can understand what ships, how it’s tested, and how to change it safely.

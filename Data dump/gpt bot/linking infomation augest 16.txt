@@ -1,0 +1,56 @@
+GitHub Copilot
+
+Brief: how internal linking is set up
+
+Goal: keep pages lean but well-connected—push users/crawlers from any service×suburb page to a few high‑value canonicals.
+Strategy:
+Primary link to the current money page (service×suburb).
+Nearby links to other covered suburbs in the same cluster.
+Fallbacks to the service hub (and cluster hub if space remains).
+Canonicalization: cluster/suburb names are normalized via slugify and resolveClusterSlug so we never emit alias paths.
+Rendering: UI components (e.g., RelatedLinks/AcceptanceSlice/Footer slices) call getRelatedServiceLinks and render its label/href pairs.
+Files involved (source of truth + helpers + consumers)
+
+Data (single source of truth)
+content/areas.clusters.json: clusters with canonical slug, name, suburbs[], and aliases map.
+data/serviceCoverage.json: per‑service whitelist of suburbs you actually service (filters out non‑covered suburbs).
+Helpers
+src/utils/slugify.js: converts names to slugs consistently.
+src/utils/geoHandler.js: resolveClusterSlug(...) maps alias → canonical cluster slug.
+src/utils/internalLinks.js: core generator
+findClusterSlugForSuburb(suburbSlug): finds the canonical cluster for a suburb by looking it up in areas.clusters.json (using slugify).
+getRelatedServiceLinks({ service, suburbSlug, count }): builds a small ordered set of internal links (money page → nearby → fallbacks).
+unslugToName(slug): prettifies slugs for labels.
+Blog routing (example of alias handling)
+src/pages/blog/[cluster]/category/[category].astro:
+getStaticPaths emits paths for canonical cluster slugs plus alias slugs.
+At runtime, resolveClusterSlug redirects alias cluster URLs to the canonical route (301).
+Breadcrumb links are emitted in HTML (+ BreadcrumbList JSON‑LD).
+How many links per page
+
+From the internal links generator: default count is 3 per placement (current page + up to two nearby; fallbacks fill to reach 3).
+Pages that include this block typically render 3 links per block. If a page has no suburb context or not enough covered neighbors, you may see fewer.
+Other navigational links (breadcrumbs, menus, post lists) are separate and not governed by this limit.
+Confirm usage and counts (optional)
+
+Find all call sites and any custom counts:
+Verify alias handling and redirects:
+How suburb information is organized and extracted
+
+Organized:
+One central JSON, content/areas.clusters.json, contains canonical cluster slugs, display names, a strict suburbs whitelist, and per‑cluster alias maps. This is the single source of truth.
+serviceCoverage.json constrains which suburb pages you’ll actually link to for a given service.
+Extraction/normalization:
+Slug normalization: slugify ensures “Springfield Lakes” → springfield-lakes, etc.
+Alias resolution: resolveClusterSlug maps variants like “brisbane-west” → your canonical cluster slug.
+Build‑time usage:
+getStaticPaths reads areas.clusters.json to generate routes (including alias variants for redirect handling).
+internalLinks.findClusterSlugForSuburb searches the clusters’ suburbs[] to locate the current suburb’s cluster, then chooses “nearby” suburbs from that cluster and filters by serviceCoverage.
+Result: links are generated against canonical, whitelisted slugs with a predictable URL structure:
+/services/[service]/[suburb]/
+/services/[service]/
+/areas/[cluster]/
+Notes
+
+BASE in internalLinks.js is currently unused; safe to remove unless you want absolute URLs.
+If you want an exact per‑page count of “related links” anchors, add a data-testid or wrapper class to the component that renders getRelatedServiceLinks, then we can audit dist/ precisely. Without that marker, the generator’s default is 3 per placement.

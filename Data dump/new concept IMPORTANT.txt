@@ -1,0 +1,167 @@
+Love the ambition. Here’s a fresh, non-spammy plan that borrows the spirit of the original (programmable, aggressive, automatable) but replaces tricks with verifiable usefulness.
+
+CleanGraph: an Evidence-Driven Local SEO system (for Astro)
+1) Proof-of-Service Ledger (PoSL)
+
+Idea: Turn every completed job into structured, verifiable evidence that your team solved a real problem in a specific suburb.
+
+What it is: A tiny JSON “job card” per booking (no personal data) with: suburb, dwelling type, tasks done, duration, before/after assets, crew IDs, and a SHA-256 content hash. Public, immutable once published.
+
+Why it wins: It’s unique, high-intent, locally anchored content that competitors can’t fake at scale. It builds E-E-A-T and earns links from property managers & local forums.
+
+Astro automation (sketch):
+
+// /scripts/build-ledger.ts
+import fs from 'node:fs'; import crypto from 'node:crypto';
+
+const jobs = JSON.parse(fs.readFileSync('./data/jobs.json','utf-8'));
+for (const j of jobs) {
+  const payload = {
+    jobId: j.id, suburb: j.suburb, service: j.service,
+    tasks: j.tasks, durationMins: j.duration, startedAt: j.startedAt,
+    media: j.media.map(m => ({ url: m.cdn, type: m.type })), // no EXIF PII
+  };
+  const hash = crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+  fs.writeFileSync(`./src/content/ledger/${j.id}.json`, JSON.stringify({ ...payload, hash }, null, 2));
+}
+
+
+On each suburb/service page, render a rolling “Latest proofs” strip and expose matching JSON-LD (ImageObject, HowTo, Review if you show the review on the page).
+
+2) Outcome Trails (Problem → Constraint → Service → Result → Aftercare)
+
+Idea: Replace generic pages with decision narratives that mirror how tenants/owners think.
+
+What it is: For each suburb×service, programmatically build a trail of short, skimmable blocks:
+
+Problem (“agent flagged oven carbonized”)
+
+Constraint (time before inspection, keys, pets, parking)
+
+Service mapping (exact tasks & add-ons selected by similar customers)
+
+Result metrics (from PoSL: duration, re-clean rate, satisfaction)
+
+Aftercare (how to keep it clean; when to book again)
+
+Why it wins: Captures long-tail intent without doorway pages. It’s genuinely helpful and unique per locale.
+
+// /src/components/OutcomeTrail.astro
+---
+const { trail } = Astro.props; // array of blocks generated at build
+---
+<section aria-label="How we solved this in your area">
+  {trail.map(b => (
+    <article>
+      <h3>{b.title}</h3>
+      <p>{b.copy}</p>
+    </article>
+  ))}
+</section>
+
+3) Civic Utility Blocks (CUBs)
+
+Idea: Make each page a tiny public-service hub for that suburb.
+
+What it is: Auto-generated, visible widgets that answer practical tasks around cleaning:
+
+“Bulk-waste days near {suburb}” (ICS link users can add)
+
+“End-of-lease inspection checklist” (downloadable PDF you authored)
+
+“Water usage & drying tips for carpet steam in {suburb} climate”
+
+Why it wins: These are link-worthy, save users time, and fit productively into the page. It’s content no aggregator has.
+
+(Data sources are up to you; keep everything cited on-page and visible. Mark up as HowTo, CreativeWork, and Event only if those blocks are shown.)
+
+4) Availability Graph + Service Reliability Index (SRI)
+
+Idea: Publish your operational strength as a living signal.
+
+What it is: A rolling 14-day availability visualization by suburb + an SRI score computed from: on-time %, first-pass pass rate with property managers, and average response time.
+
+Why it wins: It reassures humans, differentiates you, and keeps pages “fresh” with legitimate updates (accurate lastmod).
+
+Implementation notes: Render the graph UI; expose OpeningHoursSpecification + Offer (next available slot) in JSON-LD that mirrors the UI.
+
+5) Adjacent-Demand Capsules (ethical “parasites”)
+
+Idea: Capture spillover intent without doorway tactics.
+
+What it is: Short, template-driven explainers for adjacent tasks (e.g., “Bond clean vs standard vacate — what agents in {cluster} actually check”). Each includes 2–3 visible contextual links to the relevant service page and a PoSL example.
+
+Why it wins: Satisfies People-Also-Ask style queries with original, evidence-backed answers.
+
+6) Trust-Parity Schema Guard
+
+Idea: Never get a rich-result penalty again.
+
+What it is: A schema generator that diffs your JSON-LD against visible UI before build completes. If there’s a mismatch, the build fails.
+
+// /scripts/schema-guard.ts
+import { JSDOM } from 'jsdom'; // run after astro build output exists
+function assertParity(html: string, schema: any) {
+  const dom = new JSDOM(html); const doc = dom.window.document;
+  // Example parity check: breadcrumb trail
+  const uiCrumbs = [...doc.querySelectorAll('[data-breadcrumb] li')].map(li => li.textContent?.trim());
+  const ldCrumbs = schema?.itemListElement?.map((x: any) => x.name);
+  if (JSON.stringify(uiCrumbs) !== JSON.stringify(ldCrumbs)) throw new Error('Breadcrumb parity failed');
+}
+
+
+Why it wins: Aggressive automation without ever slipping into “phantom” markup.
+
+7) Local Problem Index (LPI)
+
+Idea: Let your customers’ real issues steer content.
+
+What it is: A weekly job-log pass that clusters common problems by suburb (e.g., “mould in bathrooms,” “oven carbonized,” “carpet pet accidents”), scores them by frequency × severity, and pushes one fresh paragraph + one PoSL tile onto the affected pages.
+
+Why it wins: Continuous improvement that’s grounded in your own data, not scraped copy.
+
+8) Clean Simulator (transparency that converts)
+
+Idea: Interactive “what will it actually take?” tool.
+
+What it is: Users pick dwelling size, extras, constraints; the simulator outputs estimated crew size, time, prep checklists, and a realistic timeslot. Expose a HowTo + Offer that exactly matches the visible simulator result.
+
+Why it wins: Reduces quote friction and creates uniquely structured content per suburb×service.
+
+Information architecture (simple, shallow, fast)
+
+/services/[service]/[suburb]/index.astro → canonical page with: Trail + PoSL + CUBs + Availability + LPI.
+
+/ledger/[jobId].json → public job evidence (linked from service pages).
+
+/guides/[topic]/[cluster]/ → Adjacent-Demand Capsules.
+
+Sitemap: single XML with accurate lastmod from file mtime or CMS updatedAt. No priority, no fake dates.
+
+KPIs & ethical testing
+
+Primary: conversion rate, assisted conversions, calls, booking completion.
+
+Secondary: scroll depth on Outcome Trails, simulator starts, “add to calendar” from CUBs.
+
+Experiments: template/layout A/B on the same URL (no redirects, no UA splitting). Keep content parity for users/bots.
+
+30-day rollout (aggressive but clean)
+
+Week 1: Implement PoSL pipeline + Trust-Parity Schema Guard; refactor one suburb×service to the CleanGraph layout.
+
+Week 2: Availability Graph + SRI; ship Clean Simulator MVP; create 5 Adjacent-Demand Capsules for the highest-value cluster.
+
+Week 3: Add CUBs (calendar & checklist); enable LPI cron to publish one new paragraph/week/page.
+
+Week 4: Scale to top 20 suburb×service combos; tune internal linking with visible “Popular nearby” blocks (6–8 links max).
+
+Why this is “new”
+
+It treats operations as content: verifiable job evidence + availability + reliability.
+
+It swaps keyword games for decision narratives (Outcome Trails) and civic utility (CUBs).
+
+It enforces schema–UI parity at build time, making automation safe at scale.
+
+If you want, I can turn this into a starter repo structure (folders, data shapes, and a couple of production-ready Astro components) you can drop into your stack.

@@ -1,0 +1,21 @@
+{
+  "name": "One N Done Bond Clean",
+  "url": "https://onendonebondclean.com.au",
+  "brand": "One N Done Bond Clean",
+  "description": "Local family bond-cleaning specialists with a 7-day re-clean support policy. Agent-aligned, low-odour methods.",
+  "telephone": "",
+  "email": "",
+  "logo": "/images/logo.svg",
+  "image": ["/images/team.jpg", "/images/oven-before-after.jpg"],
+  "address": {
+    "streetAddress": "",
+    "addressLocality": "Redbank Plains",
+    "addressRegion": "QLD",
+    "postalCode": "",
+    "addressCountry": "AU"
+  },
+  "geo": { "latitude": -27.648, "longitude": 152.891 },
+  "areaServed": ["ipswich", "brisbane", "logan"],
+  "openingHours": ["Mo-Fr 08:00-18:00", "Sa 08:00-14:00"],
+  "sameAs": []
+}

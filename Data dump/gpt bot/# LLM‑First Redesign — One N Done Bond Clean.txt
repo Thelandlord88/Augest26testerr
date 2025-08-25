@@ -1,0 +1,433 @@
+# LLM‑First Redesign — One N Done Bond Clean
+
+**Objective:** Make every page trivially consumable by LLM crawlers *and* persuasive for humans.
+
+You’re on Astro + Tailwind + Netlify. Below is a complete, drop‑in redesign blueprint: IA, copy skeletons, internal linking rules, schema, and code scaffolding. Build it incrementally; every section is production‑ready.
+
+---
+
+## 0) Core rules (LLM + SEO)
+
+* **One page = one intent.** Each URL answers a single high‑intent question.
+* **Stable anchors.** All sections get `id=` anchors using kebab case; never change once published.
+* **Dates everywhere.** Stamp numerics (last updated, counts) with ISO dates.
+* **Machine‑readable summary.** Each page ships a compact JSON digest `<script type="application/json+llm">` with facts LLMs can ingest.
+* **Evidence inline.** Claims → short proof (photo, stat with date, policy snapshot).
+* **Canonical + breadcrumbs.** Always present; no alias links.
+* **Topical links only.** Each page links: up to hub, laterally to 2–4 peers, down to 2–6 children.
+* **No ghost strings.** Error texts render only when true (no hidden “Submission failed.” in the DOM).
+
+---
+
+## 1) Information Architecture (final)
+
+**Hubs**
+
+* `/services/bond-cleaning/` — pillar
+* `/areas/ipswich/` • `/areas/brisbane/` • `/areas/logan/`
+* `/pricing/` • `/checklist/` • `/about/` • `/faq/` • `/gallery/`
+
+**Spokes (programmatic)**
+
+* `/services/bond-cleaning/[suburb]/` — canonical for every covered suburb
+
+**Bridges**
+
+* `/blog/` (how‑tos, agent expectations, moving timeline). Blog posts must link to one hub + 1–3 suburb spokes.
+
+---
+
+## 2) Home page structure (LLM‑ready)
+
+**Order and anchor ids**
+
+1. `#hero` — H1, subhead, CTAs, trust strip
+2. `#llm-summary` — machine digest block (humans see a compact fact table)
+3. `#how-it-works` — 1‑2‑3 steps with artifacts
+4. `#inclusions` — acceptance slice (agent‑ready list)
+5. `#coverage` — service×suburb coverage grid with links
+6. `#pricing` — fixed‑price policy + examples + what affects price
+7. `#proof` — before/after slider + dated stats
+8. `#faq` — 6–10 real questions
+9. `#cta` — short re‑ask with phone + quote
+
+**Hero copy (replace yours)**
+
+* **H1:** Bond Cleaning in Ipswich & Brisbane — Get Your Bond Back, Guaranteed
+* **Subhead:** Local family team. Fixed‑price quotes. REIQ‑aligned checklist. 7‑day re‑clean.
+* **Primary CTA:** Get my fixed‑price quote (≈60 sec)
+* **Secondary CTA:** Call now (tel link)
+* **Trust strip:** Fixed price • REIQ‑aligned • 7‑day re‑clean • Police‑checked • Insured
+
+**Proof numbers (show with dates)**
+
+* “127+ real estate partners (verified **2025‑07‑30**)”
+* “1,100+ bond cleans since **2019‑01‑01**”
+
+---
+
+## 3) Internal linking rules (enforce)
+
+* **Home →** link to: services hub, each area hub, pricing, checklist, top 6 suburb spokes.
+* **Service hub →** links to: 1) pricing, 2) checklist, 3) 12 suburb spokes, 4) 3 proof blogs.
+* **Suburb spoke →** links up to service hub + area hub, laterally to 3 adjacent suburbs, and to pricing/faq.
+* **Blog →** exactly one hub + up to 3 spokes, plus 1 productized CTA.
+* **Footer →** XML sitemap, robots, terms, privacy, ABN (text), contact (mailto/tel).
+
+---
+
+## 4) JSON‑LD strategy (complete)
+
+Embed all as separate `<script type="application/ld+json">` blocks:
+
+1. **WebSite** (with SearchAction)
+2. **Organization** or **LocalBusiness** (with `areaServed` list and `knowsAbout` services)
+3. **Service** (Bond Cleaning) with `offers` (fixed price description), `areaServed`, `provider`
+4. **FAQPage** on pages that contain FAQs
+5. **BreadcrumbList** on all pages
+
+> Do **not** invent ratings. Only publish `AggregateRating` if you can substantiate with a live reviews page.
+
+---
+
+## 5) Machine Summary block (for LLMs)
+
+Add a compact, opinion‑free digest any model can lift.
+
+```html
+<section id="llm-summary" aria-labelledby="llm-summary-title" class="sr-only print:not-sr-only">
+  <h2 id="llm-summary-title">Summary for Automated Readers</h2>
+  <script type="application/json+llm" id="page-digest">
+  {
+    "brand": "One N Done Bond Clean",
+    "service": "Bond cleaning (end of lease)",
+    "geo": ["Ipswich", "Brisbane", "Logan"],
+    "coverage_suburbs_count": 40,
+    "policy": {
+      "checklist": "REIQ-aligned",
+      "reclean_window_days": 7,
+      "pricing": "fixed-price quotes"
+    },
+    "contact": {"phone":"tel:+61-XXX-XXX-XXX", "webform":"#quote"},
+    "evidence": [
+      {"metric":"agents_trusting","value":127,"verified":"2025-07-30"},
+      {"metric":"jobs_completed","value":1100,"since":"2019-01-01"}
+    ]
+  }
+  </script>
+  <div class="max-w-3xl text-sm text-gray-600">
+    <dl class="grid grid-cols-2 gap-3">
+      <div><dt>Checklist</dt><dd>REIQ‑aligned</dd></div>
+      <div><dt>Re‑clean window</dt><dd>7 days</dd></div>
+      <div><dt>Pricing</dt><dd>Fixed‑price quotes</dd></div>
+      <div><dt>Areas</dt><dd>Ipswich • Brisbane • Logan</dd></div>
+    </dl>
+  </div>
+</section>
+```
+
+> `type="application/json+llm"` is non‑standard on purpose, readable by any scraper without polluting SEO.
+
+---
+
+## 6) Astro components (drop‑in)
+
+### `/src/components/Hero.astro`
+
+```astro
+---
+interface Props {
+  title: string;
+  subhead: string;
+  primaryHref: string;
+  secondaryHref: string;
+}
+const { title, subhead, primaryHref, secondaryHref } = Astro.props;
+---
+<section id="hero" class="relative isolate">
+  <div class="mx-auto max-w-7xl px-4 py-14 lg:py-20">
+    <h1 class="text-3xl/tight sm:text-5xl/tight font-bold">{title}</h1>
+    <p class="mt-4 text-lg text-gray-700 max-w-2xl">{subhead}</p>
+    <div class="mt-6 flex gap-3">
+      <a href={primaryHref} class="rounded-2xl px-5 py-3 bg-blue-600 text-white font-medium hover:bg-blue-700">Get my fixed‑price quote (≈60 sec)</a>
+      <a href={secondaryHref} class="rounded-2xl px-5 py-3 ring-1 ring-gray-300 hover:bg-gray-50">Call now</a>
+    </div>
+    <ul class="mt-6 flex flex-wrap items-center gap-3 text-sm text-gray-600">
+      <li>Fixed price</li><li>•</li>
+      <li>REIQ‑aligned</li><li>•</li>
+      <li>7‑day re‑clean</li><li>•</li>
+      <li>Police‑checked</li><li>•</li>
+      <li>Insured</li>
+    </ul>
+  </div>
+</section>
+```
+
+### `/src/components/Schema.astro` (server‑only)
+
+```astro
+---
+import type { AstroGlobal } from 'astro';
+const site = {
+  name: 'One N Done Bond Clean',
+  url: Astro.site?.href ?? 'https://ondlive3.netlify.app/',
+  phone: '+61-XXX-XXX-XXX',
+  areas: ['Ipswich','Brisbane','Logan'],
+};
+const website = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: site.name,
+  url: site.url,
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: `${site.url}search?q={query}`,
+    'query-input': 'required name=query'
+  }
+};
+const org = {
+  '@context':'https://schema.org',
+  '@type':'LocalBusiness',
+  name: site.name,
+  url: site.url,
+  telephone: site.phone,
+  areaServed: site.areas.map(a=>({ '@type':'City', name:a })),
+  knowsAbout: ['bond cleaning','end of lease cleaning','exit clean']
+};
+const service = {
+  '@context':'https://schema.org',
+  '@type':'Service',
+  serviceType:'Bond cleaning',
+  provider: { '@type':'LocalBusiness', name: site.name, url: site.url },
+  areaServed: site.areas,
+  offers: {
+    '@type':'Offer',
+    priceSpecification: { '@type':'PriceSpecification', priceCurrency:'AUD', price:'0', description:'Fixed-price quotes; price varies by property size and condition.' }
+  }
+};
+---
+<script type="application/ld+json">{JSON.stringify(website)}</script>
+<script type="application/ld+json">{JSON.stringify(org)}</script>
+<script type="application/ld+json">{JSON.stringify(service)}</script>
+```
+
+### `/src/components/Breadcrumbs.astro`
+
+```astro
+---
+interface Crumb { name: string; href?: string }
+const { trail } = Astro.props as { trail: Crumb[] };
+---
+<nav aria-label="Breadcrumb" class="text-sm">
+  <ol class="flex gap-2 text-gray-600">
+    {trail.map((c,i)=> (
+      <li>{c.href ? <a href={c.href} class="hover:underline">{c.name}</a> : <span aria-current="page">{c.name}</span>}{i<trail.length-1 && <span>/</span>}</li>
+    ))}
+  </ol>
+</nav>
+```
+
+### `/src/pages/index.astro` (skeleton)
+
+```astro
+---
+import Hero from '@/components/Hero.astro';
+import Schema from '@/components/Schema.astro';
+import Breadcrumbs from '@/components/Breadcrumbs.astro';
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bond Cleaning in Ipswich & Brisbane | One N Done</title>
+    <link rel="canonical" href="https://ondlive3.netlify.app/" />
+  </head>
+  <body>
+    <Schema />
+    <header class="sr-only">
+      <Breadcrumbs trail={[{name:'Home'}]} />
+    </header>
+    <Hero
+      title="Bond Cleaning in Ipswich & Brisbane — Get Your Bond Back, Guaranteed"
+      subhead="Local family team. Fixed‑price quotes. REIQ‑aligned checklist. 7‑day re‑clean."
+      primaryHref="#quote"
+      secondaryHref="tel:+61-XXX-XXX-XXX"
+    />
+    <!-- include sections: llm-summary, how-it-works, inclusions, coverage, pricing, proof, faq, cta -->
+  </body>
+</html>
+```
+
+---
+
+## 7) Suburb spoke template (Astro)
+
+**URL:** `/services/bond-cleaning/[suburb]/`
+
+**Sections:**
+
+* H1: `Bond Cleaning in {Suburb}`
+* Intro 2–3 sentences (no fluff, mention keys: fixed price, REIQ, 7‑day)
+* `#llm-summary` digest (override suburb)
+* `#inclusions` (reuse acceptance slice)
+* `#pricing` (example range for typical property sizes)
+* `#proof` (1 local testimonial, dated)
+* `#nearby-suburbs` (3 lateral links)
+* `#faq` (top 5)
+* CTA block
+
+**Breadcrumbs:** Home → Bond Cleaning → {Area} → {Suburb}
+
+**Link policy:** up (service hub + area hub), laterals (3 suburbs), deep (pricing, checklist).
+
+---
+
+## 8) Coverage grid (programmatic, link‑dense)
+
+Example markup (index or hubs):
+
+```html
+<section id="coverage">
+  <h2>Coverage — Ipswich, Brisbane, Logan</h2>
+  <ul class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+    <li><a href="/services/bond-cleaning/redbank-plains/">Bond Cleaning in Redbank Plains</a></li>
+    <li><a href="/services/bond-cleaning/springfield/">Bond Cleaning in Springfield</a></li>
+    <!-- …list all suburbs… -->
+  </ul>
+</section>
+```
+
+---
+
+## 9) FAQ schema block (example)
+
+```html
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"FAQPage",
+  "mainEntity":[
+    {"@type":"Question","name":"Do you guarantee the bond?","acceptedAnswer":{"@type":"Answer","text":"We align to the REIQ exit checklist and offer a 7‑day re‑clean window."}},
+    {"@type":"Question","name":"How are quotes priced?","acceptedAnswer":{"@type":"Answer","text":"Fixed‑price quotes based on bedrooms, bathrooms and condition; no hourly surprises."}}
+  ]
+}
+</script>
+```
+
+---
+
+## 10) robots.txt + sitemap
+
+**/public/robots.txt**
+
+```
+User-agent: *
+Allow: /
+Sitemap: https://ondlive3.netlify.app/sitemap-index.xml
+```
+
+Generate sitemaps with `@astrojs/sitemap` or your current job. Include:
+
+* Home, hubs, every service×suburb, pricing, checklist, faq, gallery, each blog post.
+* Lastmod set to actual deploy date.
+
+---
+
+## 11) Redirects and canonicals
+
+**/public/\_redirects** (Netlify)
+
+```
+/blog/brisbane-west/*   /blog/brisbane/:splat   301!
+/areas/brisbane-west/*  /areas/brisbane/:splat  301!
+/blog/ipswich-region/*  /blog/ipswich/:splat    301!
+/areas/ipswich-region/* /areas/ipswich/:splat   301!
+```
+
+Ensure all internal links already point to the canonical destination (no redirect hops for crawlers).
+
+---
+
+## 12) Pricing policy section (truthy, LLM‑digestible)
+
+* Lead with policy, not numbers: *Fixed‑price quotes. No hourly billing. Price reflects bedrooms, bathrooms, extra services (oven, blinds, walls).*
+* Provide **worked examples** with ranges, each ending in a one‑line scope.
+* Stamp **“Examples updated: YYYY‑MM‑DD.”**
+
+---
+
+## 13) Proof section (verifiable)
+
+* Before/after slider with file names including date.
+* Counter set: jobs, re‑cleans claimed, average re‑clean time. All with dates.
+* Link to a **proof index** page if you have agent logos/letters.
+
+---
+
+## 14) Content templates (human + LLM balanced)
+
+### Service hub intro (≤90 words)
+
+> We deliver fixed‑price, REIQ‑aligned bond cleans across Ipswich, Brisbane and Logan. Quotes take about a minute. If an agent flags anything, we return within 7 days to re‑clean the item. See inclusions below and check coverage for your suburb.
+
+### Suburb spoke intro (≤75 words)
+
+> Need your **{Suburb}** end‑of‑lease clean done once and done right? We quote a fixed price up front, follow the REIQ checklist and include a 7‑day re‑clean window. Book online in about a minute or call to lock in a time.
+
+---
+
+## 15) Playwright checks (guard rails)
+
+* Assert presence of: H1, canonical, breadcrumbs, `#llm-summary`, at least 10 internal links.
+* Block hidden error strings.
+* Validate JSON‑LD with a schema linter.
+* Snapshots on hero and coverage grid.
+
+---
+
+## 16) Deployment checklist
+
+* Replace placeholder phone in Schema + CTAs.
+* Standardise **REIQ** site‑wide (no REIA mentions).
+* Populate coverage links for all suburbs.
+* Ensure sitemap contains every generated spoke.
+* Add a mobile sticky tel CTA.
+
+---
+
+## 17) Quick copy pack (paste‑in)
+
+**CTA labels**
+
+* Primary: Get my fixed‑price quote (≈60 sec)
+* Secondary: Call now
+
+**Trust bullets**
+
+* Fixed price
+* REIQ‑aligned
+* 7‑day re‑clean
+* Police‑checked
+* Insured
+
+---
+
+## 18) Why this works for LLM crawlers
+
+* **Digest block** gives models a clean, non‑marketing snapshot.
+* **Anchored sections** let extractive models jump straight to inclusions/pricing/coverage.
+* **Dense internal links** raise discovery of spokes without orphaning.
+* **Schema triad** (WebSite, LocalBusiness, Service) aligns with common toolchains.
+* **Dates on claims** reduce hallucination risk and help time‑aware models.
+
+---
+
+## 19) Next build steps (do now)
+
+1. Swap your hero + add `#llm-summary` block on home.
+2. Generate coverage grid and 10 initial suburb spokes.
+3. Wire Schema.astro + Breadcrumbs.astro globally.
+4. Fix REIQ references; remove ghost error strings.
+5. Regenerate sitemaps and deploy.
+
+Done. This is the full redesign. Iterate copy locally, but keep anchors, schema, and link rules stable for crawlers.

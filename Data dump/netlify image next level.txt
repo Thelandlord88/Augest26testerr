@@ -1,0 +1,312 @@
+Love that direction. Their idea—a self-optimising loop that ties analytics → image delivery → edge pre-warming—is the right “next level.” I’ll keep the spirit, but tighten it so it’s robust on Netlify today and doesn’t bet the farm on undocumented bits.
+
+What to keep vs. tweak
+Keep: a single, smart image component; scheduled edge pre-warming; responsive sources; JSON-driven priorities.
+
+Tweak: Netlify “Analytics API” is not an officially documented public API (some folks query internal endpoints, but they’re fragile). Use RUM or your own tiny pageview endpoint (or PostHog/Umami) to feed your pre-warmer. Use Scheduled Functions for the cron job, and Netlify Image CDN for /.netlify/images transformations. 
+MDN Web Docs
+Akamai Tech Docs
+Chrome for Developers
+
+Below is a drop-in, production-ready version that gives you a unified Edge-ready image pipeline, scheduled pre-warming, and client-hint-aware delivery—with graceful fallbacks if analytics aren’t wired yet.
+
+1) Smart image component (local + remote) → Netlify Image CDN
+src/components/EdgeImage.astro
+
+astro
+Copy
+Edit
+---
+import { Image } from 'astro:assets';
+
+type Img = {
+  src: string | any; // ImageMetadata if imported
+  alt?: string;
+  widths?: number[];
+  sizes?: string;
+  priority?: boolean;
+  class?: string;
+  quality?: number;         // 40–85 recommended
+  eager?: boolean;          // alias for priority
+  fetchpriority?: 'high'|'low'|'auto';
+  decoding?: 'async'|'sync'|'auto';
+  loading?: 'eager'|'lazy';
+  formats?: ('avif'|'webp'|'jpeg')[];
+};
+
+const {
+  src,
+  alt = '',
+  widths = [400, 640, 800, 1200, 1600],
+  sizes = '100vw',
+  priority = false,
+  eager = false,
+  fetchpriority = priority || eager ? 'high' : 'auto',
+  decoding = 'async',
+  loading = priority || eager ? 'eager' : 'lazy',
+  class: cls = '',
+  quality = 72,
+  formats = ['avif','webp','jpeg'],
+} = Astro.props as Img;
+
+const isImported = typeof src !== 'string' && !!src?.src;
+
+function nimg(url: string, w: number, fmt: string) {
+  const u = new URL('/.netlify/images', Astro.site ?? 'https://onendonebondclean.com.au');
+  u.searchParams.set('url', url);
+  u.searchParams.set('w', String(w));
+  u.searchParams.set('fm', fmt);
+  u.searchParams.set('q', String(quality));
+  return `${u.pathname}?${u.searchParams.toString()}`;
+}
+---
+{isImported ? (
+  <Image
+    src={src}
+    alt={alt}
+    widths={widths}
+    formats={formats}
+    sizes={sizes}
+    class={cls}
+    loading={loading}
+    fetchpriority={fetchpriority}
+    decoding={decoding}
+  />
+) : (
+  <picture class={cls}>
+    {formats.includes('avif') && (
+      <source type="image/avif"
+        srcset={widths.map(w => `${nimg(String(src), w, 'avif')} ${w}w`).join(', ')}
+        sizes={sizes} />
+    )}
+    {formats.includes('webp') && (
+      <source type="image/webp"
+        srcset={widths.map(w => `${nimg(String(src), w, 'webp')} ${w}w`).join(', ')}
+        sizes={sizes} />
+    )}
+    <img
+      src={nimg(String(src), widths[Math.min(2, widths.length-1)], 'jpeg')}
+      srcset={widths.map(w => `${nimg(String(src), w, 'jpeg')} ${w}w`).join(', ')}
+      sizes={sizes}
+      alt={alt}
+      loading={loading}
+      fetchpriority={fetchpriority}
+      decoding={decoding}
+      width={widths[0]}
+      height={Math.round(widths[0] * 0.625)}  <!-- fallback ratio -->
+      style="height:auto"
+    />
+  </picture>
+)}
+Usage
+
+astro
+Copy
+Edit
+---
+// local import gets astro:assets optimisation
+import hero from '@/assets/hero.jpg';
+import EdgeImage from '@/components/EdgeImage.astro';
+---
+<EdgeImage image={hero} alt="Bond clean oven glass, streak-free" sizes="100vw" priority class="rounded-2xl" />
+
+<!-- public/remote path goes through Netlify Image CDN -->
+<EdgeImage src="/images/gallery/bathroom-01.jpg" alt="Shower screen after clean" sizes="(min-width:768px) 50vw, 100vw" />
+Why this is “next level”
+One component for both astro:assets and Image CDN.
+
+Handles eager LCP vs. lazy, adds AVIF/WebP/JPEG with correct sizes.
+
+You can later swap src="/img?u=..." to funnel through an Edge Function (below) that adapts quality by Client Hints.
+
+2) Enable Client Hints (to future-proof adaptive images)
+Add to public/_headers (or _headers root):
+
+yaml
+Copy
+Edit
+/*
+  Accept-CH: DPR, Width, Viewport-Width
+  Critical-CH: DPR, Width, Viewport-Width
+  Vary: DPR, Width, Viewport-Width, Sec-CH-DPR, Sec-CH-Width, Sec-CH-Viewport-Width
+This announces you’ll use DPR/Width/Viewport-Width; caches vary correctly. (Client Hints are an evolving area; DPR/Width/VW are the stable, image-focused ones.) 
+MDN Web Docs
+http.dev
+Chrome for Developers
+
+3) (Optional) Edge Function for per-request quality shaping
+Goal: rewrite /img?u=... → /.netlify/images?url=...&w=...&q=...&fm=..., choosing q (and maybe w) from Client Hints.
+
+netlify/edge-functions/edge-image.ts
+
+ts
+Copy
+Edit
+export default async (req: Request) => {
+  const url = new URL(req.url);
+  const src = url.searchParams.get('u');
+  if (!src) return new Response('Missing u', { status: 400 });
+
+  // Client hints (may or may not be present)
+  const dpr = Number(req.headers.get('sec-ch-dpr') ?? '1');
+  const vw  = Number(req.headers.get('sec-ch-viewport-width') ?? '800');
+  const width = Math.min(Math.max(Math.round(vw * dpr), 320), 1920);
+
+  // Shape quality: lower on very high DPR to control bytes
+  const q = dpr >= 2 ? 60 : 72;
+
+  const cdn = new URL('/.netlify/images', url.origin);
+  cdn.searchParams.set('url', src);
+  cdn.searchParams.set('w', String(width));
+  cdn.searchParams.set('fm', 'webp');
+  cdn.searchParams.set('q', String(q));
+
+  const res = await fetch(cdn.toString(), { headers: { 'accept': req.headers.get('accept') ?? '' } });
+
+  // Pass through but set good caching and vary
+  const hdrs = new Headers(res.headers);
+  hdrs.set('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
+  hdrs.append('Vary', 'DPR, Width, Viewport-Width, Sec-CH-DPR, Sec-CH-Width, Sec-CH-Viewport-Width');
+
+  return new Response(res.body, { status: res.status, headers: hdrs });
+};
+netlify.toml
+
+toml
+Copy
+Edit
+[[edge_functions]]
+  function = "edge-image"
+  path = "/img"
+Then you can <EdgeImage src="/img?u=/images/bathroom-01.jpg" .../> to get per-visitor tuning.
+
+4) Scheduled pre-warming (cron) with graceful analytics fallback
+Why the change vs. “Analytics API”?
+Netlify’s official docs highlight Scheduled Functions and Image CDN. A stable, public Site Analytics API isn’t documented; internal endpoints can change. Prefer:
+
+RUM export (pageview counts) via your own small endpoint, or
+
+a simple top-pages JSON you maintain, or
+
+a vendor with an API (PostHog/Umami).
+
+netlify/functions/prewarm-assets.mjs
+
+js
+Copy
+Edit
+import 'node-fetch-native/polyfill';
+import { parse } from 'node-html-parser';
+
+const ORIGIN = process.env.SITE_ORIGIN ?? 'https://onendonebondclean.com.au';
+const POPULAR_JSON = process.env.POPULAR_URLS_JSON ?? ''; // optional: https://.../popular.json
+const USER_AGENT = 'OneNDone-PrewarmBot/1.0';
+
+export const config = {
+  schedule: '@hourly' // or '0 */6 * * *'
+};
+
+export default async () => {
+  const urls = new Set();
+
+  // 1) Always include sitemap URLs
+  const sm = await fetch(`${ORIGIN}/sitemap.xml`, { headers: { 'user-agent': USER_AGENT }});
+  if (sm.ok) {
+    const xml = await sm.text();
+    for (const match of xml.matchAll(/<loc>(.*?)<\/loc>/g)) {
+      urls.add(match[1]);
+    }
+  }
+
+  // 2) Optionally merge “popular” URLs (from RUM/analytics export you control)
+  if (POPULAR_JSON) {
+    try {
+      const res = await fetch(POPULAR_JSON, { headers: { 'user-agent': USER_AGENT }});
+      const list = await res.json(); // ["https://.../services/bond-cleaning/springfield-lakes/", ...]
+      list.slice(0, 50).forEach(u => urls.add(u));
+    } catch {}
+  }
+
+  // 3) Visit each high-value page, extract images (including /.netlify/images) and "prime" them
+  const keep = Array.from(urls).slice(0, 120); // cap for safety
+  const head = async (u) => {
+    try {
+      const r = await fetch(u, { method: 'HEAD', headers: { 'user-agent': USER_AGENT }});
+      return r.ok;
+    } catch { return false; }
+  };
+
+  const toPrime = new Set();
+  for (const page of keep) {
+    try {
+      const res = await fetch(page, { headers: { 'user-agent': USER_AGENT }});
+      if (!res.ok) continue;
+      const html = await res.text();
+      const doc = parse(html);
+      const imgs = doc.querySelectorAll('img');
+      imgs.forEach(img => {
+        const src = img.getAttribute('src') || '';
+        if (src.startsWith('/.netlify/images')) toPrime.add(new URL(src, ORIGIN).toString());
+      });
+    } catch {}
+  }
+
+  // Prime via HEAD (or GET with no-store if your CDN requires)
+  const tasks = Array.from(toPrime).map(u => head(u));
+  // throttle
+  const batch = (arr, size) => arr.reduce((chunks, _, i) => (i % size ? chunks : [...chunks, arr.slice(i, i+size)]), []);
+  for (const group of batch(tasks, 8)) {
+    await Promise.allSettled(group);
+  }
+
+  return new Response(JSON.stringify({ pages: keep.length, primed: toPrime.size }), { headers: { 'content-type': 'application/json' }});
+};
+netlify.toml (scheduled function)
+
+toml
+Copy
+Edit
+[functions]
+  node_bundler = "esbuild"
+
+# Scheduled function is registered by the file's exported config.schedule.
+If you later add a RUM endpoint (tiny /api/pv that increments a KV or PostHog), just emit a daily top-pages JSON and point POPULAR_URLS_JSON at it. This keeps the loop fully official & stable.
+
+5) Tiny LCP polish (hero) & test-friendliness
+Use <EdgeImage priority fetchpriority="high" loading="eager"> on the one LCP image.
+
+Keep your reduced-motion global rule (already added) and freeze animations in Playwright tests (you’ve done this).
+
+Ensure _headers sets immutable caching for /_astro/* (you’ve done that).
+
+6) How this compares to the other team’s plan
+Area	Their idea	This plan
+Pre-warm strategy	Pull “top pages” from Netlify Analytics API	Use scheduled function + sitemap + your RUM/export (portable, no undocumented endpoints)
+Image component	One wrapper, CDN params	One wrapper that supports astro:assets and CDN, with eager/lazy control, formats, sizes
+Client Hints	Mentioned	Fully wired via _headers + optional Edge Function that adapts quality/width
+Risk	Reliant on undocumented analytics API	Uses only documented Netlify features + your own export feed
+DX	Good	Strong: single component; easy to evolve to /img?u= Edge path later
+
+Docs you’ll lean on: Netlify Scheduled Functions & Image CDN; Client Hints basics. 
+MDN Web Docs
+Akamai Tech Docs
+Chrome for Developers
+
+7) Quick QA checklist
+Replace existing SmartImage with EdgeImage.astro. Turn hero into priority/eager.
+
+Add the Client Hints headers + Vary (shown above).
+
+(Optional) Route some heavier gallery images through /img?u= and enable the edge function.
+
+Add prewarm-assets scheduled function; set SITE_ORIGIN and (optionally) POPULAR_URLS_JSON.
+
+In Playwright, assert LCP image has fetchpriority=high and that critical images resolve with AVIF/WebP.
+
+If you want, I can turn this into two clean PRs in your repo:
+
+feat/images: EdgeImage.astro, _headers CH, hero polish, tests.
+
+feat/prewarm: scheduled function + minimal RUM JSON stub, docs in README.
+
+This gets you the same “self-optimising loop”—but with fewer footguns and zero reliance on private APIs.

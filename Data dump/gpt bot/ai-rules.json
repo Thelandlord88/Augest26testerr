@@ -1,0 +1,24 @@
+{
+  "version": "1.0.0",
+  "clusters": ["ipswich", "brisbane", "logan"],
+  "services": ["bond-cleaning", "spring-cleaning", "bathroom-deep-clean"],
+  "must": {
+    "bond-cleaning": ["bond clean", "end-of-lease", "agent-aligned", "checklist", "7-day re-clean"],
+    "spring-cleaning": ["spring clean", "refresh", "top-to-bottom", "declutter"],
+    "bathroom-deep-clean": ["soap scum", "descale", "silicone", "grout", "glass de-haze"]
+  },
+  "forbid": {
+    "bond-cleaning": ["regular clean", "weekly tidy"],
+    "spring-cleaning": ["bond back guarantee", "property manager inspection specifics"],
+    "bathroom-deep-clean": ["bond refund guarantee", "whole-home scope"]
+  },
+  "synonyms": {
+    "bond-cleaning": ["bond cleaners", "end-of-lease cleaning", "exit clean"],
+    "spring-cleaning": ["deep cleaning", "house cleaning"],
+    "bathroom-deep-clean": ["bathroom cleaning", "shower screen restoration"]
+  },
+  "lexicon": {
+    "preferred": ["neutral cleaner", "dwell time", "rinse", "hydrophilic glass", "microfibre"],
+    "avoid": ["miracle", "toxic-free", "100% guaranteed results"]
+  }
+}

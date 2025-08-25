@@ -1,0 +1,159 @@
+This reads tight and genuinely production-ready. Nice work. A few last micro-tweaks to make it bulletproof, then I’ll drop a ready-to-paste Astro scaffold so you can ship today.
+
+Final polish (tiny but high-value)
+
+“Fixed price” vs “fixed quote”: if you sometimes adjust for heavy scale/mould, change hero USP to “Transparent fixed quote” (less chance of complaints).
+
+Verb consistency: use “deep clean” (noun) and “deep-clean” (verb) consistently. e.g., “We deep-clean tiles…” and “Bathroom deep clean – Springfield Lakes.”
+
+Grout re-seal note: add a one-liner: “Penetrating sealer needs 24 hrs to fully cure; keep floors dry.”
+
+Accessibility nits: ensure every before/after has alt text that states the outcome (e.g., “Shower glass after mineral scale removal, streak-free”).
+
+Breadcrumbs everywhere: Hub = Home › Services › Bathroom Deep Clean; Spoke = Home › Services › Bathroom Deep Clean › Springfield Lakes.
+
+Drop-in Astro scaffold (hub page)
+
+Paste this at /src/pages/services/bathroom-deep-clean/index.astro and wire your components.
+
+---
+import Layout from "@/layouts/Base.astro";
+import AcceptanceSlice from "@/components/AcceptanceSlice.astro";
+import Schema from "@/components/Schema.astro";
+
+const META_TITLE = "Bathroom Deep Clean | Sparkling Glass & Grout | One N Done";
+const META_DESC  = "Deep clean for showers, tiles, grout and glass. Mould treatment, scale removal, polished chrome. Fixed quotes.";
+const AREAS = ["Springfield Lakes","Ripley","Goodna","Ipswich","Redbank Plains","Indooroopilly","Taringa","Toowong","St Lucia","Logan Central","Springwood","Rochedale South"];
+---
+
+<Layout title={META_TITLE} description={META_DESC}>
+  <Schema type="service:bathroom-deep-clean" />
+
+  {/* Breadcrumbs */}
+  <nav aria-label="Breadcrumb" class="mx-auto max-w-5xl px-4 py-3 text-sm">
+    <ol class="flex gap-2 text-gray-500">
+      <li><a href="/" class="hover:underline">Home</a></li>
+      <li>›</li>
+      <li><a href="/services/" class="hover:underline">Services</a></li>
+      <li>›</li>
+      <li aria-current="page" class="text-gray-900 font-medium">Bathroom Deep Clean</li>
+    </ol>
+  </nav>
+
+  {/* Hero */}
+  <header class="mx-auto max-w-5xl px-4 py-8 md:py-12">
+    <h1 class="text-3xl md:text-4xl font-bold">Bathroom Deep Clean in Ipswich, Brisbane & Logan</h1>
+    <p class="mt-3 text-lg text-gray-700">
+      We remove soap scum, mineral scale and mould, then polish glass and chrome for a hotel-clean finish.
+    </p>
+    <ul class="mt-4 flex flex-wrap gap-3 text-sm text-gray-700">
+      <li class="rounded-full border px-3 py-1">Transparent fixed quote</li>
+      <li class="rounded-full border px-3 py-1">Supplies included</li>
+      <li class="rounded-full border px-3 py-1">48-hour touch-up guarantee</li>
+    </ul>
+    <div class="mt-6 flex flex-wrap gap-3">
+      <a href="/#quote" class="rounded-xl bg-blue-600 px-5 py-3 text-white font-semibold hover:bg-blue-700">Get a Fast Quote</a>
+      <a href="tel:+61YOURNUMBER" class="rounded-xl border px-5 py-3 font-semibold hover:bg-gray-50">Call now</a>
+    </div>
+  </header>
+
+  {/* Pain → Promise */}
+  <section class="mx-auto max-w-5xl px-4 py-6">
+    <h2 class="text-2xl font-semibold">What we solve</h2>
+    <p class="mt-3 text-gray-700">
+      Foggy glass, pink mould in grout, taps that never shine? We deep-clean tiles, grout, glass and fixtures, treat mould safely,
+      and finish dry and streak-free—ready for photos or inspection.
+    </p>
+  </section>
+
+  {/* Inclusions (Acceptance slice) */}
+  <section id="inclusions" class="mx-auto max-w-5xl px-4 py-6">
+    <h2 class="text-2xl font-semibold">What’s included</h2>
+    <AcceptanceSlice slug="bathroom-deep-clean" />
+    <p class="mt-3 text-sm text-gray-600">
+      Notes: Non-structural mould treatment on non-porous surfaces (up to 2 m²). Acid-sensitive stone cleaned with a non-acid method; we spot-test first.
+    </p>
+  </section>
+
+  {/* Before/After */}
+  <section class="mx-auto max-w-5xl px-4 py-6">
+    <h2 class="text-2xl font-semibold">Before & after</h2>
+    <!-- Drop your slider/gallery here; ensure outcome-oriented alt text -->
+  </section>
+
+  {/* Add-ons */}
+  <section class="mx-auto max-w-5xl px-4 py-6">
+    <h2 class="text-2xl font-semibold">Add-ons & upgrades</h2>
+    <ul class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <li class="rounded-2xl border p-4"><strong>Grout steam-revive</strong> — lifts embedded residue with minimal chemicals.</li>
+      <li class="rounded-2xl border p-4"><strong>Grout re-seal (penetrating)</strong> — quote on inspection; allow 24 hrs cure.</li>
+      <li class="rounded-2xl border p-4"><strong>Silicone mould remediation</strong> — surface mould lift (non-replacement).</li>
+      <li class="rounded-2xl border p-4"><strong>Intensive calcium/scale treatment</strong> — for stubborn scale or lime burn.</li>
+      <li class="rounded-2xl border p-4"><strong>Exhaust fan deep-degunk</strong> — restores extraction performance.</li>
+      <li class="rounded-2xl border p-4"><strong>Vanity drawer organise</strong> — clears clutter for proper cleaning.</li>
+    </ul>
+  </section>
+
+  {/* Pricing & How it works */}
+  <section id="pricing" class="mx-auto max-w-5xl px-4 py-6">
+    <h2 class="text-2xl font-semibold">Pricing & how it works</h2>
+    <p class="mt-3 text-gray-700">From $X for an ensuite. Fixed quote after photos. Heavy scale/mould may change time and price.</p>
+    <ol class="mt-4 list-decimal pl-5 space-y-2 text-gray-700">
+      <li>Send quick photos</li>
+      <li>We confirm price & time window</li>
+      <li>Deep clean & sign-off</li>
+    </ol>
+    <p class="mt-4 text-sm text-gray-600">Typical time: ensuite 1–1.5 hrs; main bathroom 1.5–2.5 hrs.</p>
+  </section>
+
+  {/* Process & Safety */}
+  <section class="mx-auto max-w-5xl px-4 py-6">
+    <h2 class="text-2xl font-semibold">Our process & safety</h2>
+    <p class="mt-3 text-gray-700">
+      Alkaline (1:10–1:20, 5–7 min) → rinse → Acid descaler on glass/ceramic (citric 5–10% or phosphoric 10–15%, 3–5 min; never on stone)
+      → neutralise & rinse → microfibre polish → mould biocide (QAC 0.2–0.5% or oxygen gel) → final dry.
+    </p>
+    <ul class="mt-3 list-disc pl-5 text-sm text-gray-600">
+      <li>Ventilate; wear PPE. Never mix bleach with acids or ammonia.</li>
+      <li>Rinse to neutral after any acid step.</li>
+      <li>Non-scratch pads only; avoid abrading brushed nickel/black tapware.</li>
+      <li>Spot-test coatings, grout colour and stone.</li>
+    </ul>
+  </section>
+
+  {/* FAQs */}
+  <section id="faqs" class="mx-auto max-w-5xl px-4 py-6">
+    <h2 class="text-2xl font-semibold">FAQs</h2>
+    <!-- Render your FAQ component/content here; ensure FAQPage JSON-LD is included globally -->
+  </section>
+
+  {/* Areas (Hub → Spokes) */}
+  <section class="mx-auto max-w-5xl px-4 py-6">
+    <h2 class="text-2xl font-semibold">Areas we serve</h2>
+    <ul class="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+      {AREAS.map((name) => (
+        <li><a class="text-blue-700 hover:underline" href={`/services/bathroom-deep-clean/${name.toLowerCase().replaceAll(' ', '-').replaceAll('.', '')}/`}>Bathroom deep clean in {name}</a></li>
+      ))}
+    </ul>
+  </section>
+
+  {/* Bottom CTA */}
+  <section class="mx-auto max-w-5xl px-4 py-10">
+    <div class="rounded-2xl bg-blue-50 p-6 md:p-8">
+      <h2 class="text-2xl font-semibold">Ready for streak-free glass and brighter grout?</h2>
+      <div class="mt-4 flex flex-wrap gap-3">
+        <a href="/#quote" class="rounded-xl bg-blue-600 px-5 py-3 text-white font-semibold hover:bg-blue-700">Get a Fast Quote</a>
+        <a href="tel:+61YOURNUMBER" class="rounded-xl border px-5 py-3 font-semibold hover:bg-gray-50">Call now</a>
+      </div>
+    </div>
+  </section>
+
+  {/* Sticky mobile bar (simple) */}
+  <div class="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 gap-2 border-t bg-white/95 p-3 backdrop-blur md:hidden">
+    <a href="/#quote" class="rounded-xl bg-blue-600 px-4 py-3 text-center font-semibold text-white">Get a Quote</a>
+    <a href="tel:+61YOURNUMBER" class="rounded-xl border px-4 py-3 text-center font-semibold">Call</a>
+  </div>
+</Layout>
+
+
+Everything else in your draft (copy, JSON-LD, acceptance JSON, spoke tokens) looks spot-on. If you want, I can also hand you a minimal spoke template ([suburb].astro) that derives the suburb from params and auto-renders the sibling suburb links you listed.
