@@ -5,17 +5,17 @@
 
 /* Fallback tokens (overridden by @theme extraction when supported) */
 :root {
-	--color-brand-accent: #0ea5e9;
-	--color-brand-accent-accessible: #0369a1; /* darker variant for text on white (sky-700) */
-	--color-brand-navy: #0c2f5a;
-	--color-bg-base: #ffffff;
-	--color-fg-base: #1e293b; /* slate-800 */
-	--color-bg-base-dark: #0f172a; /* slate-900 */
-	--color-fg-base-dark: #cbd5e1; /* slate-300 */
+        --color-brand-accent: oklch(68.47% 0.1479 237.32);
+        --color-brand-accent-accessible: oklch(50.00% 0.1193 242.75); /* darker variant for text on white (sky-700) */
+        --color-brand-navy: oklch(30.69% 0.0868 255.80);
+        --color-bg-base: oklch(100% 0 0);
+        --color-fg-base: oklch(27.95% 0.0368 260.03); /* slate-800 */
+        --color-bg-base-dark: oklch(20.77% 0.0398 265.75); /* slate-900 */
+        --color-fg-base-dark: oklch(86.90% 0.0198 252.89); /* slate-300 */
 	--radius-pill: 9999px;
 	--ease-swoop: cubic-bezier(.4,0,.2,1);
-	--color-link-accent: #0284c7; /* sky-600 */
-	--color-link-accent-alt: #38bdf8; /* sky-400 */
+        --color-link-accent: oklch(58.76% 0.1389 241.97); /* sky-600 */
+        --color-link-accent-alt: oklch(75.35% 0.1390 232.66); /* sky-400 */
 	--color-card-border: rgba(226,232,240,0.7); /* slate-200 */
 	--color-card-border-dark: rgba(51,65,85,0.5); /* slate-600-ish */
 	--shadow-card-hover: 0 4px 12px -2px rgb(0 0 0 / 0.15);
@@ -49,10 +49,10 @@
 		background-color: var(--color-bg-base-dark);
 		color: var(--color-fg-base-dark);
 	}
-	::selection {
-		background: var(--brand-accent);
-		color: #fff;
-	}
+        ::selection {
+                background: var(--brand-accent);
+                color: oklch(100% 0 0);
+        }
 		a {
 			text-decoration: underline;
 			text-underline-offset: 0.25em;
@@ -101,11 +101,11 @@
 	.anim-delay-400 { animation-delay: .4s; }
 	.anim-delay-500 { animation-delay: .5s; }
 	/* Semantic button utilities */
-	.btn-brand { display:inline-flex; align-items:center; gap:.5rem; font-weight:700; color:#fff; background: var(--color-brand-accent-accessible); padding:.85rem 1.75rem; border-radius:9999px; box-shadow:0 4px 10px -2px rgba(0,0,0,.15); transition: background-color var(--motion-duration-fast) var(--motion-ease-standard), transform var(--motion-duration-medium) var(--motion-ease-emphasized), box-shadow var(--motion-duration-medium) var(--motion-ease-standard); }
+    .btn-brand { display:inline-flex; align-items:center; gap:.5rem; font-weight:700; color:oklch(100% 0 0); background: var(--color-brand-accent-accessible); padding:.85rem 1.75rem; border-radius:9999px; box-shadow:0 4px 10px -2px rgba(0,0,0,.15); transition: background-color var(--motion-duration-fast) var(--motion-ease-standard), transform var(--motion-duration-medium) var(--motion-ease-emphasized), box-shadow var(--motion-duration-medium) var(--motion-ease-standard); }
 	.btn-brand:hover { filter:brightness(.95); transform:translateY(-2px); }
 	.dark .btn-brand:hover { filter:brightness(1.1); }
 	.btn-brand:focus-visible { outline:2px solid var(--brand-accent); outline-offset:3px; }
-	.badge-brand { background: var(--color-brand-accent-accessible); color:#fff; border-radius:.75rem; padding:.375rem .875rem; font-weight:600; }
+    .badge-brand { background: var(--color-brand-accent-accessible); color:oklch(100% 0 0); border-radius:.75rem; padding:.375rem .875rem; font-weight:600; }
 	.text-brand-icon { color: var(--color-brand-accent-accessible); }
 	/* Motion reduction */
 	@media (prefers-reduced-motion: reduce) {
@@ -117,14 +117,14 @@
 @layer components {
 	/* Primary brand button (new semantic helper; overrides earlier basic .btn-brand if present) */
 	.btn-brand{
-		display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:9999px;padding:.9rem 1.5rem;font-weight:600;color:#fff;box-shadow:0 2px 4px -1px rgba(0,0,0,.15);transition:background-color .25s var(--ease-swoop),box-shadow .25s var(--ease-swoop);background-color: var(--color-brand-accent);
+            display:inline-flex;align-items:center;justify-content:center;gap:.5rem;border-radius:9999px;padding:.9rem 1.5rem;font-weight:600;color:oklch(100% 0 0);box-shadow:0 2px 4px -1px rgba(0,0,0,.15);transition:background-color .25s var(--ease-swoop),box-shadow .25s var(--ease-swoop);background-color: var(--color-brand-accent);
 	}
 	.btn-brand:hover{ background-color: var(--color-brand-accent-accessible); }
 	.btn-brand:focus-visible{ outline:none; box-shadow:0 0 0 2px var(--color-link-accent),0 0 0 4px color-mix(in srgb,var(--color-link-accent) 40%, transparent); }
 	.btn-brand:disabled{ opacity:.5; cursor:not-allowed; }
 
 	.badge-brand{
-		display:inline-flex;align-items:center;border-radius:9999px;padding:.25rem .625rem;font-size:.75rem;line-height:1rem;font-weight:500;color:#fff;background-color: var(--color-brand-accent-accessible);
+            display:inline-flex;align-items:center;border-radius:9999px;padding:.25rem .625rem;font-size:.75rem;line-height:1rem;font-weight:500;color:oklch(100% 0 0);background-color: var(--color-brand-accent-accessible);
 	}
 	.badge-brand-soft{
 		display:inline-flex;align-items:center;border-radius:9999px;padding:.25rem .625rem;font-size:.75rem;line-height:1rem;font-weight:500;background-color: color-mix(in srgb, var(--color-link-accent) 12%, transparent);color: var(--color-brand-navy);border:1px solid color-mix(in srgb,var(--color-link-accent) 30%, transparent);
@@ -189,9 +189,9 @@
 @layer utilities {
 	.text-brand-icon-weak { color: color-mix(in srgb, var(--color-link-accent) 40%, white); }
 	.bar-brand { background-color: color-mix(in srgb, var(--color-link-accent) 8%, transparent); border-color: color-mix(in srgb, var(--color-link-accent) 25%, transparent); }
-	.bar-brand-strong { background-color: var(--color-brand-accent-accessible); color:#fff; }
-	.label-brand { background-color: color-mix(in srgb, var(--color-link-accent) 12%, transparent); color: color-mix(in srgb, var(--color-link-accent) 65%, black); border:1px solid color-mix(in srgb, var(--color-link-accent) 28%, transparent); }
-	.label-brand-solid { background-color: var(--color-brand-accent-accessible); color:#fff; }
+        .bar-brand-strong { background-color: var(--color-brand-accent-accessible); color:oklch(100% 0 0); }
+        .label-brand { background-color: color-mix(in srgb, var(--color-link-accent) 12%, transparent); color: color-mix(in srgb, var(--color-link-accent) 65%, black); border:1px solid color-mix(in srgb, var(--color-link-accent) 28%, transparent); }
+        .label-brand-solid { background-color: var(--color-brand-accent-accessible); color:oklch(100% 0 0); }
 	.progress-brand { background-color: var(--color-link-accent); }
 	.bg-gradient-brand { background-image: linear-gradient(90deg, color-mix(in srgb, var(--color-link-accent) 85%, white), color-mix(in srgb, var(--color-brand-navy) 30%, var(--color-link-accent))); }
 }

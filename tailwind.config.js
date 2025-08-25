@@ -14,12 +14,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        'deep-navy': '#0c2f5a',
-        'fresh-sky': '#0ea5e9',
-        'light-sky': '#e0f2fe',
-        'light-gray': '#f8fafc',
-        'accent-yellow': '#F59E0B',
-        'red-error': '#ef4444',
+        'deep-navy': 'oklch(30.69% 0.0868 255.80)',
+        'fresh-sky': 'oklch(68.47% 0.1479 237.32)',
+        'light-sky': 'oklch(95.14% 0.0250 236.82)',
+        'light-gray': 'oklch(98.42% 0.0034 247.86)',
+        'accent-yellow': 'oklch(76.86% 0.1647 70.08)',
+        'red-error': 'oklch(63.68% 0.2078 25.33)',
         gray: colors.gray,
       },
       fontFamily: {
@@ -30,7 +30,7 @@ export default {
         'fresh-sky-glow': '0 0 0 4px rgba(14, 165, 233, 0.2)',
       },
       backgroundImage: {
-        'progress-gradient': 'linear-gradient(90deg,#38bdf8,#0ea5e9)',
+        'progress-gradient': 'linear-gradient(90deg,oklch(75.35% 0.1390 232.66),oklch(68.47% 0.1479 237.32))',
       },
   // Removed unused animation & keyframe extensions; animations now centralized in input.css
     },

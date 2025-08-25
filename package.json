@@ -13,7 +13,7 @@
     "contrast:audit": "node scripts/contrast-audit.mjs",
     "tokens:export": "node scripts/export-tokens.mjs",
     "codemod:semantic-brand": "node scripts/codemod-semantic-brand.mjs",
-  "css:audit": "npm run build --silent && (npm run css:size || true) && (npm run tokens:export || true) && node scripts/scan-residual-sky.mjs || true",
+    "css:audit": "npm run build --silent && (npm run css:size || true) && (npm run tokens:export || true) && node scripts/scan-residual-sky.mjs || true",
     "a11y:scan": "node scripts/a11y-scan.mjs",
     "pages:discover": "node scripts/discover-pages.mjs",
     "pages:to-tests": "node scripts/gen-test-routes.mjs",
@@ -133,15 +133,16 @@
     "node-html-parser": "^7.0.1",
     "openai": "^5.15.0",
     "postcss": "^8.4.35",
+    "postcss-nesting": "^12.1.0",
     "prettier": "^3.6.2",
     "prettier-plugin-astro": "^0.14.1",
     "serve": "^14.2.4",
     "tailwindcss": "^4.1.12",
-  "postcss-nesting": "^12.1.0",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4",
-    "wait-on": "^8.0.4"
+    "wait-on": "^8.0.4",
+    "@csstools/postcss-oklab-function": "^4.0.11"
   },
   "overrides": {
     "esbuild": "^0.25.8"
