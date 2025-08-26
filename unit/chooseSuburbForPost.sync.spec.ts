@@ -1,12 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
 
-vi.mock('../../src/content/areas.clusters.json', () => ({
+vi.mock('~/content/areas.clusters.json', () => ({
   default: { clusters: { ipswich: { suburbs: ['ipswich', 'a'] } } }
 }));
 
-vi.mock('../../src/data/serviceCoverage.json', () => ({ default: {} }));
+vi.mock('~/data/serviceCoverage.json', () => ({ default: {} }));
 
-import { chooseSuburbForPostSync } from '../../src/utils/chooseSuburbForPost.sync';
+import { chooseSuburbForPostSync } from '~/utils/chooseSuburbForPost.sync';
 
 describe('chooseSuburbForPostSync', () => {
   it('uses front-matter when provided', () => {
