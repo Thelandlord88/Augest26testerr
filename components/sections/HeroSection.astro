@@ -1,0 +1,69 @@
+---
+// src/components/sections/HeroSection.astro
+import { Image } from 'astro:assets';
+import heroBG from '/src/assets/images/nans.png';
+import WaveBackground from '../WaveBackground.astro';
+
+export interface Props {
+  suburb?: {
+    name: string;
+  };
+}
+const { suburb } = Astro.props;
+const displayName = suburb?.name ?? 'Redbank Plains';
+---
+
+<section id="hero" class="relative min-h-[520px] flex items-center pb-0">
+  <!-- Full Bleed Background Image & Overlay (very bottom) -->
+  <div class="absolute inset-0 -z-20">
+    <Image
+      src={heroBG}
+      alt=""
+      aria-hidden="true"
+      class="w-full h-full object-cover object-center"
+      loading="eager"
+      fetchpriority="high"
+  preload
+      draggable={false}
+      sizes="(min-width: 768px) 1280px, 100vw"
+      widths={[768, 1024, 1280]}
+      formats={["avif", "webp", "png"]}
+      placeholder="blur"
+      style="pointer-events: none;"
+    />
+    <!-- White to navy overlay for readability -->
+    <div class="absolute inset-0 bg-gradient-to-b from-white/90 via-white/60 to-[#0c2f5a]/95"></div>
+  </div>
+
+  <!-- WaveBackground sits above the bg image, but behind content -->
+  <div class="absolute inset-0 z-0 pointer-events-none">
+    <WaveBackground />
+  </div>
+
+  <!-- Main Content -->
+  <div class="container mx-auto px-6 py-24 md:py-32 flex flex-col lg:flex-row items-center gap-12 relative z-10">
+    <div class="lg:w-1/2 text-center lg:text-left">
+      <h1 class="text-4xl md:text-6xl font-extrabold text-deep-navy leading-tight drop-shadow">
+        Get Your Bond Back, <span class="text-fresh-sky">Guaranteed.</span>
+      </h1>
+      <p class="mt-6 text-lg text-slate-700 max-w-xl mx-auto lg:mx-0 drop-shadow">
+        We’re Trent & Pandora, a local family team from
+        <span class="suburb-placeholder font-semibold text-deep-navy">{displayName}</span>
+        taking the stress out of moving. We offer a 100% Bond Back Guarantee on every clean.
+        <strong> Done right, the first time.</strong>
+      </p>
+      <div class="mt-10 flex justify-center lg:justify-start">
+        <a 
+          href="#quote"
+          class="cta-glow-pulse cta-shine mobile-touch-target inline-flex items-center gap-3 bg-sky-700 hover:bg-sky-800 text-white font-bold py-4 px-8 rounded-full shadow-lg focus-visible:ring-4 focus-visible:ring-sky-500/50 transition-all text-lg"
+          aria-label="Get My 100% Guaranteed Quote - Get a free quote for your bond clean"
+        >
+          <span>Get My 100% Guaranteed Quote</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"></path></svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- (Optional) You can add a mascot or image here on large screens -->
+  </div>
+</section>

@@ -1,0 +1,12 @@
+{
+  "items": [
+    { "q": "What’s included in a bond clean?", "a": "Kitchen (including oven), bathrooms and grout, internal windows/sills/tracks, cupboards/drawers in/out, skirtings and switches, reachable fans/vents, and all floors. We finish with a daylight detail pass for marks and edges." },
+    { "q": "What’s not included?", "a": "Paint repairs, silicone or structural fixes, unsafe exterior access, pest control, and specialist stain removal unless scoped as add-ons. Tell us if carpets or external windows are required by your lease." },
+    { "q": "How long does it take?", "a": "Small unit: ~3–6 hours. Larger homes take longer. Add time for heavy ovens, many blinds, internal windows/tracks, and carpet steam cleaning." },
+    { "q": "Do you guarantee my bond back?", "a": "We provide 7-day re-clean support aligned to your property manager’s feedback. If something’s missed within the window, we return and fix it." },
+    { "q": "Do I need to be home?", "a": "No—just ensure power and water are on and we have access (keys, codes, parking). We’ll update you and confirm when done." },
+    { "q": "How do you price?", "a": "Fixed quotes based on size, condition and add-ons. If the home differs materially from your brief, we’ll confirm any change before work—no surprises." },
+    { "q": "Do you clean reachable external windows?", "a": "Yes, as an add-on where safe and reachable from ground level. High-risk access isn’t included." },
+    { "q": "What if the agent asks for changes?", "a": "Send their list. We’ll schedule a re-clean within 7 days and target the exact items they flagged." }
+  ]
+}

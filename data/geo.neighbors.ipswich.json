@@ -1,0 +1,261 @@
+{
+  "ipswich": [
+    "west-ipswich",
+    "woodend",
+    "east-ipswich",
+    "newtown",
+    "brassall",
+    "north-ipswich",
+    "silkstone",
+    "booval"
+  ],
+  "springfield": [
+    "springfield-lakes",
+    "brookwater",
+    "springfield-central",
+    "augustine-heights",
+    "camira",
+    "redbank-plains",
+    "goodna",
+    "collingwood-park"
+  ],
+  "springfield-lakes": [
+    "springfield",
+    "brookwater",
+    "springfield-central",
+    "augustine-heights",
+    "redbank-plains",
+  "camira",
+  "forest-lake"
+  ],
+  "redbank-plains": [
+    "bellbird-park",
+    "augustine-heights",
+    "springfield",
+    "springfield-lakes",
+    "swanbank",
+    "white-rock",
+    "collingwood-park",
+    "goodna"
+  ],
+  "goodna": [
+    "gailes",
+    "camira",
+    "bellbird-park",
+    "redbank",
+    "collingwood-park",
+    "riverview",
+    "redbank-plains"
+  ],
+  "yamanto": [
+    "flinders-view",
+    "deebing-heights",
+    "raceview",
+    "willowbank",
+    "ripley"
+  ],
+  "ripley": [
+    "south-ripley",
+    "deebing-heights",
+    "flinders-view",
+    "yamanto",
+    "white-rock",
+    "swanbank"
+  ],
+  "raceview": [
+    "flinders-view",
+    "yamanto",
+    "silkstone",
+    "eastern-heights",
+    "booval",
+    "deebing-heights"
+  ],
+  "bundamba": [
+    "booval",
+    "north-booval",
+    "dinmore",
+    "ebbw-vale",
+    "riverview",
+    "silkstone"
+  ],
+  "booval": [
+    "north-booval",
+    "east-ipswich",
+    "silkstone",
+    "bundamba",
+    "newtown",
+    "raceview"
+  ],
+  "brookwater": [
+    "springfield",
+    "springfield-lakes",
+    "augustine-heights",
+    "camira",
+  "goodna",
+  "redbank-plains",
+  "forest-lake"
+  ],
+  "augustine-heights": [
+    "springfield",
+    "springfield-lakes",
+    "brookwater",
+    "redbank-plains",
+    "bellbird-park",
+    "camira"
+  ],
+  "camira": [
+    "springfield",
+    "springfield-lakes",
+    "goodna",
+    "gailes",
+    "bellbird-park",
+    "augustine-heights"
+  ],
+  "bellbird-park": [
+    "redbank-plains",
+    "goodna",
+    "camira",
+    "collingwood-park",
+    "augustine-heights"
+  ],
+  "collingwood-park": [
+    "redbank",
+    "goodna",
+    "bellbird-park",
+    "redbank-plains",
+    "dinmore"
+  ],
+  "redbank": [
+    "collingwood-park",
+    "goodna",
+    "riverview",
+    "dinmore"
+  ],
+  "riverview": [
+    "redbank",
+    "dinmore",
+    "bundamba",
+    "goodna"
+  ],
+  "dinmore": [
+    "riverview",
+    "bundamba",
+    "north-booval",
+    "ebbw-vale",
+    "collingwood-park"
+  ],
+  "north-booval": [
+    "booval",
+    "bundamba",
+    "dinmore",
+    "east-ipswich"
+  ],
+  "east-ipswich": [
+    "booval",
+    "newtown",
+    "silkstone",
+    "ipswich"
+  ],
+  "silkstone": [
+    "booval",
+    "raceview",
+    "eastern-heights",
+    "newtown"
+  ],
+  "eastern-heights": [
+    "silkstone",
+    "raceview",
+    "newtown"
+  ],
+  "newtown": [
+    "ipswich",
+    "booval",
+    "silkstone",
+    "eastern-heights",
+    "woodend"
+  ],
+  "woodend": [
+    "ipswich",
+    "west-ipswich",
+    "north-ipswich"
+  ],
+  "west-ipswich": [
+    "ipswich",
+    "woodend",
+    "one-mile",
+    "sadliers-crossing"
+  ],
+  "one-mile": [
+    "west-ipswich",
+    "sadliers-crossing",
+    "ipswich"
+  ],
+  "sadliers-crossing": [
+    "one-mile",
+    "west-ipswich",
+    "ipswich"
+  ],
+  "brassall": [
+    "north-ipswich",
+    "coalfalls",
+    "ipswich",
+    "tivoli"
+  ],
+  "north-ipswich": [
+    "woodend",
+    "brassall",
+    "tivoli",
+    "moores-pocket",
+    "ipswich"
+  ],
+  "coalfalls": [
+    "brassall",
+    "ipswich"
+  ],
+  "tivoli": [
+    "north-ipswich",
+    "moores-pocket",
+    "basin-pocket"
+  ],
+  "moores-pocket": [
+    "tivoli",
+    "basin-pocket",
+    "east-ipswich"
+  ],
+  "basin-pocket": [
+    "moores-pocket",
+    "tivoli",
+    "east-ipswich"
+  ],
+  "flinders-view": [
+    "raceview",
+    "yamanto",
+    "deebing-heights",
+    "ripley"
+  ],
+  "deebing-heights": [
+    "flinders-view",
+    "yamanto",
+    "ripley",
+    "south-ripley"
+  ],
+  "south-ripley": [
+    "ripley",
+    "deebing-heights",
+    "white-rock"
+  ],
+  "white-rock": [
+    "ripley",
+    "south-ripley",
+    "swanbank"
+  ],
+  "swanbank": [
+    "white-rock",
+    "redbank-plains",
+    "ripley"
+  ],
+  "willowbank": [
+    "yamanto",
+    "flinders-view"
+  ]
+}

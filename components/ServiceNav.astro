@@ -1,0 +1,47 @@
+---
+import type { ServiceCard } from '~/lib/serviceNav.adapter';
+interface Props {
+  services: ServiceCard[];
+  suburbs: { label: string; href: string }[];
+  currentSuburb: string;
+  localGuidesHref?: string | null;
+}
+const { services = [], suburbs = [], currentSuburb, localGuidesHref = null } = Astro.props;
+---
+<nav class="grid gap-6" aria-label="Other services and guides" data-servicenav data-relservices>
+  <ul class="grid md:grid-cols-2 gap-4">
+    {services.map(c => (
+      <li>
+        <a href={c.href} {...c.attrs} class="block rounded-xl p-4 border transition hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+          class:list={{ 'border-emerald-300': c.attrs['data-nearby']==='false', 'border-amber-300': c.attrs['data-nearby']==='true' }}
+          aria-label={`${c.title}${c.attrs['data-nearby']==='true' ? ' (nearby)' : ''}`}
+        >
+          <div class="font-semibold flex items-center gap-2">
+            <span class="inline-block w-2 h-2 rounded-full" class:list={{ 'bg-emerald-500': c.attrs['data-nearby']==='false', 'bg-amber-500': c.attrs['data-nearby']==='true' }} />
+            {c.title}{c.attrs['data-nearby']==='true' ? ' (nearby)' : ''}
+          </div>
+          <p class="text-sm opacity-80 mt-1">{c.desc}</p>
+        </a>
+      </li>
+    ))}
+  </ul>
+
+  {localGuidesHref && (
+    <p class="text-sm"><a class="underline" href={localGuidesHref}>Local guides for {currentSuburb}</a></p>
+  )}
+
+  {suburbs.length > 0 && (
+    <div class="pt-4 border-t border-slate-200">
+      <h3 class="text-sm font-medium mb-2">Popular areas</h3>
+      <ul class="flex flex-wrap gap-2">
+        {suburbs.map(s => (
+          <li>
+            <a href={s.href} class="px-3 py-1.5 rounded-full text-xs bg-slate-100 hover:bg-sky-500 hover:text-white transition">
+              {s.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )}
+</nav>

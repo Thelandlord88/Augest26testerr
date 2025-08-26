@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "service": "bond-cleaning",
+  "estimate": {
+    "small": "3–4 hours (1–2 cleaners)",
+    "medium": "5–6 hours (2 cleaners)",
+    "large": "7–9 hours (2–3 cleaners)"
+  },
+  "tools_common": [
+    "Microfibre cloths",
+    "Citrus degreaser",
+    "Glass cleaner + squeegee",
+    "Non-scratch scourer",
+    "Magic eraser",
+    "Vacuum with crevice tool",
+    "Mop & bucket"
+  ],
+  "groups": [
+    {
+      "label": "Kitchen",
+      "items": [
+        {
+          "task": "Oven cleaned inside & out (racks, trays, glass)",
+          "how_to": "Warm oven, citrus degreaser, non-scratch pads; rinse and polish.",
+          "accept": "No grease film, no carbon on glass edges, racks shine.",
+          "tools": ["Degreaser", "Non-scratch pads", "Razor scraper (if safe)"],
+          "time_min": 25,
+          "agent_note": "Glass edges and rack rails get the quickest rechecks."
+        },
+        {
+          "task": "Cooktop & splashback degreased and polished",
+          "accept": "No streaks; edges and controls clean.",
+          "time_min": 10
+        },
+        {
+          "task": "Rangehood filters degreased (removable) & housing wiped",
+          "time_min": 10
+        },
+        {
+          "task": "Cupboards & drawers (inside/out), benches, sink & taps",
+          "time_min": 20
+        }
+      ]
+    },
+    {
+      "label": "Bathrooms",
+      "items": [
+        { "task": "Shower: glass/screen, tiles, grout line clean, drain hair removed", "time_min": 20 },
+        { "task": "Toilet: bowl, seat/hinges, cistern & base wiped", "time_min": 10 },
+        { "task": "Vanity & mirror polished; cupboards inside/out", "time_min": 10 }
+      ]
+    },
+    {
+      "label": "Whole home",
+      "items": [
+        { "task": "Skirting boards dusted & wiped", "time_min": 10 },
+        { "task": "Light switches, power points, door handles", "time_min": 10 },
+        { "task": "Windows & tracks (accessible), mirrors, sliders", "time_min": 20 },
+        { "task": "Floors vacuumed & mopped (agent-ready finish)", "time_min": 15 }
+      ]
+    },
+    {
+      "label": "Optional add-ons",
+      "items": [
+        { "task": "Blinds (venetians/rollers) dusted & wiped" },
+        { "task": "Carpets steam-cleaned" },
+        { "task": "Oven deep-restore (heavy carbon)" },
+        { "task": "Balcony/patio detail" }
+      ]
+    }
+  ],
+  "pitfalls": [
+    "Oven glass edges still hazy",
+    "Rangehood filter drip marks",
+    "Skirting corners dusty",
+    "Shower screen bottom lip residue",
+    "Window tracks with grit in corners"
+  ],
+  "faq": [
+    { "q": "Do you re-clean if the agent asks?", "a": "Yes—7-day re-clean window aligned to agent feedback." },
+    { "q": "Do I need power & water on?", "a": "Yes—please ensure utilities are connected for best results." },
+    { "q": "How do you quote?", "a": "Fixed price by size/condition; photos help. No surprises." }
+  ],
+  "agent_focus": [
+    "Oven glass edges & rack rails",
+    "Shower screen lip & drain hair removed",
+    "Skirting corners and behind doors",
+    "Window tracks corners (visible grit)"
+  ]
+}

@@ -1,0 +1,12 @@
+---
+const { label = 'Get a fast quote', href = '/quote/' } = Astro.props;
+---
+<a
+  href={href}
+  class="inline-flex items-center gap-2 rounded-md bg-sky-700 px-4 py-2 text-white hover:bg-sky-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+  on:click={() => {
+    try { window.gtag?.('event', 'cta_click', { label }); } catch {}
+  }}
+>
+  {label}
+</a>

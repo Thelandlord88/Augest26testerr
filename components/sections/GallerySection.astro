@@ -1,0 +1,87 @@
+---
+// src/components/sections/GallerySection.astro
+import { Image } from 'astro:assets';
+
+// Import all necessary images. This is the correct way to handle assets in Astro.
+import doorImage from '/src/assets/images/door.jpg';
+import bathImage from '/src/assets/images/bath.jpg';
+import tapImage from '/src/assets/images/tap.jpg';
+import ovenImage from '/src/assets/images/oven.jpg';
+
+// The data structure now includes a reference to the full, high-resolution image
+// which is what we want to show in the lightbox.
+const galleryItems = [
+    { thumbnail: doorImage, full: doorImage, caption: "Spotless Bathroom Doors & Tracks", alt: "A sparkling clean bathroom door and tracks" },
+    { thumbnail: bathImage, full: bathImage, caption: "Pristine Bathtub & Shower", alt: "A pristine bathtub free of soap scum" },
+    { thumbnail: tapImage, full: tapImage, caption: "Gleaming Chrome Taps", alt: "A polished chrome tap on a clean sink" },
+    { thumbnail: ovenImage, full: ovenImage, caption: "Grease-Free Oven Guarantee", alt: "The inside of a sparkling clean oven" }
+];
+---
+<section id="our-work" class="bg-white py-20 md:py-28">
+    <div class="container mx-auto px-6">
+        <div class="text-center mb-16 max-w-3xl mx-auto">
+            <h2 class="text-3xl md:text-4xl font-extrabold text-deep-navy">The One N Done Standard of Clean</h2>
+            <p class="mt-4 text-lg text-gray-warm-700">Our results speak for themselves. Click any image to see our meticulous work.</p>
+        </div>
+        <div class="gallery grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 justify-items-center items-center">
+            {galleryItems.map((item, index) => (
+                // The interactive element is the outer div. It holds all the data.
+                <div 
+                    class="thumbnail-item cursor-pointer group w-full h-full" 
+                    tabindex="0"
+                    role="button"
+                    aria-label={`View image ${index + 1}: ${item.caption}`}
+                    data-index={index}
+                    data-high-res-src={item.full.src} 
+                    data-alt={item.alt}
+                    data-caption={item.caption}
+                >
+                    <Image 
+                        src={item.thumbnail} 
+                        alt={item.alt}
+                        class="rounded-lg w-full h-full object-cover aspect-square shadow-md transition-all duration-300 group-hover:shadow-2xl group-focus-visible:ring-4 ring-fresh-sky" 
+                        width={400} 
+                        height={400}
+                        loading="lazy"
+                        decoding="async"
+                        formats={['avif', 'webp']}
+                    />
+                </div>
+            ))}
+        </div>
+    </div>
+</section>
+
+<script>
+    // This script is self-contained within the GallerySection.
+    // Its only job is to dispatch the 'openLightbox' event when a thumbnail is clicked.
+    document.addEventListener('astro:page-load', () => {
+        const thumbnails = document.querySelectorAll('.thumbnail-item');
+
+        thumbnails.forEach(thumb => {
+            const openLightbox = () => {
+                // Dispatch a global event that the Lightbox component will listen for.
+                document.dispatchEvent(new CustomEvent('openLightbox', {
+                    bubbles: true, // Allow the event to bubble up through the DOM
+                    detail: {
+                        // Pass all necessary data in the event's 'detail' payload.
+                        index: parseInt(thumb.dataset.index, 10),
+                        src: thumb.dataset.highResSrc,
+                        alt: thumb.dataset.alt,
+                        caption: thumb.dataset.caption,
+                    }
+                }));
+            };
+
+            thumb.addEventListener('click', openLightbox);
+            
+            thumb.addEventListener('keydown', (e) => {
+                // Allow opening with Enter or Spacebar for accessibility.
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openLightbox();
+                }
+            });
+        });
+    });
+</script>

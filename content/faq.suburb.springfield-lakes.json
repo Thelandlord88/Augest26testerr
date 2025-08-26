@@ -1,0 +1,9 @@
+{
+  "items": [
+    { "q": "Do you service Springfield Lakes regularly?", "a": "Yes—local to Ipswich and around Springfield Lakes. We’ll offer the earliest slot that fits your key hand-in." },
+    { "q": "How soon can I book?", "a": "Most weeks we can fit within 2–3 days. End-of-month fills fast; book early if you can." },
+    { "q": "Can you work while I’m moving?", "a": "Yes. Keep power and water on, leave parking instructions and key access. We’ll clean around any last items if needed." },
+    { "q": "Do you offer carpet steam cleaning?", "a": "Yes, as an add-on with our licensed partner. If your lease requires steam, include it in your quote." },
+    { "q": "Is there a re-clean window?", "a": "Yes—7 days aligned to property manager feedback. We target exactly what they list so you can hand back keys on time." }
+  ]
+}

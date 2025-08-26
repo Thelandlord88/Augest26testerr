@@ -1,0 +1,44 @@
+{
+  "email_001": {
+    "channel": "email",
+    "service": "bond-cleaning",
+    "suburb": "Redbank Plains",
+    "sentAt": "2024-09-14T10:23:00Z",
+    "contactPlain": "wishiwashome@homehelp.com.au"
+  },
+  "sms_002": {
+    "channel": "sms",
+    "service": "bond-cleaning",
+    "suburb": "Browns Plains",
+    "sentAt": "2024-05-05T14:07:00Z",
+    "contactPlain": "+61400123456"
+  },
+  "sms_003": {
+    "channel": "sms",
+    "service": "bond-cleaning",
+    "suburb": "Springfield Lakes",
+    "sentAt": "2024-02-22T09:45:00Z",
+    "contactPlain": "+61400567890"
+  },
+  "email_004": {
+    "channel": "email",
+    "service": "bond-cleaning",
+    "suburb": "Booval",
+    "sentAt": "2024-11-11T16:12:00Z",
+    "contactPlain": "Metermaidgc92@metersrus.com.au"
+  },
+  "sms_005": {
+    "channel": "sms",
+    "service": "bond-cleaning",
+    "suburb": "Bundamba",
+    "sentAt": "2025-01-03T11:55:00Z",
+    "contactPlain": "+61481968232"
+  },
+  "email_006": {
+    "channel": "email",
+    "service": "bond-cleaning",
+    "suburb": "Redbank Plains",
+    "sentAt": "2025-06-17T13:30:00Z",
+    "contactPlain": "Dantheman767@hotmail.com"
+  }
+}

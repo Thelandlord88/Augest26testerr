@@ -1,0 +1,7 @@
+{
+  "topics": "src/data/topics.json",
+  "geoClusters": "src/content/areas.clusters.json",
+  "suburbs": "src/data/suburbs.json",
+  "reviews": "src/data/seed-reviews.json",
+  "blogReviews": "src/data/blog-reviews.json"
+}

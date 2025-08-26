@@ -1,0 +1,121 @@
+---
+// src/components/Lightbox.astro
+// This is the final, hardened, and accessible version.
+---
+<!-- 
+  REFINED: The `hidden` class is gone. We now control visibility with opacity and pointer-events
+  to allow for smooth CSS transitions. The initial state is opacity-0.
+-->
+<div 
+  id="lightbox" 
+  class="fixed inset-0 bg-deep-navy/90 p-4 z-[999] backdrop-blur-sm flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300 ease-in-out" 
+  aria-live="polite"
+  role="dialog"
+  aria-modal="true"
+  aria-hidden="true"
+  tabindex="-1"
+>
+    <div 
+      id="lightbox-content" 
+      class="relative w-full h-full flex items-center justify-center transition-transform duration-300 ease-in-out transform scale-95"
+    >
+        <button id="close-lightbox" aria-label="Close lightbox" class="absolute -top-2 -right-2 bg-white rounded-full h-10 w-10 text-2xl font-bold text-deep-navy z-10 shadow-lg hover:scale-110 hover:rotate-90 transition-transform duration-300">×</button>
+        <img id="lightbox-image" src="" alt="" class="max-w-[90vw] max-h-[80vh] object-contain rounded-lg shadow-2xl">
+        <div id="lightbox-caption" class="absolute bottom-4 text-white text-center w-full bg-black/30 p-2 rounded-md"></div>
+    </div>
+</div>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    // --- Element Selection ---
+    const lightbox = document.getElementById('lightbox') as HTMLElement;
+    const lightboxContent = document.getElementById('lightbox-content') as HTMLElement;
+    const lightboxImage = document.getElementById('lightbox-image') as HTMLImageElement;
+    const lightboxCaption = document.getElementById('lightbox-caption') as HTMLElement;
+    const closeBtn = document.getElementById('close-lightbox') as HTMLButtonElement;
+    let lastFocusedElement: HTMLElement | null = null;
+    
+    // --- Focus Trap Logic ---
+    let focusableElements: HTMLElement[] = [];
+    let firstFocusableElement: HTMLElement | null = null;
+    let lastFocusableElement: HTMLElement | null = null;
+
+    const setupFocusTrap = () => {
+      // For this component, only the close button is focusable.
+      focusableElements = [closeBtn];
+      firstFocusableElement = focusableElements[0];
+      lastFocusableElement = focusableElements[focusableElements.length - 1];
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // If lightbox is not open, do nothing.
+      if (lightbox.getAttribute('aria-hidden') === 'true') return;
+
+      // Handle Escape key
+      if (e.key === 'Escape') {
+        closeLightbox();
+        return;
+      }
+      
+      // Handle Tab key for focus trapping
+      if (e.key === 'Tab') {
+        if (e.shiftKey) { // Shift + Tab
+          if (document.activeElement === firstFocusableElement) {
+            e.preventDefault();
+            lastFocusableElement?.focus();
+          }
+        } else { // Tab
+          if (document.activeElement === lastFocusableElement) {
+            e.preventDefault();
+            firstFocusableElement?.focus();
+          }
+        }
+      }
+    };
+    
+    // --- Main Functions ---
+    const openLightbox = (e: CustomEvent) => {
+      const { src, alt, caption } = e.detail;
+      lastFocusedElement = document.activeElement as HTMLElement; // Store element that opened the lightbox
+
+      lightboxImage.src = src;
+      lightboxImage.alt = alt;
+      lightboxCaption.textContent = caption;
+
+      lightbox.setAttribute('aria-hidden', 'false');
+      lightbox.classList.remove('opacity-0', 'pointer-events-none');
+      lightboxContent.classList.remove('scale-95');
+      document.body.classList.add('menu-open');
+
+      // Add the keydown listener ONLY when the lightbox is open.
+      document.addEventListener('keydown', handleKeyDown);
+      
+      // Setup the focus trap elements and focus the first one.
+      setupFocusTrap();
+      closeBtn?.focus();
+    };
+
+    const closeLightbox = () => {
+      lightbox.setAttribute('aria-hidden', 'true');
+      lightbox.classList.add('opacity-0', 'pointer-events-none');
+      lightboxContent.classList.add('scale-95');
+      document.body.classList.remove('menu-open');
+      
+      // Remove the keydown listener ONLY when the lightbox is closed.
+      document.removeEventListener('keydown', handleKeyDown);
+      
+      // Return focus to the element that opened the lightbox.
+      lastFocusedElement?.focus();
+    };
+
+    // --- Event Listeners ---
+    document.addEventListener('openLightbox', (e) => openLightbox(e as CustomEvent));
+    closeBtn?.addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', (e) => {
+      // Close if the user clicks on the dark backdrop, but not on the content.
+      if (e.target === lightbox) {
+        closeLightbox();
+      }
+    });
+  });
+</script>
