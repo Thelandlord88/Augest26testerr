@@ -1,0 +1,64 @@
+---
+import MainLayout from '~/layouts/MainLayout.astro';
+import Button from '~/components/ui/Button.astro';
+import Badge from '~/components/ui/Badge.astro';
+import Card from '~/components/ui/Card.astro';
+import Section from '~/components/ui/Section.astro';
+
+const title = 'UI Catalog';
+const description = 'Foundational components for rapid iteration.';
+---
+
+<MainLayout title={title} description={description}>
+  <Section title="Buttons" subtitle="Variants and sizes">
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div class="space-x-2">
+        <Button>Primary</Button>
+        <Button variant="secondary">Secondary</Button>
+        <Button variant="ghost">Ghost</Button>
+        <Button variant="link" href="#">Link</Button>
+      </div>
+      <div class="space-x-2">
+        <Button size="sm">Small</Button>
+        <Button size="md">Medium</Button>
+        <Button size="lg">Large</Button>
+      </div>
+      <div class="space-y-2">
+        <Button full>Full width</Button>
+        <Button variant="secondary" full>Full secondary</Button>
+      </div>
+    </div>
+  </Section>
+
+  <Section title="Badges" subtitle="Contextual accents">
+    <div class="flex flex-wrap gap-2">
+      <Badge>Sky</Badge>
+      <Badge tone="emerald">Success</Badge>
+      <Badge tone="amber">Warning</Badge>
+      <Badge tone="slate">Neutral</Badge>
+    </div>
+  </Section>
+
+  <Section title="Cards" subtitle="Content containers">
+    <div class="grid gap-6 md:grid-cols-2">
+      <Card>
+        <h3 slot="header" class="text-lg font-bold mb-2">Standard Card</h3>
+        <p class="text-slate-700">A chrome/glass utility with soft shadow and hover lift.</p>
+        <div slot="footer" class="mt-4">
+          <Button size="sm">Action</Button>
+        </div>
+      </Card>
+      <Card hover={false}>
+        <h3 slot="header" class="text-lg font-bold mb-2">Static Card</h3>
+        <p class="text-slate-700">No hover animation, good for dense lists.</p>
+      </Card>
+    </div>
+  </Section>
+  <nav class="mt-10 px-4" aria-label="Explore more">
+    <ul class="flex flex-wrap gap-4 text-sm">
+      <li><a class="text-sky-700 hover:underline" href="/services/bond-cleaning/">Bond Cleaning</a></li>
+      <li><a class="text-sky-700 hover:underline" href="/areas/">Service Areas</a></li>
+      <li><a class="text-sky-700 hover:underline" href="/quote/">Get a Quote</a></li>
+    </ul>
+  </nav>
+</MainLayout>

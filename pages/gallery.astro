@@ -1,0 +1,26 @@
+---
+import MainLayout from '~/layouts/MainLayout.astro';
+import { absoluteUrl } from '~/lib/url';
+const canonical = absoluteUrl('/gallery/');
+---
+<MainLayout title="Gallery – One N Done" description="Before/after highlights from recent cleans." canonical={canonical}>
+  <article class="max-w-5xl mx-auto py-12 px-4">
+    <h1 class="text-3xl md:text-4xl font-extrabold text-deep-navy mb-6">Gallery</h1>
+    <p class="text-slate-700 mb-6">A few examples from kitchens, bathrooms, and outdoor areas.</p>
+    <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <div class="aspect-video bg-slate-100 rounded-xl border" />
+      <div class="aspect-video bg-slate-100 rounded-xl border" />
+      <div class="aspect-video bg-slate-100 rounded-xl border" />
+      <div class="aspect-video bg-slate-100 rounded-xl border" />
+      <div class="aspect-video bg-slate-100 rounded-xl border" />
+      <div class="aspect-video bg-slate-100 rounded-xl border" />
+    </div>
+    <nav class="mt-10" aria-label="Explore more">
+      <ul class="flex flex-wrap gap-4 text-sm">
+        <li><a class="text-sky-700 hover:underline" href="/services/bond-cleaning/">Bond Cleaning</a></li>
+        <li><a class="text-sky-700 hover:underline" href="/areas/">Service Areas</a></li>
+        <li><a class="text-sky-700 hover:underline" href="/quote/">Get a Quote</a></li>
+      </ul>
+    </nav>
+  </article>
+</MainLayout>

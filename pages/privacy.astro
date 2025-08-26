@@ -1,0 +1,20 @@
+---
+import MainLayout from '~/layouts/MainLayout.astro';
+import { absoluteUrl } from '~/lib/url';
+const canonical = absoluteUrl('/privacy/');
+---
+<MainLayout title="Privacy Policy – One N Done" description="How we collect, use, and protect your information." canonical={canonical}>
+  <article class="max-w-3xl mx-auto py-12 px-4 prose">
+    <h1>Privacy Policy</h1>
+    <p>We respect your privacy. We only collect information needed to provide quotes and deliver services. We never sell your data.</p>
+    <h2>What we collect</h2>
+    <ul>
+      <li>Contact details you submit (name, email, phone).</li>
+      <li>Service details (address, property size, preferred dates).</li>
+    </ul>
+    <h2>How it’s used</h2>
+    <p>We use your details to prepare quotes, schedule work, and communicate about your booking.</p>
+    <h2>Contact</h2>
+    <p>Questions? Email us via the contact form or request a <a href="/quote">free quote</a>.</p>
+  </article>
+</MainLayout>

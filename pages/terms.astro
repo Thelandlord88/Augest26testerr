@@ -1,0 +1,23 @@
+---
+import MainLayout from '~/layouts/MainLayout.astro';
+import { absoluteUrl } from '~/lib/url';
+const canonical = absoluteUrl('/terms/');
+---
+<MainLayout title="Terms & Conditions – One N Done" description="Service terms, booking policies, and guarantees." canonical={canonical}>
+  <article class="max-w-3xl mx-auto py-12 px-4 prose">
+    <h1>Terms & Conditions</h1>
+    <h2>Bookings</h2>
+    <p>Quotes are based on details provided. Pricing may be adjusted if property size or condition differs significantly.</p>
+    <h2>Guarantee</h2>
+    <p>Our bond‑back support covers reasonable agent feedback reported within 7 days of service completion.</p>
+    <h2>Cancellations</h2>
+    <p>Please provide 24 hours notice for reschedules or cancellations.</p>
+    <nav class="mt-10 not-prose" aria-label="Explore more">
+      <ul class="flex flex-wrap gap-4 text-sm">
+        <li><a class="text-sky-700 hover:underline" href="/services/bond-cleaning/">Bond Cleaning</a></li>
+        <li><a class="text-sky-700 hover:underline" href="/areas/">Service Areas</a></li>
+        <li><a class="text-sky-700 hover:underline" href="/quote/">Get a Quote</a></li>
+      </ul>
+    </nav>
+  </article>
+</MainLayout>
