@@ -1,0 +1,7 @@
+{
+  "/index.html": ["WebSite", "LocalBusiness"],
+  "/areas/index.html": ["CollectionPage"],
+  "/blog/*/category/*/index.html": ["CollectionPage"],
+  "/services/bond-cleaning/index.html": ["Service", "Offer"],
+  "/blog/ipswich/bond-cleaning-checklist/index.html": ["Article"]
+}
