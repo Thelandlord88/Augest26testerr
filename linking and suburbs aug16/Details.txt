@@ -1,0 +1,155 @@
+Perfect — here’s a complete, staged **internal-linking system** you can drop into your repo. It includes:
+
+* per-service **coverage** with editable **groups** (P1/P2/regions)
+* curated **neighbor maps** (Ipswich, Brisbane West, Logan)
+* a robust **link generator** with stage-aware ordering
+* a clean **RelatedLinks** component
+* a **postbuild audit** to prevent link bloat
+* a **unit test** to keep coverage in sync with your whitelist
+
+All files are ready to download.
+
+---
+
+# 1) Data: staged service coverage (editable source → generated JSON)
+
+**Editable source (groups + service mix)**
+`src/data/serviceCoverage.source.json`
+[Download](sandbox:/mnt/data/src/data/serviceCoverage.source.json)
+
+This lets you control rollout by editing groups (e.g., `ipswich_p1`, `ipswich_p2`, `brisbane_west_core`, `logan_core`) and mixing them per service.
+
+**Build step to expand to flat arrays**
+`scripts/expand-coverage.mjs`
+[Download](sandbox:/mnt/data/scripts/expand-coverage.mjs)
+
+Generates `src/data/serviceCoverage.json` (deduped, sorted):
+
+* Output (generated): `src/data/serviceCoverage.json`
+  [Download](sandbox:/mnt/data/serviceCoverage.json)
+
+**Add to package.json scripts**
+
+```json
+{
+  "scripts": {
+    "prebuild": "node scripts/expand-coverage.mjs",
+    "build": "astro build",
+    "postbuild": "node scripts/audit-related-links.mjs",
+    "test": "vitest run"
+  }
+}
+```
+
+[Download the scripts block](sandbox:/mnt/data/package.scripts.suggested.json)
+
+---
+
+# 2) Curated neighbor maps (CTR-friendly “nearby”)
+
+* Ipswich: `src/data/geo.neighbors.ipswich.json`
+  [Download](sandbox:/mnt/data/geo.neighbors.ipswich.json)
+
+* Brisbane West: `src/data/geo.neighbors.brisbane-west.json`
+  [Download](sandbox:/mnt/data/geo.neighbors.brisbane-west.json)
+
+* Logan: `src/data/geo.neighbors.logan.json`
+  [Download](sandbox:/mnt/data/geo.neighbors.logan.json)
+
+Each file is `{ "<suburb-slug>": ["neighbor-1","neighbor-2", ...] }` and only references suburbs in the same cluster/LGA. Order is hand-curated to feel “closest / most intuitive first.” Your link generator intersects these with `coverage[service]` so you never emit a suburb you don’t service.
+
+---
+
+# 3) Stage-aware prioritiser
+
+`src/utils/prioritiseByGrid.js`
+[Download](sandbox:/mnt/data/src/utils/prioritiseByGrid.js)
+
+* Keeps **P1 Ipswich spokes first**, then P2, then the rest.
+* Expand P2 when you’re ready—no code changes needed elsewhere.
+
+---
+
+# 4) Internal link generator (drop-in replacement)
+
+`src/utils/internalLinks.js`
+[Download](sandbox:/mnt/data/src/utils/internalLinks.js)
+
+What it does:
+
+* **Self-link optional** (`includeSelf`) so you can keep it on AcceptanceSlice but off for “Related”.
+* **Neighbor awareness:** uses curated neighbor maps if available; otherwise falls back to cluster order.
+* **Per-service coverage filter:** intersects neighbors with `coverage[service]`.
+* **Consistent labels:** uses `SERVICE_LABEL` map and **official suburb names** from your clusters file (preserves punctuation like “Mount Coot-tha”, “St Lucia”).
+* **Canonicals only:** builds `/services/[service]/[suburb]/`, `/services/[service]/`, `/areas/[cluster]/` with cluster normalization via `resolveClusterSlug`.
+
+Usage example in a page or component:
+
+```js
+import { getRelatedServiceLinks } from '~/utils/internalLinks.js';
+import { prioritiseByGrid } from '~/utils/prioritiseByGrid.js';
+
+const links = getRelatedServiceLinks({
+  service: 'bond-cleaning',
+  suburbSlug: 'springfield-lakes',
+  count: 3,
+  includeSelf: false,
+  prioritiseByGrid
+});
+```
+
+---
+
+# 5) UI: lean Related Links block
+
+`src/components/RelatedLinks.astro`
+[Download](sandbox:/mnt/data/src/components/RelatedLinks.astro)
+
+* Renders exactly **3 links** by default
+* Adds `data-relblock` for the audit to find and enforce the cap
+
+---
+
+# 6) Postbuild audit (no link bloat)
+
+`scripts/audit-related-links.mjs`
+[Download](sandbox:/mnt/data/scripts/audit-related-links.mjs)
+
+* Scans `dist/` HTML for `[data-relblock]` and fails the build if any block contains more than **3 anchors**.
+* Keeps the site lean even as content grows.
+
+---
+
+# 7) Unit test: coverage vs whitelist integrity
+
+`tests/coverage.whitelist.test.mjs`
+[Download](sandbox:/mnt/data/tests/coverage.whitelist.test.mjs)
+
+* Ensures every suburb in `coverage[service]` exists in your `areas.clusters.json` whitelist (catches typos and drift).
+* Runs with **Vitest**.
+
+---
+
+# 8) Bonus: ready-made JSONs from earlier steps
+
+If you want single-file variants:
+
+* **Initial 10 only** (all services):
+  [serviceCoverage.initial10.json](sandbox:/mnt/data/serviceCoverage.initial10.json)
+* **Full union** (broad rollout draft):
+  [serviceCoverage.full.json](sandbox:/mnt/data/serviceCoverage.full.json)
+
+---
+
+## How this all works together
+
+1. You **edit** `serviceCoverage.source.json` to control which groups belong to each service.
+2. `prebuild` runs `expand-coverage.mjs` to write the final `serviceCoverage.json`.
+3. Pages/components call `getRelatedServiceLinks(service, suburbSlug)`; it:
+
+   * optional **self** → **nearby** (curated or cluster order) → **fallbacks**, filtered by `coverage[service]`
+   * **prioritiseByGrid** floats P1 suburbs to the top during your staged rollout
+4. `postbuild` audit ensures each block stays at **≤3 links**.
+5. Unit test ensures coverage never references unknown suburbs.
+
+That’s the full, end-to-end setup. If you want, I can also generate **JSDoc typedefs** for the data files and add a **Playwright smoke test** to check that every emitted link 200s in `astro dev`—just say the word.
