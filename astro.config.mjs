@@ -1,6 +1,6 @@
 import { defineConfig } from 'astro/config';
+import tailwind from '@astrojs/tailwind';
 import netlify from '@astrojs/netlify';
-import tailwind from '@tailwindcss/vite';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -16,13 +16,14 @@ export default defineConfig({
     edgeMiddleware: USE_EDGE,
   }),
   integrations: [
-  // Tailwind is handled via PostCSS and `src/styles/input.css`.
+    tailwind({
+      applyBaseStyles: false,
+    }),
   ],
   viewTransitions: {
     fallback: 'animate',
   },
   vite: {
-    plugins: [tailwind()],
     resolve: {
       alias: {
         '~': path.resolve(__dirname, './src'),

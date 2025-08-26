@@ -56,6 +56,7 @@
 | `astro.config.mjs` | 2025-07-20 | 2025-08-15 | Astro configuration. | Build/runtime project settings. | Loaded by Astro build/dev |
 | `build.log` | 2025-08-15 | 2025-08-15 | Log file. | Captured build or script output. | Produced by scripts or CI |
 | `CONTRIBUTING.md` | 2025-08-20 | 2025-08-20 | Contribution guide. | Standards for PRs & quality. | Referenced by contributors/CI reviews |
+| `css/output.css` | 2025-07-20 | 2025-07-20 | Compiled CSS bundle. | Generated Tailwind styles. | Linked by layouts (MainLayout) |
 | `cypress.config.js` | 2025-07-20 | 2025-08-10 | Cypress config. | E2E test runner settings. | Used by cypress tests in cypress/e2e |
 | `cypress/e2e/faq-section.cypress.js` | 2025-08-05 | 2025-08-10 | Cypress test spec. | Browser flow / UI validation. | Run under Cypress runner |
 | `cypress/e2e/quote-form.cypress.js` | 2025-07-30 | 2025-08-10 | Cypress test spec. | Browser flow / UI validation. | Run under Cypress runner |
