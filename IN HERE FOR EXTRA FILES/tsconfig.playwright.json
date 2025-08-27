@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "types": ["@playwright/test", "node"]
+  },
+  "include": [
+    "playwright.config.ts",
+    "tests/e2e/**/*.ts",
+    "e2e/**/*.ts",
+    "tests/**/*.ts"
+  ]
+}

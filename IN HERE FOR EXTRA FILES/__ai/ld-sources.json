@@ -1,0 +1,42 @@
+{
+  "timestamp": "2025-08-26T04:31:01.342Z",
+  "counts": {
+    "generators": 3,
+    "layouts": 1,
+    "components": 6,
+    "pages": 0,
+    "legacy": 2,
+    "tooling": 5,
+    "total": 17
+  },
+  "files": {
+    "generators": [
+      "src/lib/seoSchema.js",
+      "src/utils/schema.js",
+      "src/utils/schemaGraph.js"
+    ],
+    "layouts": [
+      "src/layouts/MainLayout.astro"
+    ],
+    "components": [
+      "src/components/FAQ.astro",
+      "src/components/FaqBlock.astro",
+      "src/components/Schema.astro",
+      "src/components/SchemaGraph.astro",
+      "src/components/sections/AboutSection.astro",
+      "src/components/sections/DifferenceSection.astro"
+    ],
+    "pages": [],
+    "legacy": [
+      "src/components/FAQItem.notusing.astro",
+      "src/components/FAQSection.notusing.astro"
+    ],
+    "tooling": [
+      "scripts/assert-ld-health.mjs",
+      "scripts/report-ld-sources.mjs",
+      "scripts/report-ld.mjs",
+      "scripts/test-schema-hash.mjs",
+      "scripts/validate-schema.js"
+    ]
+  }
+}

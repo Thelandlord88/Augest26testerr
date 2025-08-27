@@ -1,0 +1,51 @@
+---
+export interface Review {
+  author: string;
+  text: string;
+  rating: number;
+  date: string;
+}
+
+interface Props { reviews: Review[] }
+const { reviews = [] } = Astro.props as Props;
+const toISO = (dmy: string) => dmy.split('/').reverse().join('-');
+---
+
+<section class="reviews-section">
+  <div class="reviews-container">
+    <h2 class="reviews-title">
+      What our customers say
+    </h2>
+
+  <!-- Snap-scroll container -->
+  <div class="reviews-scroller" tabindex="0" aria-label="Customer reviews carousel">
+      <div class="reviews-track">
+        {reviews.map(r => (
+          <article class="review-card">
+            <!-- gold stars -->
+            <div class="review-stars" role="img" aria-label={`Rated ${r.rating} out of 5 stars`}>
+              {Array(r.rating).fill(0).map(() => (
+                <span aria-hidden="true">★</span>
+              ))}
+            </div>
+
+            <blockquote class="review-quote">
+              “{r.text}”
+            </blockquote>
+
+            <hr class="review-divider">
+
+            <footer class="review-footer">
+              {r.author}
+              <span class="review-date">{r.date}</span>
+            </footer>
+          </article>
+        ))}
+      </div>
+    </div>
+
+  <p class="reviews-note">
+      Reviews from verified customers collected via email and SMS.
+    </p>
+  </div>
+</section>

@@ -1,0 +1,58 @@
+{
+  "bond-cleaning:redbank-plains": [
+    {
+      "author": "Sasha.",
+      "title": "Absolutely thrilled",
+      "body": "Every surface gleamed and carpets looked brand new.",
+      "stars": 5,
+      "date": "2024-09-14",
+      "source": "email",
+      "receiptId": "email_001"
+    },
+    {
+      "author": "James.",
+      "title": "Great value",
+      "body": "Team arrived on time and left the place spotless.",
+      "stars": 4,
+      "date": "2024-05-05",
+      "source": "sms",
+      "receiptId": "sms_002"
+    },
+    {
+      "author": "Emma",
+      "title": "Five stars all the way",
+      "body": "Professional, fast, and the oven has never looked better!",
+      "stars": 5,
+      "date": "2024-02-22",
+      "source": "sms",
+      "receiptId": "sms_003"
+    },
+    {
+      "author": "Issa",
+      "title": "No dramas",
+      "body": "Clean completed smoothly and on schedule.",
+      "stars": 4,
+      "date": "2024-11-11",
+      "source": "email",
+      "receiptId": "email_004"
+    },
+    {
+      "author": "Kat",
+      "title": "Transformed our flat",
+      "body": "Sparkling bathrooms and fresh-smelling carpets. Definitely 5 stars!",
+      "stars": 5,
+      "date": "2025-01-03",
+      "source": "sms",
+      "receiptId": "sms_005"
+    },
+    {
+      "author": "Dan",
+      "title": "Bond back in full",
+      "body": "I'm sure the people moving in after us will be happy.",
+      "stars": 5,
+      "date": "2025-06-17",
+      "source": "email",
+      "receiptId": "email_006"
+    }
+  ]
+}

@@ -1,78 +1,250 @@
 ---
-// Import images so Vite/Astro can bundle them correctly
-import ovenBefore from '~/assets/images/oven.jpg';
-import ovenAfter from '~/assets/images/og.jpg';
-import bathBefore from '~/assets/images/bath.jpg';
-import bathAfter from '~/assets/images/nans.png';
-import tapBefore from '~/assets/images/tap.jpg';
-import tapAfter from '~/assets/images/nans.png';
-import { Image } from 'astro:assets';
+// src/components/sections/Polaroids.astro
+export interface Props {
+  jobs?: {
+    before: string;
+    after: string;
+    caption: string;
+  }[];
+}
+
+// Added more items to better showcase the staggered animation
+const { jobs = [
+  { before: 'https://placehold.co/400x400/cccccc/333333?text=Dirty+Oven',
+    after:  'https://placehold.co/400x400/0ea5e9/FFFFFF?text=Sparkling!',
+    caption: 'Oven Restoration' },
+  { before: 'https://placehold.co/400x400/d3d3d3/333333?text=Grubby+Shower',
+    after:  'https://placehold.co/400x400/0ea5e9/FFFFFF?text=Gleaming!',
+    caption: 'Bathroom Deep Clean' },
+  { before: 'https://placehold.co/400x400/a9a9a9/333333?text=Stained+Carpet',
+    after:  'https://placehold.co/400x400/0ea5e9/FFFFFF?text=Spotless!',
+    caption: 'Carpet Steam Cleaning' },
+  { before: 'https://placehold.co/400x400/b0c4de/333333?text=Greasy+Rangehood',
+    after:  'https://placehold.co/400x400/0ea5e9/FFFFFF?text=Pristine!',
+    caption: 'Kitchen Degreasing' },
+] } = Astro.props;
 ---
-<!-- ========== Yesterday’s Jobs ========== -->
 
-<section class="bg-gradient-to-b from-blue-50 to-gray-100 py-14 px-3">
-  <div class="max-w-6xl mx-auto">
+<!-- NOTE: For the handwritten font to work, add this to your MainLayout.astro <head> section:
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kalam:wght@700&display=swap" rel="stylesheet">
+-->
 
-    <!-- Heading -->
-  <h2 class="font-extrabold text-3xl md:text-5xl tracking-tight text-center text-[oklch(24.29% 0.0304 283.91)] mb-10 drop-shadow-sm" style="font-family: 'Playfair Display', serif;">
-      Yesterday’s Jobs
-      <span class="block text-lg font-light text-blue-500 tracking-normal">in Polaroids</span>
-    </h2>
+<section class="polaroid-section">
+  <!-- Dust-mote background effect, using the improved styling -->
+  <div id="background-motes">
+    {Array.from({ length: 50 }).map(() => (
+      <div
+        class="dust-mote"
+        style={`
+          left: ${Math.random() * 100}%;
+          width: ${Math.random() * 4 + 1}px;
+          height: ${Math.random() * 4 + 1}px;
+          animation-duration: ${Math.random() * 20 + 10}s;
+          animation-delay: ${Math.random() * -20}s;
+        `}
+      />
+    ))}
+  </div>
 
-    <!-- Polaroids -->
-    <div class="flex flex-col md:flex-row gap-10 md:gap-7 justify-center items-start">
+  <div class="relative z-10 mx-auto max-w-6xl px-4">
+    <h2 class="section-title">A Look at Our Recent Work</h2>
 
-      <!-- Card 1 – Oven -->
-      <figure class="group polaroid-card relative bg-white rounded-[1.5rem] shadow-xl border-2 border-gray-200 overflow-visible w-full md:w-1/3 px-0 pb-6 flex flex-col items-center transition-all duration-500 ease-[cubic-bezier(.22,1,.36,1)] hover:scale-105 hover:shadow-[0_6px_30px_0_rgba(30,64,175,0.09),0_2px_4px_0_rgba(68,174,252,0.10)] active:scale-97 active:opacity-90 cursor-pointer rotate-[-3deg]">
-        <div class="relative aspect-[3/4] w-full h-80 md:h-auto overflow-hidden rounded-xl mt-5 mb-4 shadow-2xl bg-gradient-to-tr from-gray-100 via-white to-gray-50">
-          <Image src={ovenBefore} alt="Oven before" class="absolute inset-0 w-full h-full object-cover opacity-100 transition-opacity duration-500 group-hover:opacity-0 z-10" widths={[400,640,800]} sizes="(min-width: 768px) 33vw, 100vw" formats={["avif","webp","jpeg"]} />
-          <Image src={ovenAfter}  alt="Oven after"  class="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100 z-20" widths={[400,640,800]} sizes="(min-width: 768px) 33vw, 100vw" formats={["avif","webp","jpeg"]} />
-          <span class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent group-hover:bg-transparent transition-all duration-300 pointer-events-none z-30"></span>
-          <span class="polaroid-label absolute -bottom-8 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-[oklch(34.09% 0.0695 272.41)] text-white text-base rounded shadow font-[Permanent_Marker] group-hover:opacity-0 transition-all duration-300 z-40">Before</span>
-          <span class="polaroid-label absolute -bottom-8 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-yellow-400 text-[oklch(24.29% 0.0304 283.91)] text-base rounded shadow font-[Permanent_Marker] opacity-0 group-hover:opacity-100 transition-all duration-300 z-40">After</span>
-          <span class="absolute top-3 left-4 w-7 h-2 bg-yellow-200 rotate-[-12deg] rounded-[2px] opacity-65"></span>
-          <span class="absolute top-3 right-5 w-7 h-2 bg-yellow-200 rotate-[10deg] rounded-[2px] opacity-65"></span>
-        </div>
-        <figcaption class="text-center mt-6 mx-3">
-          <span class="text-lg font-extrabold text-gray-900 leading-tight mb-1 font-[Permanent_Marker]">Oven clean</span>
-          <span class="text-base font-medium text-gray-600 font-[Quicksand]">The difference a deep clean makes.</span>
-        </figcaption>
-      </figure>
-
-      <!-- Card 2 – Bathroom -->
-      <figure class="group polaroid-card relative bg-white rounded-[1.5rem] shadow-xl border-2 border-gray-200 overflow-visible w-full md:w-1/3 px-0 pb-6 flex flex-col items-center transition-all duration-500 ease-[cubic-bezier(.22,1,.36,1)] hover:scale-105 hover:shadow-[0_6px_30px_0_rgba(30,64,175,0.09),0_2px_4px_0_rgba(68,174,252,0.10)] active:scale-97 active:opacity-90 cursor-pointer rotate-[3deg]">
-        <div class="relative aspect-[3/4] w-full h-80 md:h-auto overflow-hidden rounded-xl mt-5 mb-4 shadow-2xl bg-gradient-to-tr from-gray-100 via-white to-gray-50">
-          <Image src={bathBefore} alt="Bathroom before" class="absolute inset-0 w-full h-full object-cover opacity-100 transition-opacity duration-500 group-hover:opacity-0 z-10" widths={[400,640,800]} sizes="(min-width: 768px) 33vw, 100vw" formats={["avif","webp","jpeg"]} />
-          <Image src={bathAfter}  alt="Bathroom after"  class="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100 z-20" widths={[400,640,800]} sizes="(min-width: 768px) 33vw, 100vw" formats={["avif","webp","jpeg"]} />
-          <span class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent group-hover:bg-transparent transition-all duration-300 pointer-events-none z-30"></span>
-          <span class="polaroid-label absolute -bottom-8 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-sky-700 text-white text-base rounded shadow font-[Permanent_Marker] group-hover:opacity-0 transition-all duration-300 z-40">Before</span>
-          <span class="polaroid-label absolute -bottom-8 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-yellow-400 text-[oklch(24.29% 0.0304 283.91)] text-base rounded shadow font-[Permanent_Marker] opacity-0 group-hover:opacity-100 transition-all duration-300 z-40">After</span>
-          <span class="absolute top-3 left-4 w-7 h-2 bg-yellow-200 rotate-[-12deg] rounded-[2px] opacity-65"></span>
-          <span class="absolute top-3 right-5 w-7 h-2 bg-yellow-200 rotate-[10deg] rounded-[2px] opacity-65"></span>
-        </div>
-        <figcaption class="text-center mt-6 mx-3">
-          <span class="text-lg font-extrabold text-gray-900 leading-tight mb-1 font-[Permanent_Marker]">Bathroom transformation</span>
-          <span class="text-base font-medium text-gray-600 font-[Quicksand]">We bring the sparkle back!</span>
-        </figcaption>
-      </figure>
-
-      <!-- Card 3 – Tap & Tracks -->
-      <figure class="group polaroid-card relative bg-white rounded-[1.5rem] shadow-xl border-2 border-gray-200 overflow-visible w-full md:w-1/3 px-0 pb-6 flex flex-col items-center transition-all duration-500 ease-[cubic-bezier(.22,1,.36,1)] hover:scale-105 hover:shadow-[0_6px_30px_0_rgba(30,64,175,0.09),0_2px_4px_0_rgba(68,174,252,0.10)] active:scale-97 active:opacity-90 cursor-pointer rotate-[-3deg]">
-        <div class="relative aspect-[3/4] w-full h-80 md:h-auto overflow-hidden rounded-xl mt-5 mb-4 shadow-2xl bg-gradient-to-tr from-gray-100 via-white to-gray-50">
-          <Image src={tapBefore}  alt="Tracks before" class="absolute inset-0 w-full h-full object-cover opacity-100 transition-opacity duration-500 group-hover:opacity-0 z-10" widths={[400,640,800]} sizes="(min-width: 768px) 33vw, 100vw" formats={["avif","webp","jpeg"]} />
-          <Image src={tapAfter}   alt="Tracks after"  class="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100 z-20" widths={[400,640,800]} sizes="(min-width: 768px) 33vw, 100vw" formats={["avif","webp","jpeg"]} />
-          <span class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent group-hover:bg-transparent transition-all duration-300 pointer-events-none z-30"></span>
-          <span class="polaroid-label absolute -bottom-8 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-sky-700 text-white text-base rounded shadow font-[Permanent_Marker] group-hover:opacity-0 transition-all duration-300 z-40">Before</span>
-          <span class="polaroid-label absolute -bottom-8 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-yellow-400 text-[oklch(24.29% 0.0304 283.91)] text-base rounded shadow font-[Permanent_Marker] opacity-0 group-hover:opacity-100 transition-all duration-300 z-40">After</span>
-          <span class="absolute top-3 left-4 w-7 h-2 bg-yellow-200 rotate-[-12deg] rounded-[2px] opacity-65"></span>
-          <span class="absolute top-3 right-5 w-7 h-2 bg-yellow-200 rotate-[10deg] rounded-[2px] opacity-65"></span>
-        </div>
-        <figcaption class="text-center mt-6 mx-3">
-          <span class="text-lg font-extrabold text-gray-900 leading-tight mb-1 font-[Permanent_Marker]">Details matter</span>
-          <span class="text-base font-medium text-gray-600 font-[Quicksand]">Clean, polished, and guest-ready.</span>
-        </figcaption>
-      </figure>
-
+    <div class="gallery-grid">
+      {jobs.map((job, i) => (
+        <article class="polaroid" style={`--delay: ${i * 0.15}s`}>
+          <div class="polaroid-inner">
+            <!-- Front of the Polaroid -->
+            <div class="side front">
+              <img src={job.before} alt={`Before shot of ${job.caption}`} />
+              <span class="label">Before</span>
+            </div>
+            <!-- Back of the Polaroid -->
+            <div class="side back">
+              <img src={job.after} alt={`After shot of ${job.caption}`} />
+              <span class="label after-label">After</span>
+            </div>
+          </div>
+          <p class="caption">{job.caption}</p>
+        </article>
+      ))}
     </div>
   </div>
 </section>
+
+<style>
+  /* --- Base Styles & Setup --- */
+  :root {
+    --polaroid-bg: #ffffff; /* Using white for the polaroid frame */
+    --polaroid-shadow: rgba(0, 0, 0, 0.2);
+    --font-handwriting: 'Kalam', cursive; /* Using the new handwritten font */
+  }
+
+  /* --- Background Dust Motes --- */
+  #background-motes {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .dust-mote {
+    position: absolute;
+    bottom: -10px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1), 0 0 20px rgba(255, 255, 255, 0.05);
+    animation: floatUpwards linear infinite;
+  }
+
+  @keyframes floatUpwards {
+    0% {
+      transform: translateY(0);
+      opacity: 0;
+    }
+    10%, 90% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-100vh);
+      opacity: 0;
+    }
+  }
+
+  /* --- Main Section --- */
+  .polaroid-section {
+    position: relative;
+    background-color: #0c2f5a; /* Using your deep-navy color */
+    padding: 4rem 1rem;
+    perspective: 1500px;
+    overflow: hidden; /* Contains the motes */
+  }
+
+  .section-title {
+    text-align: center;
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    margin-bottom: 3rem;
+    color: #ffffff; /* White text for contrast */
+    font-weight: 700;
+  }
+
+  /* --- Gallery Grid Layout --- */
+  .gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 4rem 2.5rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* --- Individual Polaroid Card --- */
+  .polaroid {
+    position: relative;
+    width: 50%;
+    aspect-ratio: 3 / 4;
+    transform-style: preserve-3d;
+    opacity: 0;
+    animation: floatUp 1s ease-out forwards;
+    animation-delay: var(--delay, 0s);
+  }
+  
+  /* Glowing effect behind the polaroid */
+  .polaroid::after {
+    content: '';
+    position: absolute;
+    inset: -20px;
+    z-index: -1;
+    background: radial-gradient(circle, rgba(14, 165, 233, 0.3) 0%, rgba(14, 165, 233, 0) 70%); /* Using your fresh-sky color */
+    filter: blur(30px);
+    border-radius: 30px;
+    animation: hum 5s infinite ease-in-out;
+    animation-delay: var(--delay);
+  }
+
+  @keyframes floatUp {
+    from {
+      transform: translateY(60px) scale(.9);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes hum {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 0.8;
+    }
+  }
+
+  /* --- Inner container that actually flips --- */
+  .polaroid-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.7s ease-in-out;
+  }
+
+  .polaroid:hover .polaroid-inner {
+    transform: rotateY(180deg);
+  }
+
+  /* --- Front & Back Sides of the Polaroid --- */
+  .side {
+    position: absolute;
+    inset: 0;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    border: 10px solid var(--polaroid-bg);
+    border-bottom-width: 60px;
+    box-shadow: 
+      inset 1px 1px 3px rgba(255, 255, 255, 0.7), 
+      inset -2px -2px 4px rgba(0, 0, 0, 0.25),
+      0 10px 25px var(--polaroid-shadow);
+    border-radius: 4px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .side img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .label {
+    position: absolute;
+    bottom: -48px;
+    font-family: var(--font-handwriting);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0c2f5a; /* deep-navy */
+  }
+
+  .after-label {
+      color: #0ea5e9; /* fresh-sky */
+  }
+
+  .back {
+    transform: rotateY(180deg);
+  }
+  
+  .caption {
+    margin-top: 1rem;
+    text-align: center;
+    font-size: 1rem;
+    color: #e0f2fe; /* light-sky */
+    font-weight: 500; /* Medium weight to match your site */
+  }
+</style>

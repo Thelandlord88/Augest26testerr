@@ -1,0 +1,25 @@
+# validate-redirects — 2025-08-18T03:12:52.792Z
+Base: https://ondlive3.netlify.app
+
+/blog/ipswich-region -> [301] /blog/ipswich  ✅
+/blog/ipswich-region/ -> [301] /blog/ipswich  ✅
+/blog/brisbane-west -> [301] /blog/brisbane  ✅
+/blog/brisbane-west/ -> [301] /blog/brisbane  ✅
+/blog/brisbane_west -> [301] /blog/brisbane  ✅
+/blog/brisbane_west/ -> [301] /blog/brisbane  ✅
+/blog/brisbane%20west -> [301] /blog/brisbane  ✅
+/blog/brisbane%20west/ -> [301] /blog/brisbane  ✅
+/areas/ipswich-region/forest-lake/ -> [301] /areas/ipswich/forest-lake/  ✅
+/areas/brisbane-west/forest-lake/ -> [301] /areas/brisbane/forest-lake/  ✅
+/areas/brisbane_west/forest-lake/ -> [301] /areas/brisbane/forest-lake/  ✅
+/areas/brisbane%20west/forest-lake/ -> [301] /areas/brisbane/forest-lake/  ✅
+/blog/brisbane-west/category/checklist/ -> [301] /blog/brisbane/category/checklist/  ✅
+/blog/ipswich-region/category/checklist/ -> [301] /blog/ipswich/category/checklist/  ✅
+/blog/brisbane_west/category/checklist/ -> [301] /blog/brisbane/category/checklist/  ✅
+/blog/brisbane%20west/category/checklist/ -> [301] /blog/brisbane/category/checklist/  ✅
+/blog/brisbane/checklist/ -> [301] /blog/brisbane/category/checklist/  ✅
+/blog/brisbane/local/ -> [301] /blog/brisbane/category/local/  ✅
+/blog/brisbane/usp/ -> [301] /blog/brisbane/category/usp/  ✅
+/blog/brisbane/story/ -> [301] /blog/brisbane/category/story/  ✅
+/blog/brisbane/suburb/ -> [301] /blog/brisbane/category/suburb/  ✅
+/services/bond-cleaning/brisbane/springfield/x/y/ -> [301] /services/bond-cleaning/springfield  ✅

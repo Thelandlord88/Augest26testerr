@@ -1,0 +1,7 @@
+---
+// Minimal emitter for a single JSON-LD @graph block
+interface Node { [k: string]: any }
+const { graph = [] } = Astro.props as { graph?: Node[] }
+const payload = { '@context': 'https://schema.org', '@graph': graph }
+---
+{graph.length > 0 && <script type="application/ld+json">{JSON.stringify(payload)}</script>}

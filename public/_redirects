@@ -1,0 +1,34 @@
+# Blog hub normalisation (handle with and without trailing slash)
+/blog/ipswich-region        /blog/ipswich        301!
+/blog/ipswich-region/       /blog/ipswich/       301!
+/blog/brisbane-west         /blog/brisbane       301!
+/blog/brisbane-west/        /blog/brisbane/      301!
+# Alias variants
+/blog/brisbane_west         /blog/brisbane       301!
+/blog/brisbane_west/        /blog/brisbane/      301!
+/blog/brisbane%20west       /blog/brisbane       301!
+/blog/brisbane%20west/      /blog/brisbane/      301!
+
+# Areas hub + suburb pages (cluster rename)
+/areas/ipswich-region/*     /areas/ipswich/:splat        301!
+/areas/brisbane-west/*      /areas/brisbane/:splat       301!
+# Alias variants
+/areas/brisbane_west/*      /areas/brisbane/:splat       301!
+/areas/brisbane%20west/*    /areas/brisbane/:splat       301!
+
+# Blog hubs, categories, posts (cluster rename)
+/blog/brisbane-west/*       /blog/brisbane/:splat        301!
+/blog/ipswich-region/*      /blog/ipswich/:splat         301!
+# Alias variants
+/blog/brisbane_west/*       /blog/brisbane/:splat        301!
+/blog/brisbane%20west/*     /blog/brisbane/:splat        301!
+
+# Blog categories (avoid collision with posts)
+/blog/:cluster/checklist/   /blog/:cluster/category/checklist/   301
+/blog/:cluster/local/       /blog/:cluster/category/local/       301
+/blog/:cluster/usp/         /blog/:cluster/category/usp/         301
+/blog/:cluster/story/       /blog/:cluster/category/story/       301
+/blog/:cluster/suburb/      /blog/:cluster/category/suburb/      301
+
+# Legacy service path with cluster in URL → canonical suburb-only
+/services/:service/:cluster/:suburb/*    /services/:service/:suburb        301!

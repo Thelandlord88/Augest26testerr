@@ -1,5 +1,4 @@
 ---
-import logoPath from "~/assets/images/logo.svg";
 import { paths } from "~/lib/paths";
 
 export interface Props {
@@ -11,7 +10,8 @@ const { currentSuburb = "Redbank Plains", suburbs = [] } = Astro.props;
 const onServicePage = (Astro.url?.pathname || '').startsWith('/services/');
 
 // Resolve the built asset URL for the logo import (works in dev & prod)
-const logoSrc = typeof logoPath === 'string' ? logoPath : (logoPath?.src ?? '');
+// Use public asset fallback to avoid module resolution issues for images
+const logoSrc = '/assets/images/logo.svg';
 ---
 
 <!-- No JSON-LD here; page schema is consolidated server-side -->

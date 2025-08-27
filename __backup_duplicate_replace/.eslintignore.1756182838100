@@ -1,0 +1,11 @@
+dist/
+tmp/
+playwright-report/
+test-results/
+.netlify/
+__ai/
+__schema/
+sarif/
+*.snap
+*.png
+*.webm

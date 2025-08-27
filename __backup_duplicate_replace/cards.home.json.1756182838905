@@ -1,0 +1,40 @@
+{
+  "title": "Popular next steps",
+  "subtitle": "Agent-ready guides and services locals use most",
+  "cards": [
+    {
+      "id": "svc-bond",
+      "title": "Bond Cleaning service",
+      "desc": "Fixed quotes, agent-aligned scope and 7-day re-clean support.",
+      "route": { "kind": "service", "service": "bond-cleaning" },
+      "icon": "shield",
+      "cta": "Get my guaranteed quote",
+      "ariaLabel": "Get a quote for bond cleaning"
+    },
+    {
+      "id": "blog-checklist",
+      "title": "Bond Cleaning Checklist",
+      "desc": "Room-by-room list with pass checks, tools and timing.",
+      "route": { "kind": "blogPost", "cluster": "ipswich", "slug": "bond-cleaning-checklist" },
+      "icon": "checklist",
+      "cta": "See the checklist",
+      "analytics": { "campaign": "home-cards", "slot": 2 }
+    },
+    {
+      "id": "blog-pm-checks",
+      "title": "What Property Managers Check",
+      "desc": "Where inspections fail and how to pass on the first go.",
+      "route": { "kind": "blogPost", "cluster": "ipswich", "slug": "what-agents-want" },
+      "icon": "search",
+      "cta": "Read the guide"
+    },
+    {
+      "id": "svc-bond-ipswich",
+      "title": "Bond Cleaning in Ipswich",
+      "desc": "Local availability across Ipswich and surrounds.",
+      "route": { "kind": "suburbService", "service": "bond-cleaning", "suburb": "redbank-plains" },
+      "icon": "map",
+      "cta": "See local info"
+    }
+  ]
+}

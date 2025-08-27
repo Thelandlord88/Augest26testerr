@@ -1,0 +1,125 @@
+---
+// src/sections/About.astro
+// Use a public image path for team image to avoid build-time asset processing
+const teamImage = '/assets/images/usdown.png';
+
+const promisePoints = [
+  {
+    icon: `<svg viewBox="0 0 24 24" class="w-6 h-6 text-brand-icon-weak"><circle cx="12" cy="12" r="10" fill="currentColor" opacity=".12"/><path d="M6 13l4 4 8-8" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    text: 'No checklist headaches – we bring the REIQ sheet.'
+  },
+  {
+    icon: `<svg viewBox="0 0 24 24" class="w-6 h-6 text-brand-icon-weak"><rect x="4" y="4" width="16" height="16" rx="3" fill="currentColor" opacity=".12"/><path d="M8 8h8M8 12h6m-6 4h4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
+    text: 'Live status updates sent to your phone.'
+  },
+  {
+    icon: `<svg viewBox="0 0 24 24" class="w-6 h-6 text-brand-icon-weak"><circle cx="12" cy="12" r="10" fill="currentColor" opacity=".12"/><path d="M16 12a4 4 0 01-8 0 4 4 0 018 0zm-8 4.5a7.97 7.97 0 0016 0" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>`,
+    text: 'Free re-clean within 7 days if the agent isn’t happy.'
+  },
+]
+---
+<!-- JSON-LD structured data for AboutPage and LocalBusiness -->
+<script type="application/ld+json" set:html={JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "AboutPage",
+  name: "About One N Done Bond Clean",
+  description: "Stress-free bond cleaning in SE QLD with 100% agent-ready guarantee.",
+  image: new URL(teamImage.src, import.meta.env.SITE || '').href,
+  mainEntityOfPage: { "@type": "WebPage", "@id": import.meta.env.SITE || "" },
+  publisher: {
+    "@type": "LocalBusiness",
+    "name": "One N Done Bond Clean",
+  "url": import.meta.env.SITE || "",
+    "telephone": "+61405779420",
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": "Ipswich",
+      "addressRegion": "QLD",
+      "addressCountry": "AU"
+    },
+    "sameAs": ["https://facebook.com/onendonebondclean"]
+  }
+})} />
+
+<section id="about"
+  class="relative py-24 md:py-36 overflow-hidden bg-gradient-to-br from-sky-400 via-blue-600 to-indigo-900 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 transition-colors duration-700 after:content-[''] after:absolute after:inset-0 after:bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] after:from-sky-500/20 after:to-transparent after:pointer-events-none">
+  <!-- Fluid animated SVG backdrop -->
+  <div class="absolute inset-0 z-0 opacity-30 pointer-events-none select-none">
+    <svg class="w-full h-full animate-[pulse_12s_ease-in-out_infinite]" viewBox="0 0 1440 320" fill="none" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="liquid" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="oklch(75.35% 0.1390 232.66)" stop-opacity="0.22"/>
+          <stop offset="100%" stop-color="oklch(35.88% 0.1354 278.70)" stop-opacity="0.13"/>
+        </linearGradient>
+      </defs>
+      <path fill="url(#liquid)" d="M0,96L48,112C96,128,192,160,288,165.3C384,171,480,149,576,133.3C672,117,768,107,864,122.7C960,139,1056,181,1152,186.7C1248,192,1344,160,1392,144L1440,128L1440,320L0,320Z"/>
+    </svg>
+  </div>
+
+  <div class="relative z-10 container mx-auto px-6 max-w-7xl">
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-14 items-center">
+
+      <!-- LEFT: Team Image with Pandora badge (modern masked, floating style) -->
+      <div class="lg:col-span-2 flex justify-center">
+        <div class="relative group perspective w-full max-w-xs md:max-w-sm">
+          <div
+            class="overflow-hidden rounded-3xl border-2 border-white/50 shadow-xl transition-transform duration-700 group-hover:scale-105 group-hover:rotate-2 will-change-transform bg-gradient-to-tr from-sky-300/10 via-white/10 to-blue-900/10">
+            <img src={teamImage} alt="One N Done Bond Clean team with Pandora" class="w-full h-auto object-cover" width="480" height="400" loading="lazy" decoding="async" />
+          </div>
+          <!-- Pandora floating badge -->
+          <div class="absolute -bottom-7 -right-7 w-20 h-20 bg-gradient-to-tr from-sky-400 to-blue-500 rounded-full flex items-center justify-center shadow-lg ring-4 ring-white/60 animate-bounce">
+            <span class="text-3xl">🐾</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Headline, description, points, promise card -->
+      <div class="lg:col-span-3 space-y-10 text-center lg:text-left">
+        <!-- Headline and pitch -->
+        <header>
+          <h2 class="text-4xl md:text-5xl font-extrabold text-white drop-shadow-lg tracking-tight">
+            <span class="bg-clip-text text-transparent bg-gradient-to-r from-white via-sky-200 to-blue-200">
+              Drowning in moving-out problems?
+            </span>
+          </h2>
+          <p class="mt-5 text-lg md:text-xl text-white/90 leading-relaxed max-w-xl mx-auto lg:mx-0">
+            Boxes everywhere, agents calling, deadlines looming.<br>
+            The last thing you need is <em class="underline decoration-sky-300 underline-offset-2 font-semibold">bond-clean panic</em>.
+          </p>
+        </header>
+
+        <!-- Promise points as cards w/ icons -->
+        <ul class="grid grid-cols-1 sm:grid-cols-3 gap-5 mt-8 mb-2" aria-label="Why choose us">
+          {promisePoints.map(({icon, text}) => (
+            <li class="bg-white/10 backdrop-blur-lg rounded-xl shadow hover:shadow-lg transition-all duration-300 flex flex-col items-center p-6 group focus-within:ring-2 ring-brand" tabindex="0">
+              <span class="mb-3" set:html={icon}></span>
+              <span class="text-base text-white font-medium">{text}</span>
+            </li>
+          ))}
+        </ul>
+
+        <!-- Glassmorphism Promise Card -->
+        <div
+          class="relative bg-gradient-to-br from-white/20 via-sky-200/5 to-blue-500/10 backdrop-blur-lg border border-white/30 rounded-3xl p-7 shadow-xl max-w-lg mx-auto lg:mx-0 hover:border-brand hover:bg-white/30 transition-all duration-300">
+          <div class="absolute -top-6 left-1/2 -translate-x-1/2">
+            <div class="bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-600 text-white w-14 h-14 rounded-full flex items-center justify-center text-3xl shadow-lg ring-4 ring-brand animate-bounce">🏅</div>
+          </div>
+          <h3 class="font-bold text-white text-lg mt-8 mb-2 text-center tracking-wide">
+            Our Moving-Day Promise
+          </h3>
+          <p class="text-white/90 text-center text-base leading-relaxed">
+            Leave agent-ready, or we’ll come back <strong>free of charge</strong>.
+          </p>
+          <a href="#quote"
+            class="mt-6 block w-full hover: font-bold py-3 rounded-xl transition-colors duration-200 text-center shadow focus:outline-none focus-visible:ring-2 ring-brand btn-brand">
+            Get My Guaranteed Quote
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+.perspective { perspective: 1000px; }
+</style>

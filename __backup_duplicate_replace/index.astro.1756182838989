@@ -1,0 +1,123 @@
+---
+// src/pages/bond-cleaning/[suburb]/index.astro - REWRITTEN
+
+// --- LAYOUTS, COMPONENTS, & UTILITIES ---
+import MainLayout from '~/layouts/MainLayout.astro';
+import { Image } from 'astro:assets';
+import { findSuburbBySlug } from '~/utils/geoHandler';
+import slugify from '~/utils/slugify.js';
+import FAQ from '~/components/FAQ.astro';
+import QuoteForm from '~/components/QuoteForm.astro';
+
+// --- SERVER-SIDE PAGE GENERATION ---
+// Disabled: legacy route superseded by /services/bond-cleaning/[suburb]
+export function getStaticPaths() {
+  return [];
+}
+
+const { suburb, heroImage } = Astro.props;
+// Fallbacks for missing suburb data
+const safeSuburb = suburb || { name: 'Your Area', postcode: '', landmarks: [] };
+
+// --- PAGE-SPECIFIC METADATA & SCHEMA ---
+const pageTitle = `${safeSuburb.name} Bond Cleaning | 100% Bond Back Guarantee`;
+const pageDescription = `Your local ${safeSuburb.name} (${safeSuburb.postcode}) bond cleaning specialists.`;
+
+// --- DYNAMIC FAQ CONTENT ---
+// We generate questions and answers specific to the suburb for this page.
+// This makes the content highly relevant for SEO.
+const suburbSpecificFAQs = [
+    {
+        q: `Do you provide bond cleaning services in ${safeSuburb.name}?`,
+        a: `Yes, absolutely. ${safeSuburb.name} is one of our primary service areas. We have teams available and are familiar with the local real estate standards.`
+    },
+    {
+        q: `How much does a bond clean cost in ${safeSuburb.name}?`,
+        a: `The cost depends on the size and condition of your property. We offer a free, no-obligation quote tailored to your specific home in ${safeSuburb.name}. Just fill out our quote form for a fixed price.`
+    },
+    {
+        q: "How long does a bond clean take?",
+        a: "A typical bond clean can take anywhere from 4 to 8 hours. We send a team of two or more professional cleaners to ensure the job is done efficiently and to the highest standard."
+    },
+    {
+        q: "What if my agent isn't happy with the clean?",
+        a: `Our 100% Bond Back Guarantee has you covered. If there are any issues on the cleaning checklist, contact us within 72 hours, and we will return to rectify them for free. Our goal is to ensure a smooth bond return for you in ${safeSuburb.name}.`
+    }
+];
+
+// Example: Connect reviews if available (replace with real data source)
+const suburbReviews = safeSuburb.reviews || [];
+---
+
+<MainLayout title={pageTitle} description={pageDescription}>
+  <Fragment slot="head">
+    <link rel="canonical" href={`https://onendonebondclean.com.au/bond-cleaning/${slugify(safeSuburb.name)}/`} />
+    <script type="application/ld+json" is:inline>
+      {JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": suburbSpecificFAQs.map(faq => ({
+          "@type": "Question",
+          "name": faq.q,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": faq.a
+          }
+        }))
+      })}
+    </script>
+  </Fragment>
+
+  <section class="relative bg-deep-navy text-white text-center py-20">
+      <div class="absolute inset-0 opacity-20">
+          <Image 
+              src={heroImage} 
+              alt={`Bond cleaning services in ${safeSuburb.name}`}
+              class="w-full h-full object-cover"
+              loading="eager"
+              fetchpriority="high"
+          />
+      </div>
+      <div class="relative z-10">
+          <h1 class="text-4xl md:text-5xl font-extrabold">Bond Cleaning {safeSuburb.name}</h1>
+          <p class="mt-4 text-lg text-light-sky">Local specialists, guaranteed results.</p>
+      </div>
+  </section>
+
+  <section class="py-16">
+    <div class="container mx-auto px-6 text-center">
+      <h2 class="text-2xl font-bold">Why Choose Us for Your {safeSuburb.name} Clean?</h2>
+      <p class="mt-2 text-gray-warm-700 max-w-2xl mx-auto">
+        We are your local experts, familiar with the real estate agents and properties in {safeSuburb.name}{safeSuburb.landmarks.length > 0 ? `, often working near landmarks like ${safeSuburb.landmarks.join(' and ')}` : ''}.
+      </p>
+    </div>
+  </section>
+
+  <FAQ faqs={suburbSpecificFAQs} />
+
+  {suburbReviews.length > 0 && (
+    <section class="py-16">
+      <div class="container mx-auto px-6">
+        <h2 class="text-2xl font-bold text-deep-navy mb-8">What Locals Say</h2>
+        <div class="grid gap-8 md:grid-cols-2">
+          {suburbReviews.map(review => (
+            <div class="bg-white rounded-lg shadow p-6">
+              <p class="text-lg font-semibold">{review.text}</p>
+              <div class="mt-4 text-sm text-gray-500">- {review.author}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section class="py-16 bg-light-gray">
+    <div class="container mx-auto px-6">
+        <div class="text-center mb-12">
+            <h2 class="text-3xl font-bold text-deep-navy">Get Your Free, No-Obligation Quote</h2>
+            <p class="text-lg text-gray-warm-700 mt-2">Enter your details below for a fixed price on your {safeSuburb.name} bond clean.</p>
+        </div>
+        <QuoteForm />
+    </div>
+  </section>
+</MainLayout>

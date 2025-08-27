@@ -1,0 +1,168 @@
+{
+  "service": "bond-cleaning",
+  "version": "1.0.0",
+  "policy": {
+    "headline": "100% Bond-Back Focus",
+    "promise": "Free re-clean within 7 days if your property manager flags items from our checklist.",
+    "notes": "We align to common agent checklists; outcome depends on property condition, access, and scope."
+  },
+  "defaults": {
+    "ppe": "Nitrile gloves, optional safety glasses",
+    "ventilation": true,
+    "units": "metric",
+    "safety": [
+      "Never mix bleach with acids or ammonia.",
+      "Spot-test on lacquered timber, natural stone and tinted glass.",
+      "Rinse residues thoroughly; dry before inspection."
+    ]
+  },
+  "sections": [
+    {
+      "slug": "kitchen",
+      "title": "Kitchen",
+      "items": [
+        {
+          "task": "Oven degreased and polished",
+          "chemistry": "Citrus or glycol-ether degreaser",
+          "dilution": "1:4",
+          "dwell_min": 5,
+          "tools": ["Non-scratch pad", "Plastic scraper", "Microfibre cloths"],
+          "pass": "No film on rinse; glass streak-free; racks and door edges clean",
+          "agent_note": "Check door seals and under the grill tray",
+          "risk": "Medium"
+        },
+        {
+          "task": "Rangehood filter and hood clean",
+          "chemistry": "Alkaline cleaner",
+          "dilution": "1:20 in hot water",
+          "dwell_min": 10,
+          "tools": ["Soak tub", "Brush", "Lint-free cloth"],
+          "pass": "Grease removed; baffles clear; no drip lines",
+          "agent_note": "Dry fully to avoid drip marks",
+          "risk": "Low"
+        },
+        {
+          "task": "Benchtops & cupboards (in/out)",
+          "chemistry": "Neutral cleaner",
+          "dilution": "1:100",
+          "dwell_min": 2,
+          "tools": ["Microfibre", "Detail brush", "Bucket"],
+          "pass": "No residues; hinges and handles wiped; shelves crumb-free",
+          "agent_note": "Spot-test timber/laminate",
+          "risk": "Low"
+        }
+      ]
+    },
+    {
+      "slug": "bathroom",
+      "title": "Bathrooms & Toilets",
+      "items": [
+        {
+          "task": "Glass & tiles de-soaped",
+          "chemistry": "Citric acid",
+          "dilution": "5–8% w/v",
+          "dwell_min": 4,
+          "tools": ["Nylon pad", "Squeegee", "Microfibre"],
+          "pass": "Hydrophilic glass (water sheets), no drag",
+          "agent_note": "Rinse metal trims quickly",
+          "risk": "Medium"
+        },
+        {
+          "task": "Shower silicone mould treatment",
+          "chemistry": "3% hydrogen peroxide",
+          "dwell_min": 10,
+          "tools": ["Peroxide-safe cloth", "Cotton tips"],
+          "pass": "Black spotting lightened or removed; surface dry",
+          "agent_note": "Persistent black under silicone may require re-silicone",
+          "risk": "Medium"
+        },
+        {
+          "task": "Toilet scale & sanitise",
+          "chemistry": "Descaler (mild acid) then neutral cleaner",
+          "dwell_min": 5,
+          "tools": ["Toilet brush", "Cloth"],
+          "pass": "No scale line; exterior wiped; hinges clean",
+          "agent_note": "Avoid fumes; do not mix with bleach",
+          "risk": "Medium"
+        }
+      ]
+    },
+    {
+      "slug": "whole_home",
+      "title": "Throughout",
+      "items": [
+        {
+          "task": "Skirtings, doors & switches",
+          "chemistry": "Neutral cleaner",
+          "dilution": "1:100",
+          "dwell_min": 1,
+          "tools": ["Detail brush", "Microfibre"],
+          "pass": "No dust lines; clean on white cloth",
+          "agent_note": "Edges and handles are common agent checks",
+          "risk": "Low"
+        },
+        {
+          "task": "Walls spot-clean",
+          "chemistry": "Neutral cleaner",
+          "dilution": "1:80",
+          "dwell_min": 1,
+          "tools": ["Microfibre", "Magic eraser (sparingly)"],
+          "pass": "No visible scuffs in natural light",
+          "agent_note": "Avoid burnish marks on flat paint",
+          "risk": "Low"
+        }
+      ]
+    },
+    {
+      "slug": "floors",
+      "title": "Floors",
+      "items": [
+        {
+          "task": "Hard floors pre-mop & finish",
+          "chemistry": "Alkaline pre-mop then neutral finish",
+          "dilution": "1:80 then 1:120",
+          "dwell_min": 2,
+          "tools": ["Microfibre mop", "Two-bucket method"],
+          "pass": "No streaks under angled light",
+          "agent_note": "Change water frequently",
+          "risk": "Low"
+        },
+        {
+          "task": "Edges & corners detailed",
+          "chemistry": "Neutral cleaner",
+          "dilution": "1:100",
+          "dwell_min": 1,
+          "tools": ["Detail brush", "Cloth"],
+          "pass": "No lint or dust bunnies",
+          "agent_note": "Inspect under door swings",
+          "risk": "Low"
+        }
+      ]
+    },
+    {
+      "slug": "windows",
+      "title": "Windows & Tracks",
+      "items": [
+        {
+          "task": "Tracks brushed & wiped",
+          "chemistry": "Neutral cleaner",
+          "dilution": "1:100",
+          "dwell_min": 2,
+          "tools": ["Detail brush", "Vacuum", "Cloth"],
+          "pass": "No grit; corners wiped",
+          "agent_note": "Use nozzle to lift grit before wiping",
+          "risk": "Low"
+        },
+        {
+          "task": "Internal glass",
+          "chemistry": "Glass cleaner or IPA 10%",
+          "dwell_min": 1,
+          "tools": ["Squeegee", "Lint-free cloth"],
+          "pass": "No haze or swirls in natural light",
+          "agent_note": "Wipe frames after glass",
+          "risk": "Low"
+        }
+      ]
+    }
+  ]
+}

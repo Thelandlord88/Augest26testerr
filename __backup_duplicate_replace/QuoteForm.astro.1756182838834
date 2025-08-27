@@ -1,0 +1,1062 @@
+---
+/**
+ * One N Done — QuoteForm.astro (Seamless, Scoped)
+ * - All selectors are scoped with [data-quote] to avoid clashes.
+ * - Compact UI, clear scope, smart "Recommended" badges (no auto-select).
+ * - Netlify-friendly, AU phone validation, zero-dep calendar.
+ */
+---
+<section id="quote" data-quote class="py-16 md:py-20 bg-gradient-to-b from-sky-50 to-sky-100">
+  <div class="max-w-5xl mx-auto q-shell overflow-hidden">
+
+    <!-- Header / trust -->
+    <div class="px-6 md:px-8 py-6">
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex-1">
+          <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900">
+            Pass Your Bond Inspection First Time — <span class="q-spot">Guaranteed</span>
+          </h2>
+          <p class="mt-1 text-slate-600 text-sm md:text-base">
+            REIA-aligned clean. 7-Day Reclean. Transparent scope.
+          </p>
+          <!-- Trust strip -->
+          <div class="mt-3 flex flex-wrap items-center gap-1.5 text-[13px]">
+            <span class="inline-flex items-center gap-1.5 rounded-lg border border-brand bg-brand-soft px-2 py-1 badge-brand-soft">
+              <i class="fas fa-shield-check" aria-hidden="true"></i> 7-Day Reclean
+            </span>
+            <span class="inline-flex items-center gap-1.5 rounded-lg border border-brand bg-brand-soft px-2 py-1 badge-brand-soft">
+              <i class="fas fa-clipboard-check" aria-hidden="true"></i> REIA-aligned scope
+            </span>
+            <span class="inline-flex items-center gap-1.5 rounded-lg border border-brand bg-brand-soft px-2 py-1 badge-brand-soft">
+              <i class="fas fa-eye" aria-hidden="true"></i> Transparent pricing
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div class="mt-4">
+  <!-- Labeled Stepper -->
+  <ol id="q-steps" data-test="stepper" class="grid grid-cols-4 items-center gap-2 text-[13px] text-slate-600">
+          <li data-step-label="1" class="q-stepper-item" aria-current="step"><span class="q-step-num">1</span><span>Property</span></li>
+          <li data-step-label="2" class="q-stepper-item"><span class="q-step-num">2</span><span>Add-ons</span></li>
+          <li data-step-label="3" class="q-stepper-item"><span class="q-step-num">3</span><span>Your info</span></li>
+          <li data-step-label="4" class="q-stepper-item"><span class="q-step-num">4</span><span>Review</span></li>
+        </ol>
+  <div class="mt-2 h-2 rounded-full bg-slate-200 overflow-hidden">
+          <div id="q-progress" class="h-2 bg-sky-600 w-0"></div>
+        </div>
+      </div>
+    </div>
+
+  <div class="px-6 md:px-8 pb-24 md:pb-6">
+      <div class="grid md:grid-cols-3 gap-8">
+        <!-- FORM -->
+        <div class="md:col-span-2 relative">
+          <div id="q-error" class="hidden mb-4 bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-lg" role="alert" aria-live="polite">
+            <strong class="font-bold">Submission failed.</strong>
+            <span id="q-error-msg" class="block sm:inline"></span>
+          </div>
+
+          <form id="q-form" name="quote-request" method="POST" data-netlify="true" netlify-honeypot="bot-field" novalidate>
+            <p class="hidden"><label>Don’t fill this out: <input name="bot-field"></label></p>
+            <input type="hidden" name="form-name" value="quote-request"/>
+
+            <!-- STEP 1 -->
+            <div id="q-step-1" class="q-step active">
+              <div class="q-card">
+                <h3 class="q-h3">About Your <span class="q-accent">Property</span></h3>
+                <div class="q-callout"><i class="fas fa-bolt mr-2 text-[var(--brand-sky)]"></i>3 quick choices to tailor your quote.</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label for="property-type" class="q-label"><i class="fas fa-home" aria-hidden="true"></i> Property type</label>
+                    <span class="q-select-wrap">
+                      <select id="property-type" name="property-type" required aria-describedby="pt-err" class="q-input q-select">
+                      <option value="">Select…</option>
+                      <option>House</option><option>Apartment</option><option>Townhouse</option>
+                      </select>
+                      <span class="q-select-icn" aria-hidden="true"><i class="fas fa-chevron-down"></i></span>
+                    </span>
+                    <p id="pt-err" class="q-err" hidden>Please select a property type.</p>
+                  </div>
+                  <div class="md:col-span-2 q-group">
+                    <div class="grid grid-cols-2 gap-3 md:gap-5">
+                      <div>
+                        <label for="bedrooms" class="q-label"><i class="fas fa-bed" aria-hidden="true"></i> Bedrooms</label>
+                        <span class="q-select-wrap">
+                          <select id="bedrooms" name="bedrooms" class="q-input q-select">
+                          <option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option>
+                          </select>
+                          <span class="q-select-icn" aria-hidden="true"><i class="fas fa-chevron-down"></i></span>
+                        </span>
+                      </div>
+                      <div>
+                        <label for="bathrooms" class="q-label"><i class="fas fa-bath" aria-hidden="true"></i> Bathrooms</label>
+                        <span class="q-select-wrap">
+                          <select id="bathrooms" name="bathrooms" class="q-input q-select">
+                          <option>1</option><option selected>2</option><option>3</option>
+                          </select>
+                          <span class="q-select-icn" aria-hidden="true"><i class="fas fa-chevron-down"></i></span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Toggles drive recommendations -->
+                  <div class="md:col-span-2">
+                    <fieldset class="space-y-2">
+                      <legend class="q-label">Quick toggles (helps us recommend extras)</legend>
+                      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <label class="q-chip"><input type="checkbox" id="has-pets" name="has-pets"/> <i class="fas fa-check q-on" aria-hidden="true"></i> <i class="fas fa-paw q-ico" aria-hidden="true"></i> <span>Pets at property</span></label>
+                        <label class="q-chip"><input type="checkbox" id="has-carpet" name="has-carpet"/> <i class="fas fa-check q-on" aria-hidden="true"></i> <i class="fas fa-border-all q-ico" aria-hidden="true"></i> <span>Has carpeted rooms</span></label>
+                        <label class="q-chip"><input type="checkbox" id="has-balcony" name="has-balcony"/> <i class="fas fa-check q-on" aria-hidden="true"></i> <i class="fas fa-seedling q-ico" aria-hidden="true"></i> <span>Balcony/Patio</span></label>
+                        <label class="q-chip"><input type="checkbox" id="ext-reachable" name="ext-reachable"/> <i class="fas fa-check q-on" aria-hidden="true"></i> <i class="fas fa-window-restore q-ico" aria-hidden="true"></i> <span>External windows reachable</span></label>
+                        <label class="q-chip"><input type="checkbox" id="two-storey" name="storeys" value="2+"/> <i class="fas fa-check q-on" aria-hidden="true"></i> <i class="fas fa-building q-ico" aria-hidden="true"></i> <span>2+ storeys</span></label>
+                      </div>
+                    </fieldset>
+                  </div>
+                </div>
+
+                <div class="q-actions">
+                  <button type="button" class="q-btn q-next q-btn-primary">Next <i class="fas fa-arrow-right ml-2" aria-hidden="true"></i></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 2 -->
+            <div id="q-step-2" class="q-step hidden">
+              <div class="q-card">
+                <h3 class="q-h3">Customise Your <span class="q-accent">Clean</span></h3>
+                <div class="mb-2 flex items-center gap-2 text-slate-900 font-semibold">
+                  <span>The Standard Bond Clean</span>
+                  <span class="q-badge-inc"><i class="fas fa-check" aria-hidden="true"></i> Included</span>
+                </div>
+                <button type="button" id="q-included-btn" class="q-btn q-btn-included mb-2" aria-controls="q-included" aria-expanded="false">What’s included?</button>
+                <details id="q-included" class="q-opt mb-3">
+                  <summary class="hidden">What’s included in our Standard Bond Clean?</summary>
+                  <ul class="mt-3 text-sm text-slate-600 list-disc list-inside space-y-1">
+                    <li>Kitchen: cooktop, rangehood filters, splashbacks, cupboards (in/out)</li>
+                    <li>Oven interior and door glass</li>
+                    <li>Bathrooms: showers, screens, grout touch-up, silicone joins</li>
+                    <li>Internal windows, sills, and tracks</li>
+                    <li>Skirtings, switches, door frames, reachable vents and fans</li>
+                    <li>Floors vacuumed and mopped throughout</li>
+                  </ul>
+                </details>
+                <div id="addons" class="grid grid-cols-1 gap-3">
+                  <!-- Extras, each may receive a Recommended pill via JS -->
+                  <label class="q-addon">
+                    <input type="checkbox" name="addons" value="Full Wall Wash"/>
+                    <span class="q-title">Full Wall Wash</span>
+                    <span class="q-note">Entire interior walls. Labour-intensive.</span>
+                    <span class="q-pill hidden">Recommended</span>
+                  </label>
+                  <label class="q-addon">
+                    <input type="checkbox" name="addons" value="Carpet Steam Clean"/>
+                    <span class="q-title">Carpet Steam Clean</span>
+                    <span class="q-note">Hot-water extraction. Invoice supplied.</span>
+                    <span class="q-pill hidden">Recommended</span>
+                  </label>
+                  <label class="q-addon">
+                    <input type="checkbox" name="addons" value="Blinds Detailing"/>
+                    <span class="q-title">Blinds Detailing</span>
+                    <span class="q-note">Slats dusted/wiped (fragile types noted).</span>
+                  </label>
+                  <label class="q-addon">
+                    <input type="checkbox" name="addons" value="External Windows (Reachable)"/>
+                    <span class="q-title">External Windows (Reachable)</span>
+                    <span class="q-note">Ground-level/accessible only.</span>
+                    <span class="q-pill hidden">Recommended</span>
+                  </label>
+                  <label class="q-addon">
+                    <input type="checkbox" name="addons" value="Balcony/Patio Wash"/>
+                    <span class="q-title">Balcony/Patio Wash</span>
+                    <span class="q-note">Sweep, mop, railings wiped.</span>
+                    <span class="q-pill hidden">Recommended</span>
+                  </label>
+                  <label class="q-addon">
+                    <input type="checkbox" name="addons" value="Garage Sweep & Cobwebs"/>
+                    <span class="q-title">Garage Sweep & Cobwebs</span>
+                    <span class="q-note">Floor, edges, spider webs.</span>
+                  </label>
+                  <label class="q-addon">
+                    <input type="checkbox" name="addons" value="Flea Treatment (Licensed Partner)"/>
+                    <span class="q-title">Flea Treatment (Licensed Partner)</span>
+                    <span class="q-note">Required by many pet clauses.</span>
+                    <span class="q-pill hidden">Recommended</span>
+                  </label>
+                </div>
+
+                <div class="q-actions between">
+                  <button type="button" class="q-btn q-prev q-btn-secondary"><i class="fas fa-arrow-left mr-2"></i>Back</button>
+                  <button type="button" class="q-btn q-next q-btn-primary">Next <i class="fas fa-arrow-right ml-2"></i></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 3 -->
+            <div id="q-step-3" class="q-step hidden">
+              <div class="q-card">
+                <h3 class="q-h3">Your <span class="q-accent">Information</span></h3>
+                <div class="q-callout"><i class="fas fa-lock mr-2 text-[var(--brand-sky)]"></i>We want to know your home, not you. All personal details are safe.</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label for="full-name" class="q-label"><i class="fas fa-user" aria-hidden="true"></i> Name/nickname</label>
+                    <input id="full-name" name="full-name" type="text" class="q-input" required aria-describedby="nm-err"/>
+                    <p id="nm-err" class="q-err" hidden>Please enter your full name.</p>
+                  </div>
+                  <div>
+                    <label class="q-label"><i class="fas fa-phone" aria-hidden="true"></i> Mobile
+                      <button type="button" class="q-tip-btn" aria-label="Why we need this"><i class="fas fa-question-circle"></i></button>
+                      <span class="q-tip">Used only for scheduling/urgent questions.</span>
+                    </label>
+                    <input id="phone" name="phone" type="tel" class="q-input" placeholder="0412 345 678" required aria-describedby="ph-err"/>
+                    <p id="ph-err" class="q-err" hidden>Enter a valid Australian phone number.</p>
+                  </div>
+                  <div class="md:col-span-2">
+                    <label for="email" class="q-label"><i class="fas fa-envelope" aria-hidden="true"></i> Email</label>
+                    <input id="email" name="email" type="email" class="q-input" required aria-describedby="em-err"/>
+                    <p id="em-err" class="q-err" hidden>Enter a valid email address.</p>
+                  </div>
+                  <div class="md:col-span-2">
+                    <label for="property-address" class="q-label"><i class="fas fa-map-marker-alt" aria-hidden="true"></i> Property address</label>
+                    <input id="property-address" name="property-address" type="text" class="q-input" required aria-describedby="ad-err" placeholder="Include unit number if applicable"/>
+                    <p id="ad-err" class="q-err" hidden>Please enter the property address.</p>
+                  </div>
+                  <div>
+                    <label class="q-label"><i class="fas fa-calendar" aria-hidden="true"></i> Preferred service date</label>
+                    <div id="cal-root" class="relative">
+                      <input id="service-date-display" type="text" readonly placeholder="dd/mm/yyyy" class="q-input pr-10" aria-describedby="dt-err"/>
+                      <input id="service-date" name="service-date" type="hidden"/>
+                      <span id="cal-trigger" class="q-cal-icn"><i class="fas fa-calendar-alt"></i></span>
+                    </div>
+                    <p id="dt-err" class="q-err" hidden>Please select a valid date (today or later).</p>
+                  </div>
+                  <div>
+                    <label for="special-requests" class="q-label">Special requests</label>
+                    <textarea id="special-requests" name="special-requests" rows="4" class="q-input" placeholder="Access notes (lock box / key pick-up), gate or lift booking, parking instructions, pet details, focus areas (e.g., oven, walls), anything else we should know…"></textarea>
+                  </div>
+                </div>
+                <!-- Additional details as a more noticeable toggle -->
+                <button type="button" id="q-additional-btn" class="q-btn q-btn-included mt-3" aria-controls="q-additional" aria-expanded="false"><span class="q-box" aria-hidden="true"><i class="fas fa-check"></i></span><span>Additional details (optional)</span> <i class="fas fa-chevron-down ml-2"></i></button>
+                <details id="q-additional" class="q-opt mt-2">
+                  <summary class="hidden">Additional details (optional)</summary>
+                  <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                      <label for="exit-date" class="q-label">Exit / Key hand-in date <span class="text-slate-400 text-xs">(optional)</span></label>
+                      <input id="exit-date" name="exit-date" type="text" class="q-input" placeholder="dd/mm/yyyy"/>
+                    </div>
+                    <div>
+                      <label for="pm-contact" class="q-label">Real estate <span class="text-slate-400 text-xs">(it helps us to know)</span></label>
+                      <input id="pm-contact" name="pm-contact" type="text" class="q-input" placeholder="Agency name & email (optional)"/>
+                    </div>
+                  </div>
+                </details>
+                <!-- privacy line moved into callout above to reduce visual noise -->
+                <div class="q-actions between">
+                  <button type="button" class="q-btn q-prev q-btn-secondary"><i class="fas fa-arrow-left mr-2"></i>Back</button>
+                  <button type="button" class="q-btn q-next q-btn-primary">Next <i class="fas fa-arrow-right ml-2"></i></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 4 -->
+            <div id="q-step-4" class="q-step hidden">
+              <div class="q-card">
+                <h3 class="q-h3">Review & <span class="q-accent">Submit</span></h3>
+                <div class="q-callout"><i class="fas fa-shield-check mr-2 text-[var(--brand-sky)]"></i>You’re covered by our <span class="q-spot">7‑Day Reclean</span> guarantee.</div>
+                <div class="q-review">
+                  <div class="q-row"><div class="q-term">Property</div><div class="q-val" id="rv-prop">—</div></div>
+                  <div class="q-row"><div class="q-term">Address</div><div class="q-val break-words" id="rv-addr">—</div></div>
+                  <div class="q-row"><div class="q-term">Date</div><div class="q-val" id="rv-date">—</div></div>
+                  <div id="rv-key-row" class="q-row hidden"><div class="q-term">Key hand-in</div><div class="q-val" id="rv-key">—</div></div>
+                  <div id="rv-pm-row" class="q-row hidden"><div class="q-term">Real estate</div><div class="q-val" id="rv-pm">—</div></div>
+                  <div class="q-row q-row-col">
+                    <div class="q-term">Services</div>
+                    <div class="q-val"><ul id="rv-svcs" class="q-tags"></ul></div>
+                  </div>
+                  <div class="q-row q-row-col"><div class="q-term">Notes</div><div class="q-val" id="rv-notes">—</div></div>
+                </div>
+                <div class="q-actions between">
+                  <button type="button" class="q-btn q-prev q-btn-secondary"><i class="fas fa-arrow-left mr-2"></i>Back</button>
+                  <button type="submit" id="q-submit" class="q-btn q-btn-cta">
+                    <span class="q-submit-text">Lock in my guaranteed quote</span>
+                    <span class="q-spinner hidden"><svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>Submitting…</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+
+          <!-- Sticky mobile bar -->
+          <div id="q-mobilebar" class="md:hidden fixed inset-x-0 bottom-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200 px-4 py-3 flex items-center justify-between gap-3">
+            <button type="button" class="q-btn q-prev q-btn-secondary w-1/3"><i class="fas fa-arrow-left mr-2"></i>Back</button>
+            <div class="flex-1"></div>
+            <button type="button" class="q-btn q-next q-btn-primary w-1/3">Next <i class="fas fa-arrow-right ml-2"></i></button>
+          </div>
+        </div>
+
+        <!-- RIGHT SUMMARY -->
+    <aside id="q-summary" class="hidden md:block">
+          <div class="sticky top-6">
+            <div class="rounded-lg border border-slate-200 border-l-4 border-l-sky-400 bg-white p-3.5 shadow-sm text-sm">
+              <h4 class="font-semibold text-slate-800">Live summary</h4>
+              <div class="mt-2 text-slate-900 font-semibold" id="sm-prop">—</div>
+              <div class="mt-1 text-slate-700 break-words" id="sm-addr">—</div>
+              <div class="mt-1 text-slate-700" id="sm-date">—</div>
+              <div class="mt-2">
+                <div class="text-slate-600 text-xs">Services</div>
+                <ul id="sm-svcs" class="mt-1 flex flex-wrap gap-2"></ul>
+              </div>
+              <p class="mt-3 text-xs text-slate-500"><i class="fas fa-lock mr-1"></i>We never share your details.</p>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- SUCCESS VIEW -->
+    <div id="q-success" class="hidden text-center py-16 px-6">
+      <div class="mx-auto w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center shadow"><i class="fas fa-check text-emerald-700 text-3xl"></i></div>
+      <h3 class="text-2xl font-bold text-slate-900 mt-4">Request received</h3>
+      <p class="text-slate-600 mt-1">Thanks for your submission. We’ll confirm scope and availability shortly.</p>
+      <div class="mt-6 flex items-center justify-center gap-3">
+  <a href="tel:+61405779420" class="q-btn q-btn-secondary inline-flex items-center"><i class="fas fa-phone mr-2"></i>Call now</a>
+        <button id="q-new" class="q-btn q-btn-primary">The Beginning</button>
+      </div>
+      <!-- Feature card: keep users engaged while they wait -->
+      <div class="mt-8 flex items-center justify-center">
+        <div class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm">
+          <div class="font-semibold text-slate-900">While you wait, keep learning</div>
+          <p class="mt-1 text-sm text-slate-600">Explore our latest jobs and tips.</p>
+          <div class="mt-3 flex gap-2">
+            <a href="/gallery" class="q-btn q-btn-secondary">Gallery</a>
+            <a href="/blog" class="q-btn q-btn-secondary">Blog</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script is:inline>
+(function(){
+  const $ = (s, r=document) => r.querySelector(s);
+  const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+
+  function init(){
+    const root = document.querySelector('[data-quote]');
+    if(!root || root.dataset.init==='1') return;
+    root.dataset.init='1';
+
+    const form = $('#q-form', root);
+    const formArea = form.closest('.md\\:col-span-2');
+    const success = $('#q-success', root);
+    const summary = $('#q-summary', root);
+    const mobilebar = $('#q-mobilebar', root);
+    const errorBanner = $('#q-error', root);
+    const errorMsg = $('#q-error-msg', root);
+    const progress = $('#q-progress', root);
+    // Step count text removed from UI; progress bar + stepper are enough
+    const stepNum = $('#q-step', root);
+    const stepNumMobile = $('#q-mobile-step', root);
+    const submitBtn = $('#q-submit', root);
+  const includedBtn = $('#q-included-btn', root);
+  const includedDetails = $('#q-included', root);
+  const additionalBtn = $('#q-additional-btn', root);
+  const additionalDetails = $('#q-additional', root);
+
+    const state = {
+      step: 1, propertyType: '', bedrooms:'3', bathrooms:'2',
+      addons:[], fullName:'', phone:'', email:'', address:'', date:'', notes:'',
+      exitDate:'', pmContact:'',
+      toggles: { pets:false, carpet:false, balcony:false, reachable:false, twoStorey:false }
+    };
+
+    function setStep(n){
+      state.step = Math.max(1, Math.min(4, n));
+      const steps = $$('.q-step', form);
+      steps.forEach((el,i)=>{ const active = (i+1)===state.step; el.classList.toggle('hidden', !active); el.classList.toggle('active', active); });
+      progress.style.width = (state.step/steps.length*100)+'%';
+  // Progress bar gradient is handled by CSS theme (Chrome/Glass v2); width only here
+  if(stepNum) stepNum.textContent = String(state.step);
+  if(stepNumMobile) stepNumMobile.textContent = String(state.step);
+      render();
+      focusFirst();
+  // Analytics: step change
+  tryGtagEvent('quote_step_change', { step: state.step, path: window.location.pathname });
+      // Visually accent current step label (new stepper + legacy labels if present)
+      const labelsLegacy = $$('#q-steps-labels [data-step-label]');
+      labelsLegacy.forEach((el)=>{
+        if(el.getAttribute('data-step-label')===String(state.step)) el.classList.add('q-accent');
+        else el.classList.remove('q-accent');
+      });
+      const stepperItems = $$('#q-steps [data-step-label]');
+      stepperItems.forEach((li)=>{
+        if(li.getAttribute('data-step-label')===String(state.step)) li.setAttribute('aria-current','step');
+        else li.removeAttribute('aria-current');
+      });
+    }
+
+    function render(){
+      // Summary strings
+      const prop = `${state.bedrooms} Bed, ${state.bathrooms} Bath ${state.propertyType || 'Property'}`;
+      $('#sm-prop').textContent = prop;
+      $('#sm-addr').textContent = state.address || '—';
+      $('#sm-date').textContent = state.date ? state.date.split('-').reverse().join('/') : '—';
+  const sm = $('#sm-svcs'); sm.innerHTML = '';
+  addSvcChip(sm, 'Standard Bond Clean', true, true);
+  state.addons.forEach(a=> addSvcChip(sm, a, false, true));
+
+      if(state.step===4){
+        $('#rv-prop').textContent = prop;
+        $('#rv-addr').textContent = state.address || '—';
+        $('#rv-date').textContent = state.date ? state.date.split('-').reverse().join('/') : '—';
+        const key = $('#rv-key'); const keyRow = $('#rv-key-row');
+        if(key && keyRow){ const v = (state.exitDate||'').trim(); key.textContent = v || '—'; keyRow.classList.toggle('hidden', !v); }
+        const pm = $('#rv-pm'); const pmRow = $('#rv-pm-row');
+        if(pm && pmRow){ const v = (state.pmContact||'').trim(); pm.textContent = v || '—'; pmRow.classList.toggle('hidden', !v); }
+        $('#rv-notes').textContent = state.notes || '—';
+        const rv = $('#rv-svcs'); rv.innerHTML='';
+        addSvcChip(rv, 'Standard Bond Clean', true, true);
+        state.addons.forEach(a=> addSvcChip(rv, a, false, true));
+      }
+
+      // Recommended badges (based on toggles)
+      const map = [
+        { key:'carpet', label:'Carpet Steam Clean' },
+        { key:'pets',   label:'Flea Treatment (Licensed Partner)' },
+        { key:'balcony',label:'Balcony/Patio Wash' },
+        { key:'reachable', label:'External Windows (Reachable)' }
+      ];
+      $$('oklch(86.22% 0.0525 196.22)ons .q-addon').forEach(card=>{
+        const title = card.querySelector('.q-title').textContent.trim();
+        const pill = card.querySelector('.q-pill');
+        const should = map.some(m => state.toggles[m.key] && m.label===title);
+        pill && pill.classList.toggle('hidden', !should);
+      });
+    }
+
+    function addSvcChip(container, text, base=false, compact=false){
+      const el = document.createElement('li');
+  el.className = 'q-tag' + (compact ? ' q-tag-sm' : '') + (base ? ' q-tag-base' : '');
+      el.innerHTML = `<i class="${base?'fas fa-check text-emerald-600':'fas fa-plus link-brand'}"></i><span>${text}</span>`;
+      container.appendChild(el);
+    }
+
+    function focusFirst(){
+      const stepEl = $(`#q-step-${state.step}`, form);
+      const first = stepEl.querySelector('input,select,textarea,button.q-next,button.q-prev');
+      first && first.focus({ preventScroll:true });
+    }
+
+    function toggleInvalid(input, ok){
+      const msg = input.getAttribute('aria-describedby');
+      if(msg){ const el = document.getElementById(msg); if(el) el.hidden = ok; }
+      input.classList.toggle('q-invalid', !ok);
+      input.setAttribute('aria-invalid', String(!ok));
+    }
+
+    function validate(step){
+      if(step===1){
+        const sel = $('#property-type', form);
+        const ok = sel.value.trim() !== '';
+        toggleInvalid(sel, ok);
+        return ok;
+      }
+      if(step===3){
+        const nm = $('#full-name', form);
+        const ph = $('#phone', form);
+        const em = $('#email', form);
+        const ad = $('#property-address', form);
+        const dt = $('#service-date', form);
+        const phoneRE = /^(?:\+?61[-\s]?)?(?:0?[2-578]\d{8}|4\d{2}[-\s]?\d{3}[-\s]?\d{3})$/;
+        const emailRE = /^\S+@\S+\.\S+$/;
+        const todayIso = new Date().toISOString().split('T')[0];
+        const ok = nm.value.trim() && phoneRE.test(ph.value) && emailRE.test(em.value) && ad.value.trim() &&
+                   dt.value && new Date(dt.value) >= new Date(todayIso);
+        toggleInvalid(nm, !!nm.value.trim());
+        toggleInvalid(ph, phoneRE.test(ph.value));
+        toggleInvalid(em, emailRE.test(em.value));
+        toggleInvalid(ad, !!ad.value.trim());
+  toggleInvalid($('#service-date-display'), !!(dt.value && new Date(dt.value) >= new Date(todayIso)));
+        return ok;
+      }
+      return true;
+    }
+
+    // Events
+    form.addEventListener('input', (e)=>{
+      const t = e.target;
+      switch(t.name){
+        case 'property-type': state.propertyType=t.value; break;
+        case 'bedrooms': state.bedrooms=t.value; break;
+        case 'bathrooms': state.bathrooms=t.value; break;
+        case 'full-name': state.fullName=t.value; break;
+        case 'phone': state.phone=t.value; break;
+        case 'email': state.email=t.value; break;
+        case 'property-address': state.address=t.value; break;
+  case 'special-requests': state.notes=t.value; break;
+  case 'exit-date': state.exitDate=t.value; break;
+  case 'pm-contact': state.pmContact=t.value; break;
+        case 'service-date': state.date=t.value; break;
+        case 'addons':
+          state.addons = $$('oklch(86.22% 0.0525 196.22)ons input[name="addons"]:checked').map(c=>c.value);
+          break;
+      }
+      render();
+    });
+
+    form.addEventListener('change', (e)=>{
+      const id = e.target.id;
+      if(id==='has-pets') state.toggles.pets = e.target.checked;
+      if(id==='has-carpet') state.toggles.carpet = e.target.checked;
+      if(id==='has-balcony') state.toggles.balcony = e.target.checked;
+      if(id==='ext-reachable') state.toggles.reachable = e.target.checked;
+      if(id==='two-storey') state.toggles.twoStorey = e.target.checked;
+      render();
+    });
+
+    form.addEventListener('click', (e)=>{
+      const b = e.target.closest('button');
+      if(!b) return;
+      if(b.classList.contains('q-next')){
+        // First interaction analytics
+        if(state.step===1) tryGtagEvent('quote_start', { path: window.location.pathname });
+        if(validate(state.step)) setStep(state.step+1);
+      }
+      if(b.classList.contains('q-prev')){ setStep(state.step-1); }
+    });
+
+    form.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      if(!(validate(1) && validate(3))) return;
+      // UI lock
+      submitBtn.disabled = true;
+      $('.q-submit-text', submitBtn).classList.add('hidden');
+      $('.q-spinner', submitBtn).classList.remove('hidden');
+      errorBanner.classList.add('hidden');
+
+      const body = new URLSearchParams();
+      body.append('form-name','quote-request');
+      body.append('propertyType', state.propertyType);
+      body.append('bedrooms', state.bedrooms);
+      body.append('bathrooms', state.bathrooms);
+      body.append('fullName', state.fullName);
+      body.append('phone', state.phone);
+      body.append('email', state.email);
+      body.append('propertyAddress', state.address);
+      body.append('serviceDate', state.date);
+  body.append('specialRequests', state.notes);
+  if(state.exitDate) body.append('exitDate', state.exitDate);
+  if(state.pmContact) body.append('pmContact', state.pmContact);
+      state.addons.forEach(a=> body.append('addons[]', a));
+
+      try{
+        const res = await fetch('/', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body: body.toString() });
+        if(!res.ok) throw new Error('Server '+res.status);
+        // Show success, hide form+summary+mobilebar
+        formArea.classList.add('hidden');
+        summary.classList.add('hidden');
+        mobilebar.classList.add('hidden');
+        success.classList.remove('hidden');
+        localStorage.removeItem('pendingQuoteSubmission');
+  tryGtagEvent('quote_submit_success', { path: window.location.pathname });
+      }catch(err){
+        localStorage.setItem('pendingQuoteSubmission', JSON.stringify(state));
+        errorMsg.textContent = `We saved your progress. We'll retry automatically when you're back online.`;
+        errorBanner.classList.remove('hidden');
+  tryGtagEvent('quote_submit_error', { message: String(err && err.message || err), path: window.location.pathname });
+      }finally{
+        submitBtn.disabled = false;
+        $('.q-submit-text', submitBtn).classList.remove('hidden');
+        $('.q-spinner', submitBtn).classList.add('hidden');
+      }
+    });
+
+    $('#q-new', root)?.addEventListener('click', ()=>{
+      form.reset();
+      Object.assign(state, { step:1, propertyType:'', bedrooms:'3', bathrooms:'2', addons:[], fullName:'', phone:'', email:'', address:'', date:'', notes:'', toggles:{pets:false,carpet:false,balcony:false,reachable:false,twoStorey:false} });
+      success.classList.add('hidden');
+      formArea.classList.remove('hidden');
+      summary.classList.remove('hidden');
+      mobilebar.classList.remove('hidden');
+      render(); setStep(1); window.scrollTo({top:0, behavior:'smooth'});
+    });
+
+    // Offline auto-resubmit
+    const pending = localStorage.getItem('pendingQuoteSubmission');
+    if(pending && navigator.onLine){ try{ const s=JSON.parse(pending); Object.assign(state,s); form.dispatchEvent(new Event('submit')); }catch{ localStorage.removeItem('pendingQuoteSubmission'); } }
+
+    // Calendar
+    initCalendar();
+
+    // Included toggle
+    if(includedBtn && includedDetails){
+      includedBtn.addEventListener('click', ()=>{
+        const open = includedDetails.hasAttribute('open');
+        if(open) includedDetails.removeAttribute('open');
+        else includedDetails.setAttribute('open','');
+        includedBtn.setAttribute('aria-expanded', String(!open));
+      });
+    }
+
+  // Additional details toggle
+    if(additionalBtn && additionalDetails){
+      additionalBtn.addEventListener('click', ()=>{
+        const open = additionalDetails.hasAttribute('open');
+        if(open) additionalDetails.removeAttribute('open');
+        else additionalDetails.setAttribute('open','');
+        additionalBtn.setAttribute('aria-expanded', String(!open));
+      });
+    }
+
+    // Initial
+    render(); setStep(1);
+  }
+
+  function initCalendar(){
+    const root = document.getElementById('cal-root');
+    if(!root) return;
+    const isoInput = document.getElementById('service-date');
+    const disp = document.getElementById('service-date-display');
+    const trig = document.getElementById('cal-trigger');
+
+    const today = new Date();
+    const SOD = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const same = (a,b)=> SOD(a).getTime()===SOD(b).getTime();
+    const addM = (d,n)=> new Date(d.getFullYear(), d.getMonth()+n, 1);
+
+    class Cal{
+      constructor(){ this.min=SOD(today); this.view=new Date(); this.sel=null; this.build(); }
+      build(){
+        this.pop=document.createElement('div');
+        this.pop.className='q-cal';
+        root.appendChild(this.pop);
+        const head=document.createElement('div'); head.className='q-cal-head'; this.pop.appendChild(head);
+        this.prev=this.btn('<i class="fas fa-chevron-left"></i>', ()=>{this.view=addM(this.view,-1); this.render();});
+        this.next=this.btn('<i class="fas fa-chevron-right"></i>', ()=>{this.view=addM(this.view,1); this.render();});
+        this.lab=document.createElement('span'); this.lab.className='font-semibold text-slate-900';
+        head.append(this.prev,this.lab,this.next);
+
+  this.grid=document.createElement('div'); this.grid.className='grid grid-cols-7 gap-1 p-1'; this.pop.appendChild(this.grid);
+        this.days=[];
+        for(let i=0;i<42;i++){ const b=document.createElement('button'); b.type='button'; b.className='q-cal-day'; b.addEventListener('click',e=>{e.stopPropagation(); this.select(b._d);}); this.days.push(b); this.grid.appendChild(b); }
+      }
+      btn(html,cb){ const b=document.createElement('button'); b.type='button'; b.innerHTML=html; b.className='px-2 py-1 link-brand focus:outline-none'; b.addEventListener('click',cb); return b; }
+      open(){ this.pop.classList.remove('hidden'); this.render(); document.addEventListener('mousedown', this._out=(e)=>{ if(!this.pop.contains(e.target) && e.target.id!=='cal-trigger') this.close(); }); this.days.find(d=>!d.disabled)?.focus(); }
+      close(){ this.pop.classList.add('hidden'); document.removeEventListener('mousedown', this._out); }
+      render(){
+        this.lab.textContent=this.view.toLocaleString('default',{month:'long',year:'numeric'});
+        const first=new Date(this.view.getFullYear(),this.view.getMonth(),1);
+        const off=(first.getDay()+6)%7; const start=new Date(first); start.setDate(first.getDate()-off);
+        for(let i=0;i<42;i++){ const b=this.days[i]; const d=new Date(start); d.setDate(start.getDate()+i); b._d=d; b.textContent=d.getDate();
+          const inM=d.getMonth()===this.view.getMonth(); const dis=d<this.min; const sel=this.sel && same(d,this.sel); const today=same(d,new Date());
+          b.disabled=dis; b.className='q-cal-day'; if(!inM) b.classList.add('text-slate-400'); if(dis) b.classList.add('text-slate-300','cursor-not-allowed'); if(today) b.classList.add('ring-2'); if(sel) b.classList.add('bg-sky'); }
+      }
+      select(d){ if(d<this.min) return; this.sel=d; this.render(); const iso=d.toISOString().split('T')[0]; isoInput.value=iso; disp.value=iso.split('-').reverse().join('/'); isoInput.dispatchEvent(new Event('input',{bubbles:true})); disp.focus(); this.close(); }
+    }
+    const cal=new Cal();
+    trig.addEventListener('mousedown', e=>{ e.preventDefault(); cal.open(); });
+    trig.addEventListener('click', e=>e.preventDefault());
+    disp.addEventListener('focus', ()=> cal.open());
+  }
+
+  function scheduleInit(){
+    const root = document.querySelector('[data-quote]');
+    if(!root) return;
+    const start = () => {
+      if(root.dataset.init==='1') return;
+      if('requestIdleCallback' in window){
+        requestIdleCallback(()=> init());
+      } else {
+        setTimeout(()=> init(), 0);
+      }
+    };
+    // If already in view, start soon; otherwise observe
+    const io = new IntersectionObserver((entries, obs)=>{
+      if(entries.some(e => e.isIntersecting)){
+        obs.disconnect();
+        start();
+      }
+    }, { rootMargin: '300px' });
+    io.observe(root);
+    // First interaction fallback (e.g., CTA click)
+    const onFirstInteract = () => { start(); window.removeEventListener('click', onFirstInteract, true); };
+    window.addEventListener('click', onFirstInteract, true);
+  }
+
+  // Astro client events (when client router is present)
+  document.addEventListener('astro:page-load', scheduleInit);
+  document.addEventListener('astro:after-swap', scheduleInit);
+  // Fallbacks for static loads (no Astro client runtime)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', scheduleInit);
+  } else {
+    scheduleInit();
+  }
+
+  // Lightweight GA wrapper (mirrors Header.astro)
+  function tryGtagEvent(name, params = {}){
+    try {
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', name, { ...params, transport_type: 'beacon' });
+      } else if (Array.isArray(window.dataLayer)) {
+        window.dataLayer.push({ event: name, ...params });
+      }
+    } catch (_) {}
+  }
+})();
+</script>
+
+<style>
+/* ---- Scoped styles: Chrome/Glass v2 ---- */
+[data-quote]{
+  /* Brand palette */
+  --brand-navy:oklch(30.69% 0.0868 255.80);
+  --brand-sky:oklch(68.47% 0.1479 237.32);
+  --brand-sky-600:oklch(58.76% 0.1389 241.97);
+  --brand-sky-400:oklch(75.35% 0.1390 232.66);
+  --brand-sky-light:oklch(95.14% 0.0250 236.82);
+  --brand-gray-light:oklch(98.42% 0.0034 247.86);
+  --brand-error:oklch(63.68% 0.2078 25.33);
+  --brand-green:oklch(72.27% 0.1920 149.58);
+  --brand-green-light:oklch(96.24% 0.0434 156.74);
+
+  /* Silver/Chrome system */
+  --silver-50:oklch(97.87% 0.0057 264.53);
+  --silver-100:oklch(95.95% 0.0080 253.85);
+  --silver-200:oklch(92.65% 0.0121 259.82);
+  --silver-300:oklch(87.46% 0.0195 263.00);
+  --silver-400:oklch(81.02% 0.0244 256.12);
+  --silver-500:oklch(71.83% 0.0247 246.15);
+
+  /* Reusable effects */
+  --shadow-1:0 8px 28px rgba(2,6,23,.08);
+  --shadow-2:0 10px 34px rgba(2,6,23,.12);
+  --glass-bg:linear-gradient(180deg,rgba(255,255,255,.88),rgba(255,255,255,.84) 60%,rgba(246,248,252,.9));
+  --chrome-border:linear-gradient(135deg,rgba(255,255,255,.85),rgba(15,23,42,.08));
+  --focus-ring:0 0 0 6px rgba(14,165,233,.16);
+
+  /* Rounded system */
+  --r-card:1rem;
+  --r-el:.75rem;
+}
+
+[data-quote] .q-step{display:none}
+[data-quote] .q-step.active{display:block;animation:qfade .25s ease}
+@keyframes qfade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* Cards: glass body + chrome edge */
+[data-quote] .q-card{
+  background:var(--glass-bg),var(--chrome-border);
+  border:1px solid transparent;
+  background-clip:padding-box,border-box;
+  border-radius:var(--r-card);
+  padding:1rem;
+  box-shadow:var(--shadow-1);
+  backdrop-filter:saturate(1.08) blur(6px);
+  -webkit-backdrop-filter:saturate(1.08) blur(6px);
+}
+
+/* Outer shell: chrome panel container */
+[data-quote] .q-shell{
+  border-radius:1rem;
+  background:var(--glass-bg),var(--chrome-border);
+  border:1px solid transparent; background-clip:padding-box,border-box;
+  box-shadow:0 16px 48px rgba(2,6,23,.12), inset 0 1px 0 rgba(255,255,255,.4);
+  backdrop-filter:saturate(1.08) blur(8px);
+  -webkit-backdrop-filter:saturate(1.08) blur(8px);
+}
+
+/* Headings */
+[data-quote] .q-h3{
+  font-size:1.125rem;line-height:1.3;font-weight:800;
+  color:var(--brand-navy);letter-spacing:.1px;margin-bottom:.6rem;
+  text-shadow:0 1px 0 rgba(255,255,255,.25);
+}
+[data-quote] .q-accent{color:var(--brand-sky)}
+[data-quote] .q-spot{
+  background-image:linear-gradient(transparent 62%,rgba(56,189,248,.35) 62%);
+  padding:0 .05em;border-radius:.15em
+}
+
+/* Labeled stepper: metal pills + active sky core */
+[data-quote] #q-steps{counter-reset:step}
+[data-quote] .q-stepper-item{
+  display:flex;align-items:center;gap:.45rem;padding:.28rem .5rem;border-radius:.6rem;
+  background:linear-gradient(oklch(100% 0 0),oklch(100% 0 0)) padding-box, var(--chrome-border) border-box;
+  border:1px solid transparent;box-shadow:0 2px 10px rgba(2,6,23,.04)
+}
+[data-quote] #q-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:stretch}
+[data-quote] .q-stepper-item{min-height:2.75rem}
+[data-quote] .q-stepper-item span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1}
+[data-quote] .q-stepper-item[aria-current="step"]{font-weight:700;color:oklch(30.25% 0.0702 244.98);background:linear-gradient(oklch(96.68% 0.0176 239.99),oklch(100% 0 0)) padding-box,var(--chrome-border) border-box}
+[data-quote] .q-step-num{
+  display:inline-grid;place-items:center;width:1.35rem;height:1.35rem;border-radius:9999px;
+  background:linear-gradient(180deg,var(--silver-100),var(--silver-300));
+  color:oklch(20.77% 0.0398 265.75);font-weight:800;font-size:.8rem;border:1px solid rgba(15,23,42,.08)
+}
+[data-quote] .q-stepper-item[aria-current="step"] .q-step-num{
+  background:linear-gradient(180deg,var(--brand-sky-400),var(--brand-sky-600));color:oklch(100% 0 0);border-color:transparent
+}
+
+/* Callout */
+[data-quote] .q-callout{
+  display:flex;align-items:flex-start;gap:.5rem;
+  background:linear-gradient(180deg,oklch(97.37% 0.0142 238.00),oklch(100% 0 0));
+  border-left:4px solid var(--brand-sky);
+  padding:.55rem .75rem;border-radius:.6rem;color:var(--brand-navy);font-size:.9rem;margin:.15rem 0 .6rem;
+  box-shadow:0 1px 0 rgba(255,255,255,.6) inset
+}
+
+/* Labels/inputs/selects: crisp rims + inner gloss */
+[data-quote] .q-label{display:block;color:oklch(37.17% 0.0392 257.29);font-weight:600;margin-bottom:.4rem}
+[data-quote] .q-label i{margin-right:.35rem;color:oklch(55.44% 0.0407 257.42)}
+
+[data-quote] .q-input{
+  width:100%;padding:.65rem .85rem;border-radius:var(--r-el);
+  border:1px solid transparent;
+  background:
+    linear-gradient(oklch(100% 0 0),oklch(100% 0 0)) padding-box,
+    linear-gradient(180deg,var(--silver-200),var(--silver-400)) border-box;
+  color:var(--brand-navy);outline:0;font-size:15px;line-height:1.35;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.7),
+    0 1px 2px rgba(2,6,23,.06);
+}
+[data-quote] .q-input::placeholder{color:oklch(71.07% 0.0351 256.79)}
+[data-quote] .q-input:focus{
+  box-shadow:var(--focus-ring), inset 0 1px 0 rgba(255,255,255,.75);
+  border-color:transparent;
+  background:
+    linear-gradient(oklch(100% 0 0),oklch(100% 0 0)) padding-box,
+    linear-gradient(180deg,var(--brand-sky-400),var(--brand-sky-600)) border-box;
+}
+[data-quote] .q-err{color:var(--brand-error);font-size:.85rem;margin-top:.35rem}
+[data-quote] .q-invalid{
+  background:
+    linear-gradient(oklch(100% 0 0),oklch(100% 0 0)) padding-box,
+    linear-gradient(180deg,oklch(88.45% 0.0593 18.33),oklch(63.68% 0.2078 25.33)) border-box;
+}
+
+/* Compact select with chevron */
+[data-quote] .q-select-wrap{position:relative;display:inline-block}
+[data-quote] .q-select{width:12rem;padding-right:2rem}
+[data-quote] .q-select-icn{position:absolute;right:.6rem;top:50%;transform:translateY(-50%);color:oklch(71.07% 0.0351 256.79);pointer-events:none}
+
+/* Chips (toggles): glass + pressed active */
+[data-quote] .q-chip{
+  display:inline-flex;align-items:center;gap:.4rem;border-radius:9999px;padding:.38rem .65rem;cursor:pointer;font-size:14px;
+  border:1px solid transparent;
+  background:linear-gradient(oklch(100% 0 0),oklch(100% 0 0)) padding-box,var(--chrome-border) border-box;
+  box-shadow:0 1px 1px rgba(2,6,23,.04)
+}
+[data-quote] .q-chip .q-ico{opacity:.85;margin-right:.05rem;color:oklch(55.44% 0.0407 257.42)}
+[data-quote] .q-chip .q-on{display:none;color:var(--brand-sky)}
+[data-quote] .q-chip input{width:1rem;height:1rem}
+[data-quote] .q-chip:has(input:checked){
+  color:oklch(30.25% 0.0702 244.98);
+  background:linear-gradient(180deg,oklch(96.68% 0.0176 239.99),oklch(100% 0 0)) padding-box,var(--chrome-border) border-box;
+  box-shadow:0 2px 8px rgba(2,6,23,.06), inset 0 1px 0 rgba(255,255,255,.8)
+}
+[data-quote] .q-chip:has(input:checked) .q-on{display:inline-block}
+[data-quote] .q-chip:has(input:checked) .q-ico{color:oklch(50.00% 0.1193 242.75)}
+[data-quote] .q-chip:focus-within{outline:0;box-shadow:var(--focus-ring);}
+
+/* Add-ons: tile with metallic rim */
+[data-quote] .q-addon{
+  position:relative;display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;gap:.25rem .75rem;align-items:center;
+  padding:.85rem;border-radius:var(--r-el);cursor:pointer;font-size:14px;
+  border:1px solid transparent;
+  background:linear-gradient(oklch(100% 0 0),oklch(100% 0 0)) padding-box,var(--chrome-border) border-box;
+  box-shadow:var(--shadow-1)
+}
+[data-quote] .q-addon:hover{background:linear-gradient(180deg,oklch(99.39% 0.0029 264.54),oklch(100% 0 0)) padding-box,var(--chrome-border) border-box}
+[data-quote] .q-addon:has(input:checked){
+  background:linear-gradient(180deg,oklch(96.68% 0.0176 239.99),oklch(100% 0 0)) padding-box,linear-gradient(135deg,rgba(56,189,248,.65),rgba(15,23,42,.08)) border-box
+}
+[data-quote] .q-addon:focus-within{outline:0;box-shadow:var(--focus-ring),var(--shadow-1)}
+[data-quote] .q-addon input{grid-column:2;grid-row:1 / span 2;justify-self:end;width:1rem;height:1rem}
+[data-quote] .q-title{font-weight:700;color:var(--brand-navy)}
+[data-quote] .q-note{font-size:.85rem;color:oklch(55.44% 0.0407 257.42)}
+[data-quote] .q-pill{
+  grid-column:1 / span 2;grid-row:3;justify-self:start;margin-top:.15rem;
+  background:linear-gradient(180deg,oklch(97.78% 0.0239 85.79),oklch(93.25% 0.0744 85.99));color:oklch(30.95% 0.0634 93.48);font-weight:800;font-size:.72rem;padding:.18rem .5rem;border-radius:9999px;
+  border:1px solid rgba(59,47,0,.07)
+}
+
+/* Actions/buttons: glossy sky + chrome ring secondary */
+[data-quote] .q-actions{display:flex;flex-direction:column;gap:.55rem;margin-top:.8rem}
+[data-quote] .q-actions.between{flex-direction:row;justify-content:space-between;align-items:center}
+[data-quote] .q-btn{position:relative;isolation:isolate;font-weight:800;font-size:15px;line-height:1.2;display:inline-flex;align-items:center;justify-content:center;border-radius:.7rem;overflow:hidden}
+[data-quote] .q-btn i{font-size:1em}
+[data-quote] .q-btn i.mr-2{margin-right:.45rem}
+[data-quote] .q-btn i.ml-2{margin-left:.45rem}
+
+/* Primary: sky gradient + moving sheen on hover */
+[data-quote] .q-btn-primary{
+  padding:.78rem 1.1rem;color:oklch(100% 0 0);border:1px solid transparent;
+  background:
+    linear-gradient(180deg,var(--brand-sky-400),var(--brand-sky-600)) padding-box,
+    var(--chrome-border) border-box;
+  box-shadow:0 6px 18px rgba(14,165,233,.28)
+}
+[data-quote] .q-btn-primary::after{
+  content:"";position:absolute;inset:-40% -20% auto -20%;height:200%;
+  background:linear-gradient(75deg,rgba(255,255,255,.0) 0%,rgba(255,255,255,.45) 22%,rgba(255,255,255,.0) 44%);
+  transform:translateX(-120%);transition:transform .6s ease;pointer-events:none;mix-blend:screen
+}
+[data-quote] .q-btn-primary:hover::after{transform:translateX(120%)}
+@media (prefers-reduced-motion:reduce){
+  [data-quote] .q-btn-primary::after{display:none}
+  [data-quote] .q-step.active{animation:none}
+}
+
+/* Secondary: chrome ring with glass fill */
+[data-quote] .q-btn-secondary{
+  padding:.72rem 1rem;color:var(--brand-navy);
+  border:1px solid transparent;
+  background:linear-gradient(oklch(100% 0 0),oklch(100% 0 0)) padding-box,var(--chrome-border) border-box;
+}
+[data-quote] .q-btn-secondary:hover{
+  background:linear-gradient(180deg,oklch(98.77% 0.0057 264.53),oklch(100% 0 0)) padding-box,var(--chrome-border) border-box
+}
+
+/* CTA (yellow kept but refined) */
+[data-quote] .q-btn-cta{
+  padding:.85rem 1.15rem;color:oklch(23.65% 0.0595 258.13);font-weight:900;
+  border:1px solid transparent;
+  background:linear-gradient(180deg,oklch(88.73% 0.1279 86.39),oklch(76.86% 0.1647 70.08)) padding-box,var(--chrome-border) border-box;
+  box-shadow:0 6px 18px rgba(245,158,11,.25)
+}
+[data-quote] .q-btn-cta:hover{filter:brightness(1.03)}
+
+/* Focus-visible for keyboard */
+[data-quote] .q-btn-primary:focus-visible,
+[data-quote] .q-btn-secondary:focus-visible,
+[data-quote] .q-btn-cta:focus-visible{outline:none;box-shadow:var(--focus-ring)}
+
+/* Tooltip */
+[data-quote] .q-tip-btn{margin-left:.25rem;color:oklch(71.07% 0.0351 256.79)}
+[data-quote] .q-tip{
+  margin-left:.5rem;background:oklch(100% 0 0);border:1px solid transparent;
+  background:linear-gradient(oklch(100% 0 0),oklch(100% 0 0)) padding-box,var(--chrome-border) border-box;
+  box-shadow:var(--shadow-1);padding:.35rem .5rem;border-radius:.6rem;font-size:.75rem;color:oklch(44.55% 0.0374 257.28);display:none;position:absolute;transform:translateY(-140%)
+}
+[data-quote] .q-tip-btn:focus + .q-tip,[data-quote] .q-tip-btn:hover + .q-tip{display:inline-block}
+
+/* Calendar popover */
+[data-quote] .q-cal{
+  position:absolute;z-index:50;top:100%;left:0;margin-top:.35rem;width:18rem;padding:.6rem;border-radius:1rem;
+  background:var(--glass-bg),var(--chrome-border);
+  border:1px solid transparent;background-clip:padding-box,border-box;box-shadow:var(--shadow-2)
+}
+[data-quote] .q-cal.hidden{display:none}
+[data-quote] .q-cal-icn{position:absolute;right:.75rem;top:50%;transform:translateY(-50%);color:oklch(71.07% 0.0351 256.79);cursor:pointer}
+[data-quote] .q-cal-day{width:2.1rem;height:2.1rem;border-radius:.6rem;display:flex;align-items:center;justify-content:center;font-size:.875rem;outline:0}
+[data-quote] .q-cal-day.ring-2{box-shadow:0 0 0 2px var(--brand-sky)}
+[data-quote] .q-cal-day.bg-sky{background:var(--brand-sky);color:oklch(100% 0 0)}
+
+/* Disclosures */
+[data-quote] .q-opt{
+  border:1px dashed var(--silver-300);border-radius:.75rem;padding:.6rem .8rem;
+  background:linear-gradient(180deg,oklch(99.12% 0.0041 271.37),oklch(100% 0 0))
+}
+[data-quote] .q-opt-sum{cursor:pointer;font-weight:700;color:oklch(37.17% 0.0392 257.29);list-style:none}
+[data-quote] .q-opt-sum::-webkit-details-marker{display:none}
+[data-quote] .q-opt[open]{background:linear-gradient(180deg,oklch(98.43% 0.0074 260.73),oklch(100% 0 0))}
+
+/* Review layout */
+[data-quote] .q-review{
+  background:linear-gradient(180deg,oklch(99.12% 0.0041 271.37),oklch(100% 0 0));
+  border:1px solid transparent;background-clip:padding-box,border-box;
+  background-image:linear-gradient(oklch(100% 0 0),oklch(100% 0 0)),var(--chrome-border);
+  border-radius:1rem;padding:1rem;box-shadow:var(--shadow-1)
+}
+[data-quote] .q-group{
+  background:linear-gradient(180deg,oklch(99.12% 0.0041 271.37),oklch(100% 0 0));
+  border:1px solid transparent;background-clip:padding-box,border-box;
+  background-image:linear-gradient(oklch(100% 0 0),oklch(100% 0 0)),var(--chrome-border);
+  border-radius:.75rem;padding:.75rem
+}
+[data-quote] .q-row{display:grid;grid-template-columns:160px 1fr;gap:.7rem;align-items:start;padding:.3rem 0}
+
+[data-quote] .q-row-col{grid-template-columns:160px 1fr}
+[data-quote] .q-term{color:oklch(44.55% 0.0374 257.28);font-weight:600;text-align:right;padding-right:.25rem;position:relative}
+[data-quote] .q-term:after{content:':';position:absolute;right:-.2rem;color:oklch(55.44% 0.0407 257.42)}
+[data-quote] .q-val{color:oklch(23.65% 0.0595 258.13);word-break:break-word}
+[data-quote] .q-tags{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.25rem}
+[data-quote] .q-tag{
+  display:inline-flex;align-items:center;gap:.35rem;font-size:.9rem;padding:.35rem .55rem;border-radius:.6rem;
+  border:1px solid transparent;background:linear-gradient(oklch(100% 0 0),oklch(100% 0 0)) padding-box,var(--chrome-border) border-box
+}
+[data-quote] .q-tag.q-tag-base{background:linear-gradient(180deg,oklch(96.68% 0.0176 239.99),oklch(100% 0 0)) padding-box,var(--chrome-border) border-box}
+[data-quote] .q-tag.q-tag-sm{font-size:.85rem;padding:.35rem .55rem}
+[data-quote] #sm-svcs{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.25rem}
+
+/* Step header tint: stick to sky + silver for brand coherence */
+[data-quote] #q-step-1 .q-card{border-top:6px solid var(--brand-sky)}
+[data-quote] #q-step-2 .q-card{border-top:6px solid var(--silver-400)}
+[data-quote] #q-step-3 .q-card{border-top:6px solid var(--brand-green)}
+[data-quote] #q-step-4 .q-card{border-top:6px solid var(--brand-sky)}
+
+/* Mobile safe space for sticky bar */
+@media (max-width:767px){[data-quote]{padding-bottom:5.5rem}}
+
+/* Progress bar: sky-to-sky gradient with metallic sheen */
+[data-quote] #q-progress{
+  background-image:linear-gradient(90deg,var(--brand-sky-400),var(--brand-sky));
+  position:relative;overflow:hidden
+}
+[data-quote] #q-progress::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(120deg,transparent 0%,rgba(255,255,255,.35) 22%,transparent 45%);
+  transform:translateX(-100%);animation:progress-sheen 2.2s linear infinite
+}
+@keyframes progress-sheen{to{transform:translateX(100%)}}
+
+/* Error banner */
+[data-quote] #q-error{border-color:var(--brand-error);color:var(--brand-error);background:oklch(97.05% 0.0129 17.38)}
+
+/* Compact tweaks for small phones */
+@media (max-width:640px){
+  [data-quote] .q-card{padding:.85rem}
+  [data-quote] .q-h3{margin-bottom:.5rem}
+  [data-quote] .q-input{padding:.55rem .7rem}
+  [data-quote] .q-select{width:100%;max-width:100%;min-width:0}
+  [data-quote] .q-actions{gap:.5rem;margin-top:.7rem}
+  [data-quote] .q-chip{padding:.45rem .6rem}
+  [data-quote] .q-addon{padding:.7rem}
+  [data-quote] .q-callout{padding:.5rem .7rem;margin:.1rem 0 .5rem}
+  [data-quote] .q-row{gap:.65rem;padding:.25rem 0}
+  [data-quote] .q-btn-primary{padding:.72rem 1.05rem}
+  [data-quote] .q-btn-secondary{padding:.66rem .95rem}
+  [data-quote] .q-btn-cta{padding:.82rem 1.08rem}
+}
+
+/* Included button (navy bg, sky text) — now with chrome ring */
+[data-quote] .q-btn-included{
+  background:linear-gradient(180deg,oklch(29.23% 0.0803 257.82),oklch(25.83% 0.0685 257.81)) padding-box,var(--chrome-border) border-box;
+  color:var(--brand-sky);padding:.58rem .95rem;border:1px solid transparent;border-radius:.6rem
+}
+[data-quote] .q-btn-included:hover{filter:brightness(1.05)}
+[data-quote] .q-btn-included .fa-chevron-down{transition:transform .15s ease}
+[data-quote] #q-additional-btn{gap:.5rem}
+[data-quote] #q-additional-btn .q-box{
+  display:inline-grid;place-items:center;width:1rem;height:1rem;border-radius:.2rem;
+  background:oklch(25.28% 0.0609 257.82);color:oklch(85.18% 0.0837 237.77);border:1px solid rgba(154,215,255,.25)
+}
+[data-quote] #q-additional-btn[aria-expanded="true"] .q-box{
+  background:var(--brand-sky);color:oklch(23.65% 0.0595 258.13);border-color:oklch(58.76% 0.1389 241.97)
+}
+[data-quote] #q-additional-btn[aria-expanded="true"] .fa-chevron-down,
+[data-quote] #q-included-btn[aria-expanded="true"] .fa-chevron-down{transform:rotate(180deg)}
+
+/* Included badge */
+[data-quote] .q-badge-inc{
+  display:inline-flex;align-items:center;gap:.3rem;background:var(--brand-green-light);color:oklch(43.18% 0.0865 166.91);
+  border:1px solid oklch(87.12% 0.1363 154.45);padding:.18rem .42rem;border-radius:9999px;font-size:.75rem;font-weight:700
+}
+[data-quote] .q-badge-inc i{color:oklch(69.59% 0.1491 162.48)}
+</style>

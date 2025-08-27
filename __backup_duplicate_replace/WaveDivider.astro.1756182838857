@@ -1,0 +1,27 @@
+---
+// src/components/WaveDivider.astro
+---
+
+<div 
+  class="absolute left-0 bottom-0 w-full h-[80px] md:h-[100px] xl:h-[120px] pointer-events-none z-30"
+  aria-hidden="true"
+>
+  <svg 
+    viewBox="0 0 1440 100"
+    preserveAspectRatio="none"
+    class="block w-full h-full"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <defs>
+      <linearGradient id="section-wave-gradient" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="oklch(68.47% 0.1479 237.32)" />
+        <stop offset="100%" stop-color="oklch(30.69% 0.0868 255.80)" />
+      </linearGradient>
+    </defs>
+    <path 
+      d="M0,50 C240,90 480,20 720,50 C960,80 1200,10 1440,50 L1440,100 L0,100 Z"
+      fill="url(#section-wave-gradient)"
+      opacity="0.92"
+    />
+  </svg>
+</div>

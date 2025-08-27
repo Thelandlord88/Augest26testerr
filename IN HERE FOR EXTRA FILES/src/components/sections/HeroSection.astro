@@ -1,0 +1,10 @@
+---
+export interface Props { title?: string; subtitle?: string }
+const { title = 'One N Done Bond Clean', subtitle = 'Reliable end-of-lease cleaning' } = Astro.props;
+---
+<section class="py-16 bg-gradient-to-b from-white to-slate-50">
+  <div class="container mx-auto px-4 text-center">
+    <h1 class="text-3xl md:text-5xl font-extrabold">{title}</h1>
+    <p class="mt-4 text-lg text-slate-600">{subtitle}</p>
+  </div>
+</section>

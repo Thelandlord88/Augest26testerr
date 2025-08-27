@@ -1,0 +1,4 @@
+# Intent anchor verify — mode=src
+Scanned files: 57
+Checked anchors: 0
+Mismatches: 0

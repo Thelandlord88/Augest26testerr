@@ -1,0 +1,20 @@
+---
+// Presentational-only FAQ. JSON-LD should be emitted at the page level via <Schema graph={...}/>.
+import { getSuburbFaq } from '~/data/getSuburbFaq.js';
+
+export interface Props { suburb?: string }
+const { suburb = 'Redbank Plains' } = Astro.props;
+const faq = getSuburbFaq(suburb) || [];
+---
+<section class="mx-auto max-w-3xl py-12">
+  <h2 class="text-2xl font-bold mb-6">Frequently asked questions for {suburb}</h2>
+  {faq.map((q, i) => (
+    <details class="mb-4 border-b" id={`faq-${i}`}>
+      <summary class="py-3 font-semibold cursor-pointer">{q.question}</summary>
+      <p class="pb-3 text-slate-600 dark:text-slate-300">{q.answer}</p>
+    </details>
+  ))}
+  {faq.length === 0 && (
+    <p class="text-slate-500">No FAQs available.</p>
+  )}
+</section>

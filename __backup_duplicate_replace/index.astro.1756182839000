@@ -1,0 +1,10 @@
+---
+import MainLayout from '~/layouts/MainLayout.astro';
+const title = 'Blog – Brisbane';
+const description = 'Blog index for Brisbane.';
+---
+<MainLayout title={title} description={description}>
+  <article class="max-w-3xl mx-auto py-12 px-4">
+    <h1 class="text-3xl font-bold">Blog – Brisbane</h1>
+  </article>
+</MainLayout>

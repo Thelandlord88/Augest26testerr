@@ -1,0 +1,38 @@
+name: blog-base-guards
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        base: ["/blog/", "/guides/"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-1.49
+      - run: npx playwright install --with-deps
+      - name: Restore AI cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            __ai
+          key: ai-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            ai-${{ runner.os }}-
+      - run: npm run build
+      - name: Sitemap canonical guard
+        run: node scripts/assert-sitemap-blog-canonicals.mjs
+      - run: npm run ai:blog:verify
+      - run: BLOG_BASE=${{ matrix.base }} npm run ai:blog:verify:ext
+      - run: npm run ai:blog:codemod:dry && npm run ai:blog:codemod:ci

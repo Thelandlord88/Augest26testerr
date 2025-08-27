@@ -1,0 +1,61 @@
+---
+import type { CrossServiceItem } from '~/utils/internalLinksAdapter';
+import {
+  getCrossServiceItems,
+  getCrossServiceLinks,
+  getLocalGuidesLink,
+} from '~/utils/internalLinksAdapter';
+
+interface Props {
+  /** Suburb slug for the *current* page */
+  suburbSlug: string;
+  /** Optional wrapper classes */
+  class?: string;
+  /** Optional heading (sr-only by default) */
+  heading?: string;
+}
+
+const { suburbSlug, class: klass = '', heading = 'Related services and local guides' } = Astro.props;
+
+// Robust async items (same suburb or nearby fallback)
+const robustItems: CrossServiceItem[] = await getCrossServiceItems(suburbSlug);
+
+// Base links (could include local guides already)
+const baseLinks = getCrossServiceLinks(suburbSlug);
+const localHref = getLocalGuidesLink(suburbSlug);
+
+// Merge: robust service items + Local guides (dedupe by href)
+type AnyLink = { label: string; href: string; here?: boolean; data?: any };
+const merged: AnyLink[] = [];
+for (const item of robustItems) {
+  merged.push({ label: item.label, href: item.href, here: item.here, data: item.data });
+}
+const seen = new Set(merged.map((l) => l.href));
+if (!seen.has(localHref)) {
+  merged.push({ label: 'Local guides', href: localHref, here: true, data: { kind: 'local-guides' } });
+}
+---
+<section role="region" class={`mt-8 ${klass}`} aria-label="Related services and local guides">
+  <h2 class="sr-only">{heading}</h2>
+  {merged.length === 0 ? (
+    <ul class="flex flex-wrap gap-2" aria-hidden="true" />
+  ) : (
+    <ul class="flex flex-wrap gap-2">
+      {merged.map((l) => (
+        <li>
+          <a
+            class="inline-flex items-center rounded-md px-3 py-2 text-sm font-medium text-blue-700 hover:text-blue-900 hover:underline"
+            href={l.href}
+          >
+            {l.label}
+            {l.here === false && (
+              <span class="ml-2 inline-flex items-center rounded-full bg-yellow-50 text-yellow-800 text-[10px] px-2 py-0.5">
+                nearby
+              </span>
+            )}
+          </a>
+        </li>
+      ))}
+    </ul>
+  )}
+</section>

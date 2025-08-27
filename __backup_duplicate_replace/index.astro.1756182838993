@@ -1,0 +1,44 @@
+---
+import MainLayout from '~/layouts/MainLayout.astro';
+import { absoluteUrl } from '~/lib/url';
+import { resolveClusterSlug as getCanonicalCluster, listSuburbsForCluster } from '~/utils/geoHandler';
+import { CANONICAL_CLUSTERS } from '~/lib/clusters';
+
+export function getStaticPaths() {
+  return CANONICAL_CLUSTERS.map(cluster => ({ params: { cluster } }));
+}
+
+const { cluster } = Astro.params;
+const canonicalCluster = getCanonicalCluster(cluster) || cluster;
+if (canonicalCluster !== cluster) {
+  return Astro.redirect(`/areas/${canonicalCluster}/`, 301);
+}
+const suburbs = listSuburbsForCluster(canonicalCluster);
+const clusterDisplay = canonicalCluster.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+---
+
+<MainLayout title={`${clusterDisplay} – Service Areas`} description={`Suburbs we cover in ${clusterDisplay}.`} canonical={absoluteUrl(`/areas/${canonicalCluster}/`)}>
+  <section class="max-w-5xl mx-auto px-4 py-12">
+    <h1 class="text-3xl md:text-4xl font-extrabold text-deep-navy mb-6">{clusterDisplay}</h1>
+    {suburbs.length === 0 ? (
+      <p>No suburbs configured yet.</p>
+    ) : (
+      <ul class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {suburbs.map(s => (
+          <li>
+            <a href={`/areas/${canonicalCluster}/${s.slug}/`} class="block bg-white p-4 rounded-xl border border-gray-warm-200 hover:border-fresh-sky/60 hover:shadow-md transition">
+              {s.name}
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </section>
+</MainLayout>
+
+<script type="application/ld+json" set:html={JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "url": (import.meta.env.SITE ? new URL(`/areas/${canonicalCluster}/`, import.meta.env.SITE).toString() : `/areas/${canonicalCluster}/`),
+  "name": `${clusterDisplay} — Service Areas`
+})} />

@@ -1,0 +1,80 @@
+---
+import acceptance from '~/content/acceptance.bond-clean.json';
+
+const {
+  heading = 'What’s included (agent-ready)',
+  showEstimate = true,
+  showTools = true,
+  showPitfalls = true,
+  showFAQ = true,
+  suburbName = ''
+} = Astro.props;
+
+const totalMin = acceptance.groups
+  .flatMap(g => g.items)
+  .reduce((sum, i) => sum + (i.time_min || 0), 0);
+
+const est = acceptance.estimate;
+const estNote = `Typical timing: ${est.small} • ${est.medium} • ${est.large}`;
+---
+<section class="my-12" aria-labelledby="acceptance-title">
+  <h2 id="acceptance-title" class="text-2xl md:text-3xl font-bold tracking-tight">🧹 {heading}{suburbName ? ` — ${suburbName}` : ''}</h2>
+  {showEstimate && (
+    <p class="mt-2 text-slate-600">{estNote}{totalMin ? ` • Task mins (sum): ~${totalMin}m` : ''}</p>
+  )}
+
+  <div class="mt-6 grid gap-6 md:grid-cols-2">
+    {acceptance.groups.map(group => (
+      <div class="rounded-2xl border border-slate-200 p-5 bg-white shadow-sm" data-group={group.label}>
+        <h3 class="text-lg font-semibold mb-3">{group.label}</h3>
+        <ul class="space-y-2 list-disc pl-5">
+          {group.items.map(item => (
+            <li>
+              <span class="font-medium">{item.task}</span>
+              {item.accept && <span class="text-slate-600"> — <em>{item.accept}</em></span>}
+              {item.time_min && <span class="ml-2 text-slate-500">({item.time_min}m)</span>}
+              {item.agent_note && <div class="mt-1 text-sm text-amber-700">Agent note: {item.agent_note}</div>}
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </div>
+
+  {showTools && (
+    <div class="mt-8 rounded-2xl border border-slate-200 p-5 bg-slate-50">
+      <h3 class="text-lg font-semibold mb-3">Tools we use</h3>
+      <p class="text-slate-700">{acceptance.tools_common.join(', ')}.</p>
+    </div>
+  )}
+
+  {showPitfalls && acceptance.pitfalls?.length && (
+    <div class="mt-6 rounded-2xl border border-slate-200 p-5 bg-brand-soft">
+      <h3 class="text-lg font-semibold mb-3">Common pitfalls we double-check</h3>
+      <ul class="list-disc pl-5 text-slate-800">
+        {acceptance.pitfalls.map((p, i) => <li key={i}>{p}</li>)}
+      </ul>
+    </div>
+  )}
+
+  {showFAQ && acceptance.faq?.length && (
+    <div class="mt-8">
+      <h3 class="text-lg font-semibold mb-3">Quick FAQ</h3>
+      <dl class="divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
+        {acceptance.faq.map(({ q, a }) => (
+          <div class="p-5">
+            <dt class="font-medium">{q}</dt>
+            <dd class="mt-1 text-slate-700">{a}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  )}
+
+  <aside class="mt-8 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+    <strong class="block mb-1">Agent inspection focus points</strong>
+    <ul class="list-disc pl-5">
+      {acceptance.agent_focus.map(p => <li>{p}</li>)}
+    </ul>
+  </aside>
+</section>

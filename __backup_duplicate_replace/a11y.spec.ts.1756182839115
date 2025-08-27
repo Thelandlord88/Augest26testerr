@@ -1,0 +1,30 @@
+/// <reference types="@playwright/test" />
+// @ts-nocheck
+import { test, expect } from '@playwright/test';
+import { AxeBuilder } from '@axe-core/playwright';
+import { loadTestRoutes } from './helpers/routes';
+
+const routes = loadTestRoutes();
+
+test.describe('a11y', () => {
+  test.skip(({ browserName }) => browserName !== 'chromium', 'A11y checks on Chromium only');
+  for (const path of routes) {
+    test(`a11y – ${path}`, async ({ page }) => {
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await page.goto(path, { waitUntil: 'domcontentloaded' });
+      await page.waitForLoadState('networkidle');
+      // Reduce motion for stability
+      await page.addStyleTag({ content: `*{animation:none!important;transition:none!important}` });
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa'])
+        .analyze();
+      if (results.violations.length) {
+        console.error(`A11y violations on ${path}:`);
+        for (const v of results.violations) {
+          console.error(`- ${v.id}: ${v.help} [${v.impact}]`);
+        }
+      }
+      expect(results.violations, `A11y violations found on ${path}`).toHaveLength(0);
+    });
+  }
+});

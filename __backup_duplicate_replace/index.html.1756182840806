@@ -1,0 +1,129 @@
+<!DOCTYPE html><html lang="en" class="scroll-smooth"> <head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="canonical" href="https://onendonebondclean.com.au/services/bond-cleaning/redbank-plains/"><meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"><title>Bond Cleaning - Redbank Plains</title><meta name="description" content="Bond cleaning in Redbank Plains"><meta name="keywords" content="bond cleaning, end of lease cleaning, exit clean, Redbank Plains, Brisbane, One N Done"><meta name="author" content="One N Done Bond Clean"><meta name="generator" content="Astro v5.13.3"><!-- Open Graph --><meta property="og:type" content="website"><meta property="og:url" content="https://onendonebondclean.com.au/services/bond-cleaning/redbank-plains/"><meta property="og:title" content="Bond Cleaning - Redbank Plains"><meta property="og:description" content="Bond cleaning in Redbank Plains"><meta property="og:image" content="https://onendonebondclean.com.au/og.jpg"><meta property="og:image:alt" content="Bond cleaning in action by One N Done"><meta property="og:locale" content="en_AU"><!-- Twitter --><meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content="@OneNDoneClean"><meta name="twitter:title" content="Bond Cleaning - Redbank Plains"><meta name="twitter:description" content="Bond cleaning in Redbank Plains"><meta name="twitter:image" content="https://onendonebondclean.com.au/og.jpg"><!-- Performance hints --><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><!-- Site fonts (centralized, non-blocking) --><link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Permanent+Marker&family=Quicksand:wght@400;600&display=swap"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Permanent+Marker&family=Quicksand:wght@400;600&display=swap" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Permanent+Marker&family=Quicksand:wght@400;600&display=swap"></noscript><!-- Structured data --><!-- Minimal fallback WebPage JSON-LD (merged post-build) --><!-- Google Analytics (gtag.js) --><script async src="https://www.googletagmanager.com/gtag/js?id=G-DCGW9TY7QM"></script><script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-DCGW9TY7QM');
+    </script><!-- Early theme + transition suppression to avoid flash --><script>
+      (function(){
+        const root = document.documentElement;
+        root.classList.add('no-transition');
+        const stored = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (stored === 'dark' || (!stored && prefersDark)) root.classList.add('dark');
+        // Remove suppression after a frame
+        requestAnimationFrame(()=>root.classList.remove('no-transition'));
+      })();
+    </script><script>
+      // Sync with system changes if user hasn't explicitly chosen a mode
+      (function(){
+        const mq = window.matchMedia('(prefers-color-scheme: dark)');
+        function sync(e){
+          const stored = localStorage.getItem('theme');
+          if (stored) return; // respect manual choice
+          document.documentElement.classList.toggle('dark', e.matches);
+        }
+        if (mq.addEventListener) mq.addEventListener('change', sync); else mq.addListener(sync);
+      })();
+    </script><link rel="stylesheet" href="/_astro/index.BFk7fpqx.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@context": "https://schema.org",
+      "@type": "CleaningService",
+      "name": "One N Done Bond Clean",
+      "url": "https://onendonebondclean.com.au",
+      "telephone": "+61405779420",
+      "priceRange": "$",
+      "image": "https://onendonebondclean.com.au/og.jpg",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Redbank Plains",
+        "addressRegion": "QLD",
+        "postalCode": "4301",
+        "addressCountry": "AU"
+      },
+      "areaServed": [],
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": -27.6413,
+        "longitude": 152.9006
+      },
+      "openingHoursSpecification": [
+        {
+          "@type": "OpeningHoursSpecification",
+          "dayOfWeek": [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday"
+          ],
+          "opens": "08:00",
+          "closes": "18:00"
+        }
+      ]
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://onendonebondclean.com.au#organization",
+      "name": "One N Done Bond Clean",
+      "url": "https://onendonebondclean.com.au"
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://onendonebondclean.com.au#website",
+      "url": "https://onendonebondclean.com.au",
+      "publisher": {
+        "@id": "https://onendonebondclean.com.au#organization"
+      }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://onendonebondclean.com.au/services/bond-cleaning/#webpage/",
+      "url": "https://onendonebondclean.com.au/services/bond-cleaning/redbank-plains/",
+      "isPartOf": {
+        "@id": "https://onendonebondclean.com.au#website"
+      }
+    }
+  ]
+}
+</script>
+</head> <body class="font-sans antialiased min-h-screen flex flex-col"> <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:bg-slate-900 focus:text-white focus:px-3 focus:py-2 focus:rounded focus:z-[100] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400">Skip to content</a> <!-- No JSON-LD here; page schema is consolidated server-side --><!-- ==========  MARKUP  ========== --><header id="main-header" class="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-700/50 transition-colors duration-300"> <nav class="container mx-auto px-4 sm:px-6 py-3 flex items-center justify-between" aria-label="Primary navigation"> <!-- Logo --> <a href="/" class="flex items-center gap-2 group" aria-label="One N Done Bond Clean Home"> <img src="/assets/images/logo.svg" alt="One N Done Bond Clean Logo" class="w-12 h-12 md:w-14 md:h-14 rounded-full shadow group-hover:shadow-xl transition-shadow" width="56" height="56" loading="eager" fetchpriority="high"> <span class="sr-only md:not-sr-only font-extrabold text-xl text-slate-900 dark:text-white">
+One N Done
+</span> </a> <!-- Desktop Nav --> <div class="hidden lg:flex items-center gap-6"> <!-- Location Pill --> <div data-suburb-ticker class="relative flex items-center gap-2 bg-slate-100 dark:bg-slate-800/80 px-3 py-1.5 rounded-full text-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50"> <svg class="w-4 h-4 link-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path> </svg> <select id="suburb-selector-desktop" class="bg-transparent appearance-none focus:outline-none cursor-pointer text-slate-900 dark:text-white focus:ring-2 focus:ring-brand rounded px-1 pr-6" aria-label="Choose your suburb">  </select> <!-- Chevron icon --> <svg aria-hidden="true" class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path> </svg> </div> <!-- Links --> <a href="/" class="text-slate-700 dark:text-slate-300 hover:link-brand focus:link-brand relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 hover:after:w-full after:bg-brand-soft0 after:transition-all"> Home </a><a href="/services/bond-cleaning/" class="text-slate-700 dark:text-slate-300 hover:link-brand focus:link-brand relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 hover:after:w-full after:bg-brand-soft0 after:transition-all"> Services </a><a href="/areas/brisbane/" class="text-slate-700 dark:text-slate-300 hover:link-brand focus:link-brand relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 hover:after:w-full after:bg-brand-soft0 after:transition-all"> Areas </a><a href="/blog/brisbane/" class="text-slate-700 dark:text-slate-300 hover:link-brand focus:link-brand relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 hover:after:w-full after:bg-brand-soft0 after:transition-all"> Blog </a><a href="/gallery/" class="text-slate-700 dark:text-slate-300 hover:link-brand focus:link-brand relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 hover:after:w-full after:bg-brand-soft0 after:transition-all"> Gallery </a><a href="/get-a-quote/" class="text-slate-700 dark:text-slate-300 hover:link-brand focus:link-brand relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 hover:after:w-full after:bg-brand-soft0 after:transition-all"> Quote </a> <!-- Dark mode toggle --> <button id="theme-toggle" type="button" class="relative inline-flex items-center justify-center w-10 h-10 rounded-full border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition" aria-label="Toggle dark mode"> <span class="sun block">☀️</span> <span class="moon hidden">🌙</span> </button> <!-- CTA --> <a href="#quote" data-cta="header-cta-desktop" class="hover: font-bold px-4 py-2 rounded-full shadow hover:shadow-lg transition-all transform hover:scale-105 btn-brand">
+Get a Quote
+</a> </div> <!-- Mobile Toggle --> <button id="mobile-toggle" class="lg:hidden p-2 rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800" aria-expanded="false" aria-controls="mobile-menu" aria-label="Toggle navigation"> <svg class="w-6 h-6 menu-open" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path> </svg> <svg class="w-6 h-6 menu-close hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path> </svg> </button> </nav> <!-- Mobile Drawer --> <div id="mobile-menu" class="lg:hidden hidden"> <div class="px-4 py-4 space-y-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700"> <div data-suburb-ticker class="relative"> <select id="suburb-selector-mobile" class="w-full p-2 pr-8 rounded-md bg-slate-100 dark:bg-slate-800 appearance-none text-slate-900 dark:text-white focus:ring-2 focus:ring-brand">  </select> <!-- Chevron icon --> <svg aria-hidden="true" class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 dark:text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"> <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path> </svg> </div> <a href="/" class="block py-2 text-slate-700 dark:text-slate-300"> Home </a><a href="/services/bond-cleaning/" class="block py-2 text-slate-700 dark:text-slate-300"> Services </a><a href="/areas/brisbane/" class="block py-2 text-slate-700 dark:text-slate-300"> Areas </a><a href="/blog/brisbane/" class="block py-2 text-slate-700 dark:text-slate-300"> Blog </a><a href="/gallery/" class="block py-2 text-slate-700 dark:text-slate-300"> Gallery </a><a href="/get-a-quote/" class="block py-2 text-slate-700 dark:text-slate-300"> Quote </a> <a href="#quote" data-cta="header-cta-mobile" class="block bg-brand-soft0 text-white text-center font-bold py-2 rounded-full">
+Get a Quote
+</a> </div> </div> </header> <!-- ==========  MICRO JS  ========== --> <script type="module">const d=document.getElementById("theme-toggle");function u(){const e=document.documentElement.classList.contains("dark");d?.querySelector(".sun")?.classList.toggle("hidden",e),d?.querySelector(".moon")?.classList.toggle("hidden",!e)}d?.addEventListener("click",()=>{const e=document.documentElement;e.classList.add("no-transition");const t=!e.classList.contains("dark");e.classList.toggle("dark",t),localStorage.setItem("theme",t?"dark":"light"),u(),requestAnimationFrame(()=>e.classList.remove("no-transition"))});u();const l=document.getElementById("mobile-toggle"),f=document.getElementById("mobile-menu"),w=l?.querySelector(".menu-open"),b=l?.querySelector(".menu-close");l?.addEventListener("click",()=>{const e=f.classList.toggle("hidden");l.setAttribute("aria-expanded",String(!e)),w?.classList.toggle("hidden",!e),b?.classList.toggle("hidden",e),document.body.classList.toggle("overflow-hidden",!e)});const a=document.getElementById("suburb-selector-desktop"),i=document.getElementById("suburb-selector-mobile");function m(e){a&&(a.value=e),i&&(i.value=e)}function p(e){const t=window.location.pathname.match(/^\/services\/([^/]+)/),n=`/services/${t?t[1]:"bond-cleaning"}/${e}/`,c=`${n}#quote`;window.location.pathname===n?(window.location.hash!=="#quote"&&(window.location.hash="#quote"),g()):window.location.href=c}function y(e){const t=e.target.value;m(t),localStorage.setItem("selectedSuburb",t);const o=e.target.selectedOptions?.[0],n=o?.dataset?.name||o?.textContent||t,c=(e.currentTarget?.id||"").includes("desktop")?"header-desktop":"header-mobile",r=(window.location.pathname.match(/^\/services\/([^/]+)/)||[null,"bond-cleaning"])[1];h("suburb_change",{suburb_slug:t,suburb_name:n,service:r,source:c,path:window.location.pathname}),window.dispatchEvent(new CustomEvent("suburbChanged",{detail:{slug:t,name:n}})),p(t)}[a,i].forEach(e=>e?.addEventListener("change",y));(function(){const t=window.location.pathname.match(/^\/services\/[^/]+\/([^/]+)/),o=t?t[1]:null,n=localStorage.getItem("selectedSuburb");function c(s){return s?a?.querySelector(`option[value="${s}"]`)||i?.querySelector(`option[value="${s}"]`)?s:(a?.querySelector(`option[data-name="${s}"]`)||i?.querySelector(`option[data-name="${s}"]`))?.value||null:null}const r=c(o)||c(n);r&&m(r)})();function g(){const e=document.getElementById("quote");if(!e)return!1;const o=(document.getElementById("main-header")?.offsetHeight??0)+8,n=e.getBoundingClientRect().top+window.scrollY-o;return window.scrollTo({top:n,behavior:"smooth"}),!0}Array.from(document.querySelectorAll('a[href="#quote"]')).forEach(e=>e.addEventListener("click",t=>{if(e.getAttribute("href")==="#quote"&&g()){const n=window.location.pathname.match(/^\/services\/([^/]+)/);h("cta_click_quote",{source:e.getAttribute("data-cta")||"header-cta",service:n?n[1]:"home",path:window.location.pathname}),t.preventDefault()}}));function h(e,t={}){try{typeof window.gtag=="function"?window.gtag("event",e,{...t,transport_type:"beacon"}):Array.isArray(window.dataLayer)&&window.dataLayer.push({event:e,...t})}catch{}}</script> <main id="main" role="main" tabindex="-1" class="flex-1 vt-main"> true </main> <footer class="bg-slate-950 text-slate-100" role="contentinfo"> <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid gap-10 md:grid-cols-12"> <!-- Services --> <nav class="md:col-span-3" aria-labelledby="footer-services"> <h2 id="footer-services" class="text-sm font-semibold uppercase tracking-wide text-slate-400">Services</h2> <ul class="mt-4 space-y-3"> <li><a class="inline-flex items-center min-h-11 hover:underline focus:outline-none focus:underline" href="/services/bond-cleaning/">Bond Cleaning</a></li><li><a class="inline-flex items-center min-h-11 hover:underline focus:outline-none focus:underline" href="/services/end-of-lease-cleaning/">End of Lease Cleaning</a></li><li><a class="inline-flex items-center min-h-11 hover:underline focus:outline-none focus:underline" href="/services/carpet-cleaning/">Carpet Cleaning</a></li><li><a class="inline-flex items-center min-h-11 hover:underline focus:outline-none focus:underline" href="/services/oven-cleaning/">Oven Cleaning</a></li> </ul> </nav> <!-- Popular Areas (only on service pages) --> <nav class="md:col-span-3" aria-labelledby="footer-areas"> <h2 id="footer-areas" class="text-sm font-semibold uppercase tracking-wide text-slate-400">Popular Areas</h2> <ul class="mt-4 space-y-3"> <li><a class="inline-flex items-center min-h-11 hover:underline focus:outline-none focus:underline" href="/services/bond-cleaning/redbank-plains/">Redbank Plains</a></li><li><a class="inline-flex items-center min-h-11 hover:underline focus:outline-none focus:underline" href="/services/bond-cleaning/springfield-lakes/">Springfield Lakes</a></li> </ul> </nav> <!-- From the Blog --> <nav class="md:col-span-3" aria-labelledby="footer-blog"> <h2 id="footer-blog" class="text-sm font-semibold uppercase tracking-wide text-slate-400">From the Blog</h2> <ul class="mt-4 space-y-3"> <li><a class="inline-flex items-center min-h-11 hover:underline focus:outline-none focus:underline" href="/blog/ipswich/bond-cleaning-checklist/">Bond Cleaning Checklist</a></li><li><a class="inline-flex items-center min-h-11 hover:underline focus:outline-none focus:underline" href="/blog/ipswich/what-agents-want/">What Agents Want</a></li><li><a class="inline-flex items-center min-h-11 hover:underline focus:outline-none focus:underline" href="/blog/ipswich/eco-bond-cleaning/">Eco Bond Cleaning</a></li> </ul> </nav> <!-- Contact card --> <section class="md:col-span-3"> <div class="rounded-2xl bg-slate-900/70 p-5 ring-1 ring-white/10"> <div class="flex items-center gap-3"> <img src="/assets/images/logo.svg" alt="" width="40" height="40" loading="lazy" decoding="async"> <div> <p class="font-semibold">One N Done</p> <p class="text-sm text-slate-400">Bond Cleaning Experts</p> </div> </div> <address class="not-italic mt-4 space-y-1 text-sm text-slate-300"> <div>Redbank Plains, QLD, 4301</div> <div><a class="inline-flex items-center min-h-11 hover:underline focus:outline-none focus:underline" href="tel:+61405779420">+61405779420</a></div> <div><a class="inline-flex items-center min-h-11 hover:underline focus:outline-none focus:underline" href="mailto:info@onendonebondclean.com.au">info@onendonebondclean.com.au</a></div> </address> <div class="mt-3 flex gap-3"> <a class="inline-flex h-11 w-11 items-center justify-center rounded-full bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-brand" href="https://www.facebook.com/onendonebondclean" rel="noopener noreferrer" target="_blank" aria-label="Facebook">f</a> <a class="inline-flex h-11 w-11 items-center justify-center rounded-full bg-slate-800 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-brand" href="https://www.instagram.com/onendonebondclean" rel="noopener noreferrer" target="_blank" aria-label="Instagram">◎</a> </div> </div> </section> </div> <!-- legal row --> <div class="border-t border-white/10"> <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row items-center gap-4 md:gap-8 justify-between"> <p class="text-xs text-slate-400">© 2025 One N Done Bond Clean. All rights reserved.</p> <nav aria-label="Footer utility"> <ul class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm"> <li><a class="inline-flex items-center min-h-11 hover:underline focus:outline-none focus:underline" href="/privacy-policy/">Privacy Policy</a></li> <li><a class="inline-flex items-center min-h-11 hover:underline focus:outline-none focus:underline" href="/terms/">Terms of Service</a></li> <li><a class="inline-flex items-center min-h-11 hover:underline focus:outline-none focus:underline" href="/gallery/">Gallery</a></li> <li><a class="inline-flex items-center min-h-11 hover:underline focus:outline-none focus:underline" href="/get-a-quote/">Get a Quote</a></li> <li><a class="inline-flex items-center min-h-11 hover:underline focus:outline-none focus:underline" href="/sitemap.xml">Sitemap</a></li> </ul> </nav> </div> </div> <!-- Back to top (no-JS fallback + JS enhancement) --> <a href="#top" class="sr-only">Back to top</a> <button id="toTop" class="fixed bottom-5 right-5 hidden btn-brand !rounded-full !p-3 shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand" aria-label="Back to top">
+↑
+</button> <script type="module">const e=document.getElementById("toTop"),o=()=>{window.scrollY>600?e?.classList.remove("hidden"):e?.classList.add("hidden")};o();window.addEventListener("scroll",()=>{window.requestAnimationFrame(o)},{passive:!0});e?.addEventListener("click",()=>window.scrollTo({top:0,behavior:"smooth"}));</script> </footer> <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const skip = document.querySelector('a[href="#main"]');
+        const focusMain = () => {
+          const m = document.getElementById('main');
+          if (!m) return;
+          // Ensure element is focusable
+          if (!m.hasAttribute('tabindex')) m.setAttribute('tabindex', '-1');
+          // Focus without scrolling, and re-assert a few times to defeat late steals
+          const tick = () => m.focus({ preventScroll: true });
+          tick();
+          setTimeout(tick, 0);
+          requestAnimationFrame(tick);
+          setTimeout(tick, 50);
+        };
+        // Click handler for mouse/keyboard activation that dispatches click
+        skip?.addEventListener('click', (e) => {
+          e.preventDefault();
+          focusMain();
+          // Maintain expected URL hash for accessibility tools
+          if (location.hash !== '#main') location.hash = 'main';
+        });
+        // Also handle anchor navigation without our click handler
+        window.addEventListener('hashchange', () => {
+          if (location.hash === '#main') focusMain();
+        });
+        if (location.hash === '#main') focusMain();
+      });
+    </script> </body> </html>

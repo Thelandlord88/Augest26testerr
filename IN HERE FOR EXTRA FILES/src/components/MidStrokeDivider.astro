@@ -1,0 +1,105 @@
+---
+// src/components/MidStrokeDivider.astro
+// Elegant stroke divider for a professional cleaning aesthetic
+---
+
+<div class="midstroke-clean-divider" aria-hidden="true">
+  <!-- Gentle background bubbles -->
+  <div class="clean-bubbles">
+    {Array.from({ length: 20 }).map((_, i) => (
+      <div 
+        class="bubble"
+        style={`--i: ${i}; --size: ${6 + Math.random() * 14}px`}
+      />
+    ))}
+  </div>
+
+  <!-- Soft fluid wave -->
+  <svg class="clean-wave" viewBox="0 0 1440 320" preserveAspectRatio="none">
+    <defs>
+      <linearGradient id="clean-wave-gradient" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#e0f7ff" />
+        <stop offset="100%" stop-color="#b3e5fc" />
+      </linearGradient>
+    </defs>
+    <path 
+      d="M0,160 C240,200 480,120 720,180 C960,240 1200,160 1440,200 L1440,320 L0,320 Z" 
+      fill="url(#clean-wave-gradient)" 
+    />
+  </svg>
+</div>
+
+<style>
+  .midstroke-clean-divider {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 320px;
+    transform: translateY(-50%);
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+  }
+
+  .clean-wave {
+    position: absolute;
+    bottom: 0;
+    width: 200%;
+    height: 100%;
+    animation: glide 20s linear infinite;
+    mix-blend-mode: lighten;
+    opacity: 0.7;
+  }
+
+  @keyframes glide {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .clean-bubbles {
+    position: absolute;
+    inset: 0;
+    mix-blend-mode: soft-light;
+    pointer-events: none;
+  }
+
+  .bubble {
+    position: absolute;
+    bottom: -50px;
+    left: calc(var(--i) * 5%);
+    width: var(--size);
+    height: var(--size);
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    animation: floatBubble 16s infinite ease-in-out;
+    animation-delay: calc(var(--i) * -0.5s);
+    filter: blur(1px);
+  }
+
+  @keyframes floatBubble {
+    0% {
+      transform: translateY(0) scale(0.8);
+      opacity: 0.1;
+    }
+    50% {
+      transform: translateY(-60vh) scale(1);
+      opacity: 0.5;
+    }
+    100% {
+      transform: translateY(-120vh) scale(0.5);
+      opacity: 0;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .midstroke-clean-divider {
+      height: 220px;
+    }
+
+    .bubble {
+      animation-duration: 12s;
+    }
+  }
+</style>

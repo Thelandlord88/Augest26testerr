@@ -1,0 +1,134 @@
+---
+// src/components/SparkleWipeDivider.astro
+---
+<div class="sparkle-wrapper">
+  <!-- Wave Background Layer -->
+  <div class="organic-wave-container" aria-hidden="true">
+    <div class="bubbles">
+      <div class="bubble"></div>
+      <div class="bubble"></div>
+      <div class="bubble"></div>
+      <div class="bubble"></div>
+      <div class="bubble"></div>
+      <div class="bubble"></div>
+      <div class="bubble"></div>
+      <div class="bubble"></div>
+      <div class="bubble"></div>
+      <div class="bubble"></div>
+    </div>
+
+    <svg class="wave wave-1" viewBox="0 0 1440 320" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="wave-gradient" x1="0.5" y1="0" x2="0.5" y2="1">
+          <stop offset="0%" stop-color="var(--color-fresh-sky)" />
+          <stop offset="100%" stop-color="var(--color-deep-navy)" />
+        </linearGradient>
+      </defs>
+      <path d="M0,160L48,181.3C96,203,192,245,288,250.7C384,256,480,224,576,197.3C672,171,768,149,864,165.3C960,181,1056,235,1152,240C1248,245,1344,203,1392,181.3L1440,160L1440,320L0,320Z" />
+    </svg>
+
+    <svg class="wave wave-2" viewBox="0 0 1440 320" preserveAspectRatio="none">
+      <path d="M0,224L60,213.3C120,203,240,181,360,186.7C480,192,600,224,720,213.3C840,203,960,149,1080,138.7C1200,128,1320,160,1380,176L1440,192L1440,320L0,320Z" />
+    </svg>
+  </div>
+
+  <!-- Foreground Content -->
+  <div class="content-slot">
+  {Astro.slots.default ? Astro.slots.default() : ''}
+  </div>
+</div>
+
+<style>
+  :root {
+    --color-fresh-sky: oklch(68.47% 0.1479 237.32);
+    --color-deep-navy: oklch(30.69% 0.0868 255.80);
+    --bubble-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .sparkle-wrapper {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background: linear-gradient(to bottom, var(--color-fresh-sky), var(--color-deep-navy));
+  }
+
+  .organic-wave-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    transform: scaleY(-1);
+  }
+
+  .wave {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 200%;
+    height: clamp(100px, 20vw, 220px);
+    fill: url(#wave-gradient);
+    mix-blend-mode: screen;
+    will-change: transform;
+  }
+
+  .wave-1 {
+    animation: drift 18s linear infinite;
+    opacity: 0.7;
+  }
+
+  .wave-2 {
+    animation: drift 22s linear infinite reverse;
+    opacity: 0.5;
+  }
+
+  @keyframes drift {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .bubbles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    mix-blend-mode: screen;
+    pointer-events: none;
+  }
+
+  .bubble {
+    position: absolute;
+    bottom: -50px;
+    background-color: var(--bubble-color);
+    border-radius: 50%;
+    animation: rise 20s infinite ease-in-out;
+    will-change: transform, opacity;
+  }
+
+  @keyframes rise {
+    0% { transform: translateY(0) scale(1); opacity: 0.9; }
+    60% { transform: translateY(-50vh) scale(1.1); opacity: 0.6; }
+    100% { transform: translateY(-100vh) scale(0.3); opacity: 0; }
+  }
+
+  .bubble:nth-child(1) { left: 10%; width: 20px; height: 20px; animation-duration: 15s; animation-delay: 0s; }
+  .bubble:nth-child(2) { left: 20%; width: 10px; height: 10px; animation-duration: 25s; animation-delay: 2s; }
+  .bubble:nth-child(3) { left: 35%; width: 25px; height: 25px; animation-duration: 18s; animation-delay: 5s; }
+  .bubble:nth-child(4) { left: 50%; width: 15px; height: 15px; animation-duration: 22s; animation-delay: 1s; }
+  .bubble:nth-child(5) { left: 65%; width: 8px; height: 8px; animation-duration: 30s; animation-delay: 7s; }
+  .bubble:nth-child(6) { left: 80%; width: 18px; height: 18px; animation-duration: 16s; animation-delay: 3s; }
+  .bubble:nth-child(7) { left: 90%; width: 12px; height: 12px; animation-duration: 28s; animation-delay: 6s; }
+  .bubble:nth-child(8) { left: 5%; width: 22px; height: 22px; animation-duration: 19s; animation-delay: 4s; }
+  .bubble:nth-child(9) { left: 95%; width: 14px; height: 14px; animation-duration: 24s; animation-delay: 8s; }
+  .bubble:nth-child(10) { left: 25%; width: 16px; height: 16px; animation-duration: 20s; animation-delay: 0s; }
+
+  .content-slot {
+    position: relative;
+    z-index: 10;
+    padding-top: 6rem;
+    padding-bottom: 6rem;
+  }
+</style>

@@ -1,0 +1,231 @@
+---
+const checklist = [
+  { icon: "✔", text: "Skirting boards & door frames" },
+  { icon: "✔", text: "Inside all cupboards & drawers" },
+  { icon: "✔", text: "Exhaust fans & air-con vents" },
+  { icon: "✔", text: "Oven, rangehood, splashback" },
+];
+---
+
+<!-- 37-Point Checklist Schema -->
+<script
+  type="application/ld+json"
+  set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: "37-Point Bond-Clean Checklist",
+    description: "Official REIQ exit-condition checklist used by Brisbane property managers.",
+    brand: { "@type": "Brand", name: "One N Done" },
+  })}
+/
+>
+
+<section
+  id="difference"
+  class="
+    py-20 md:py-28
+    bg-gradient-to-br from-white to-slate-50
+    dark:from-slate-900 dark:to-slate-800
+    transition-colors duration-300
+  "
+>
+  <div class="container mx-auto px-4">
+    <!-- Hero Copy -->
+    <header class="text-center max-w-4xl mx-auto">
+      <h2
+        class="
+          text-3xl md:text-4xl lg:text-5xl font-extrabold
+          text-slate-900 dark:text-white
+          animate-fade-in-up
+        "
+      >
+        We Don’t Clean for You.<br />
+        <span class="text-sky-500">We Clean for Your Property Manager.</span>
+      </h2>
+      <p
+        class="
+          mt-4 text-lg text-slate-600 dark:text-slate-300
+          animate-fade-in-up animation-delay-200
+        "
+      >
+        For over a decade, we've decoded the exact criteria Brisbane real-estate agents use to release a full bond—then built a 37-point checklist that guarantees compliance.
+      </p>
+    </header>
+
+    <!-- Layout Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-10 lg:gap-12 mt-16">
+      <!-- Left Column -->
+      <aside class="lg:col-span-2 space-y-8">
+        <!-- Checklist Card -->
+  <article class="glass-card hover:-translate-y-1 transition-all">
+          <h3 class="font-bold text-slate-900 dark:text-white mb-3">
+            The Agent’s Checklist
+          </h3>
+          <ul class="space-y-2">
+            {checklist.map((item) => (
+              <li class="flex items-center gap-2">
+                <span class="text-green-500 text-lg">{item.icon}</span>
+                <span class="text-slate-700 dark:text-slate-300">{item.text}</span>
+              </li>
+            ))}
+          </ul>
+        </article>
+
+        <!-- Trust Badge -->
+  <article class="glass-card hover:-translate-y-1 transition-all">
+          <h3 class="font-bold text-slate-900 dark:text-white mb-3">
+            Trusted by 127+ Agents
+          </h3>
+          <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Documentation that protects property managers → they recommend us.
+          </p>
+          <div
+            class="
+              h-16 rounded-md
+              bg-gradient-to-r from-slate-100 to-slate-200
+              dark:from-slate-700 dark:to-slate-600
+              flex items-center justify-center
+            "
+          >
+            <span class="text-slate-500 text-xs">Partner logos</span>
+          </div>
+        </article>
+      </aside>
+
+      <!-- Right Column – Image Comparison -->
+      <aside class="lg:col-span-3">
+        <div class="sticky top-28 glass-card">
+          <h3 class="font-bold text-slate-900 dark:text-white mb-2">
+            Visual Proof Beats Words
+          </h3>
+          <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Drag the slider to see the exact standard we deliver.
+          </p>
+
+          <!-- Comparison -->
+          <figure id="comparison" class="relative w-full aspect-video rounded-lg overflow-hidden ring-1 ring-slate-300 dark:ring-slate-600" aria-labelledby="comparison-title">
+            <img
+              src="https://placehold.co/800x450/16a34a/ffffff?text=After"
+              alt="After professional clean"
+              class="absolute inset-0 w-full h-full object-cover"
+              width="800" height="450" loading="lazy" decoding="async"
+            />
+            <div
+              id="before"
+              class="absolute inset-0 w-1/2 h-full overflow-hidden"
+            >
+              <img
+                src="https://placehold.co/800x450/b91c1c/ffffff?text=Before"
+                alt="Before (common fail)"
+                class="h-full object-cover"
+                width="800" height="450" loading="lazy" decoding="async"
+              />
+            </div>
+
+            <!-- Handle -->
+            <div
+              id="handle"
+              class="
+                absolute top-0 bottom-0 w-1.5 -ml-0.5
+                bg-white/80 backdrop-blur-sm
+                cursor-ew-resize
+                flex items-center justify-center
+              "
+              role="slider" aria-label="Before and after slider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" tabindex="0"
+            >
+              <div class="w-8 h-8 rounded-full bg-white shadow-lg flex-center">
+                <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                </svg>
+              </div>
+            </div>
+            <figcaption id="comparison-title" class="sr-only">Drag handle to compare before and after cleaning results</figcaption>
+          </figure>
+        </div>
+      </aside>
+    </div>
+
+    <!-- CTA -->
+    <footer class="text-center mt-20">
+      <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">
+        Pass Your Final Inspection. Guaranteed.
+      </h3>
+      <a
+        href="#quote"
+        class="
+          inline-flex items-center gap-2
+          bg-sky-700 hover:bg-sky-800
+          text-white font-bold text-lg
+          px-8 py-4 rounded-full
+          shadow-lg hover:shadow-xl
+          transform hover:scale-105
+          transition-all
+        "
+      >
+        Get Instant Quote
+        <svg class="w-5 h-5" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13 7l5 5m0 0l-5 5m5-5H6" />
+        </svg>
+      </a>
+      <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
+        7-Day Bond-Back Guarantee included.
+      </p>
+    </footer>
+  </div>
+</section>
+
+<style>
+  @keyframes fade-in-up {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in-up {
+    animation: fade-in-up 0.6s ease-out forwards;
+  }
+  .animation-delay-200 { animation-delay: 0.2s; }
+  .flex-center { display: flex; align-items: center; justify-content: center; }
+</style>
+
+<script>
+  (function(){
+    const container = document.getElementById('comparison');
+    const before   = document.getElementById('before');
+    const handle   = document.getElementById('handle');
+    if(!container || !before || !handle) return;
+
+    let isDragging = false;
+
+    const move = (x) => {
+      const rect = container.getBoundingClientRect();
+      const pos  = Math.max(0, Math.min(x - rect.left, rect.width));
+      before.style.width  = `${pos}px`;
+      handle.style.left   = `${pos}px`;
+      const val = Math.round((pos / rect.width) * 100);
+      handle.setAttribute('aria-valuenow', String(val));
+    };
+
+    handle.addEventListener('pointerdown', () => { isDragging = true; handle.setPointerCapture?.(event.pointerId); });
+    window.addEventListener('pointerup', () => { isDragging = false; });
+    window.addEventListener('pointermove', (e) => isDragging && move(e.clientX));
+
+    // Touch-friendly
+    container.addEventListener('touchstart', (e) => move(e.touches[0].clientX), { passive: true });
+    container.addEventListener('touchmove', (e) => move(e.touches[0].clientX), { passive: true });
+
+    // Keyboard support
+    handle.addEventListener('keydown', (e) => {
+      const rect = container.getBoundingClientRect();
+      const left = handle.offsetLeft;
+      const step = Math.max(4, Math.round(rect.width * 0.05)); // 5% or 4px
+      if(e.key === 'ArrowLeft') { e.preventDefault(); move(container.getBoundingClientRect().left + left - step); }
+      if(e.key === 'ArrowRight') { e.preventDefault(); move(container.getBoundingClientRect().left + left + step); }
+      if(e.key === 'Home') { e.preventDefault(); move(container.getBoundingClientRect().left + 0); }
+      if(e.key === 'End') { e.preventDefault(); move(container.getBoundingClientRect().left + rect.width); }
+    });
+
+    // Initial 50 % after layout
+    requestAnimationFrame(() => move(container.offsetWidth / 2));
+  })();
+</script>

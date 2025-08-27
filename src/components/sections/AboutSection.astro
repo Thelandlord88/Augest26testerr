@@ -1,7 +1,7 @@
 ---
 // src/sections/About.astro
-import { Image } from 'astro:assets'
-import teamImage from '~/assets/images/usdown.webp'
+// Use a public image path for team image to avoid build-time asset processing
+const teamImage = '/assets/images/usdown.png';
 
 const promisePoints = [
   {
@@ -64,15 +64,7 @@ const promisePoints = [
         <div class="relative group perspective w-full max-w-xs md:max-w-sm">
           <div
             class="overflow-hidden rounded-3xl border-2 border-white/50 shadow-xl transition-transform duration-700 group-hover:scale-105 group-hover:rotate-2 will-change-transform bg-gradient-to-tr from-sky-300/10 via-white/10 to-blue-900/10">
-            <Image
-              src={teamImage}
-              alt="One N Done Bond Clean team with Pandora"
-              class="w-full h-auto object-cover grayscale-0 group-hover:grayscale-0"
-              width={480}
-              height={400}
-              loading="lazy"
-              decoding="async"
-            />
+            <img src={teamImage} alt="One N Done Bond Clean team with Pandora" class="w-full h-auto object-cover" width="480" height="400" loading="lazy" decoding="async" />
           </div>
           <!-- Pandora floating badge -->
           <div class="absolute -bottom-7 -right-7 w-20 h-20 bg-gradient-to-tr from-sky-400 to-blue-500 rounded-full flex items-center justify-center shadow-lg ring-4 ring-white/60 animate-bounce">

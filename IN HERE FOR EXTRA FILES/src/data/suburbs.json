@@ -1,0 +1,58 @@
+[
+  {
+    "name": "Redbank Plains",
+    "slug": "redbank-plains",
+    "postcode": "4301",
+    "landmarks": ["Redbank Plaza", "Robelle Domain"],
+    "coords": { "lat": -27.6608, "lng": 152.8609 }
+  },
+  {
+    "name": "Springfield Lakes",
+    "slug": "springfield-lakes",
+    "postcode": "4300",
+    "landmarks": ["Springfield Central", "Orion Lagoon"],
+    "coords": { "lat": -27.6710, "lng": 152.9150 }
+  },
+  {
+    "name": "Brookwater",
+    "slug": "brookwater",
+    "postcode": "4300",
+    "landmarks": ["Brookwater Golf & Country Club", "The Mater Hospital"],
+    "coords": { "lat": -27.6833, "lng": 152.8833 }
+  },
+  {
+    "name": "Forest Lake",
+    "slug": "forest-lake",
+    "postcode": "4078",
+    "landmarks": ["The Lake", "Forest Lake Shopping Centre"],
+    "coords": { "lat": -27.6167, "lng": 152.9667 }
+  },
+  {
+    "name": "Indooroopilly",
+    "slug": "indooroopilly",
+    "postcode": "4068",
+    "landmarks": ["Indooroopilly Shopping Centre", "Walter Taylor Bridge"],
+    "coords": { "lat": -27.5, "lng": 152.9667 }
+  },
+  {
+    "name": "Kenmore",
+    "slug": "kenmore",
+    "postcode": "4069",
+    "landmarks": ["Kenmore Village", "Kenmore Plaza"],
+    "coords": { "lat": -27.5167, "lng": 152.9167 }
+  },
+  {
+    "name": "Springwood",
+    "slug": "springwood",
+    "postcode": "4127",
+    "landmarks": ["Springwood Conservation Park", "IKEA"],
+    "coords": { "lat": -27.6167, "lng": 153.1333 }
+  },
+  {
+    "name": "Browns Plains",
+    "slug": "browns-plains",
+    "postcode": "4118",
+    "landmarks": ["Grand Plaza", "Browns Plains Hotel"],
+    "coords": { "lat": -27.6667, "lng": 153.0500 }
+  }
+]

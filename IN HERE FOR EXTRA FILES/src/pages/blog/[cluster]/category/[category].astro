@@ -1,0 +1,81 @@
+---
+import Layout from '~/layouts/MainLayout.astro';
+import topics from '~/data/topics.json';
+import { paths, rel, toCanonicalCluster } from '~/lib/paths';
+import { titleCase } from '~/lib/seoSchema.js';
+
+// Generate static paths for canonical clusters and all categories
+export async function getStaticPaths() {
+  const cats = Array.from(new Set(topics.map((t) => t.category)));
+  const clusters = Array.from(new Set(['brisbane', 'ipswich', 'logan']));
+  return clusters.flatMap((cluster) => cats.map((category) => ({ params: { cluster, category } })));
+}
+
+const clusterRaw = Astro.params.cluster || '';
+const category = Astro.params.category || '';
+const cluster = toCanonicalCluster(clusterRaw);
+if (cluster !== clusterRaw) {
+  return Astro.redirect(rel.blogCategory(cluster, category), 301);
+}
+
+const filtered = topics.filter((t) => t.category === category);
+const pageUrl = paths.blogCategory(cluster, category);
+const pageTitle = `Blog – ${titleCase(cluster)} / ${titleCase(category.replace(/-/g, ' '))}`;
+---
+
+<Layout title={pageTitle} description={`Posts in ${category} for ${cluster}.`} canonical={pageUrl}>
+  <article class="max-w-4xl mx-auto py-12 px-4">
+    <nav aria-label="Breadcrumb" class="mb-3 text-sm text-slate-600">
+      <ol class="flex items-center gap-1">
+  <li><a href={paths.blogRoot()} class="hover:underline">Blog</a></li>
+        <li aria-hidden="true">/</li>
+  <li><a href={paths.blogCluster(cluster)} class="hover:underline">{titleCase(cluster)}</a></li>
+        <li aria-hidden="true">/</li>
+        <li aria-current="page" class="text-slate-800 font-medium">{category}</li>
+      </ol>
+    </nav>
+  <h1 class="text-3xl md:text-4xl font-extrabold mb-4 text-deep-navy">{titleCase(category)} in {titleCase(cluster)}</h1>
+
+    {filtered.length === 0 ? (
+      <>
+        <p>No posts yet.</p>
+        <nav class="mt-6" aria-label="Related">
+          <ul class="list-disc pl-5 space-y-2">
+            <li><a class="text-sky-700 hover:underline" href={paths.blogCluster(cluster)}>More from {titleCase(cluster)}</a></li>
+            <li><a class="text-sky-700 hover:underline" href={paths.blogRoot()}>All guides</a></li>
+            <li><a class="text-sky-700 hover:underline" href="/areas/">Service Areas</a></li>
+          </ul>
+        </nav>
+      </>
+    ) : (
+      <ul class="grid md:grid-cols-2 gap-4">
+        {filtered.map(t => (
+          <li class="border rounded-lg p-4 hover:shadow">
+            <a class="text-sky-700 font-semibold hover:underline" href={paths.blogPost(cluster, t.slug)}>{t.title}</a>
+            <p class="text-sm text-slate-600 mt-1">{t.description}</p>
+          </li>
+        ))}
+      </ul>
+    )}
+    <nav class="mt-10" aria-label="Explore more">
+      <ul class="flex flex-wrap gap-4 text-sm">
+        <li><a class="text-sky-700 hover:underline" href={paths.blogCluster(cluster)}>Back to {titleCase(cluster)} guides</a></li>
+        <li><a class="text-sky-700 hover:underline" href={paths.blogRoot()}>All guides</a></li>
+        <li><a class="text-sky-700 hover:underline" href="/services/bond-cleaning/">Bond Cleaning</a></li>
+      </ul>
+    </nav>
+  </article>
+  <!-- Single JSON-LD block for the page -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@graph": [
+      { "@type": ["CollectionPage", "Blog"], name: pageTitle, url: pageUrl },
+      { "@type": "BreadcrumbList", itemListElement: [
+        {"@type": "ListItem", position: 1, name: "Blog", item: paths.blogCluster(cluster) },
+        {"@type": "ListItem", position: 2, name: titleCase(cluster), item: paths.blogCluster(cluster) },
+        {"@type": "ListItem", position: 3, name: category }
+      ]}
+    ]
+  })} />
+</Layout>
+

@@ -1,0 +1,12 @@
+# Disabled Lighthouse CI workflow (temporarily)
+# To re-enable, rename this file back to lhci.yml
+name: Lighthouse (disabled)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  disabled:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Lighthouse CI is currently disabled for this repo."

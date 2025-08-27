@@ -1,0 +1,49 @@
+{
+  "clusters": [
+    {
+      "slug": "ipswich",
+      "name": "Ipswich",
+      "aliases": { "ipswich-region": "Ipswich" },
+      "suburbs": [
+  "Ipswich","Springfield Lakes","Springfield","Brookwater","Augustine Heights",
+  "Redbank Plains","Goodna","Bellbird Park","Camira","Collingwood Park",
+  "Bundamba","Booval","Dinmore","Raceview","Yamanto","Ripley","Flinders View",
+  "Brassall","Eastern Heights",
+  "Redbank","Riverview","North Booval","East Ipswich","Silkstone",
+  "Deebing Heights","Newtown","West Ipswich","Woodend","One Mile","Sadliers Crossing"
+      ]
+    },
+    {
+      "slug": "brisbane",
+      "name": "Brisbane",
+      "aliases": {
+        "brisbane-west": "Brisbane",
+        "brisbane%20west": "Brisbane",
+        "brisbane_west": "Brisbane"
+      },
+      "suburbs": [
+  "Indooroopilly","Taringa","Toowong","St Lucia","Auchenflower","Milton",
+        "Chapel Hill","Kenmore","Kenmore Hills","Fig Tree Pocket","Jindalee",
+  "Mount Ommaney","Seventeen Mile Rocks","Sinnamon Park","Brookfield","Pullenvale","Forest Lake",
+        "Paddington","Ashgrove","Red Hill","Bardon","Oxley","Sherwood","Graceville","Chelmer",
+        "Middle Park","Jamboree Heights","Riverhills","Westlake","Sumner","Darra","Richlands",
+        "Inala","Durack","Doolandella","Ellen Grove","Bellbowrie","Moggill","Anstead",
+        "Pinjarra Hills","Upper Brookfield","Karana Downs","Mount Crosby","Kholo","Lake Manchester",
+        "Wacol","The Gap","Upper Kedron"
+      ]
+    },
+    {
+      "slug": "logan",
+      "name": "Logan",
+      "suburbs": [
+  "Logan Central","Springwood","Rochedale South","Slacks Creek","Shailer Park",
+  "Daisy Hill","Tanah Merah","Meadowbrook","Browns Plains","Hillcrest","Regents Park",
+  "Heritage Park","Marsden","Kingston","Woodridge","Beenleigh","Bethania","Edens Landing","Eagleby",
+  "Underwood","Loganholme","Loganlea","Waterford","Waterford West","Crestmead",
+  "Boronia Heights","Greenbank","Park Ridge","Park Ridge South","Logan Reserve",
+  "Holmview","Mount Warren Park","Windaroo","Bahrs Scrub","Belivah","Bannockburn",
+  "Wolffdene","Cedar Creek","Tamborine","Yarrabilba","Logan Village","Veresdale","Veresdale Scrub"
+      ]
+    }
+  ]
+}

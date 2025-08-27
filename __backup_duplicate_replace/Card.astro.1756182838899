@@ -1,0 +1,13 @@
+---
+export interface Props { as?: 'div' | 'section' | 'article'; hover?: boolean; padded?: boolean; }
+const { as = 'div', hover = true, padded = true } = Astro.props as Props;
+const Tag = as;
+const cls = `chrome-shell ${padded ? 'p-4 md:p-6' : ''} ${hover ? 'transition hover:shadow-xl' : ''}`;
+---
+<Tag class={cls}>
+  <slot name="header" />
+  <div class="contents">
+    <slot />
+  </div>
+  <slot name="footer" />
+</Tag>

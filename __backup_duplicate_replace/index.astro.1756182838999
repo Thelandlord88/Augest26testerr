@@ -1,0 +1,9 @@
+---
+import MainLayout from '~/layouts/MainLayout.astro';
+export const prerender = true;
+const title = 'Get a Quote - One N Done Bond Clean';
+---
+<MainLayout title={title} description="Request a free quote for bond cleaning.">
+  <h1>{title}</h1>
+  <p>Fill in the form or contact us to get a free quote for bond cleaning.</p>
+</MainLayout>

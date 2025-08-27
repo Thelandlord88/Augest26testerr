@@ -1,0 +1,62 @@
+{
+  "priority_actions": [
+    {
+      "title": "Add H1 Heading",
+      "why": "The page currently lacks an H1 heading, which is crucial for SEO and user experience.",
+      "impact": "high"
+    },
+    {
+      "title": "Implement Schema Markup",
+      "why": "Adding Service JSON-LD will enhance search visibility and improve click-through rates.",
+      "impact": "high"
+    },
+    {
+      "title": "Increase Word Count",
+      "why": "With only one word, the page lacks content richness, which is essential for SEO and user engagement.",
+      "impact": "high"
+    },
+    {
+      "title": "Add Images",
+      "why": "Visual content is important for user engagement and can help illustrate the service offered.",
+      "impact": "medium"
+    },
+    {
+      "title": "Include FAQs",
+      "why": "Adding a FAQ section will address common customer queries and improve user experience.",
+      "impact": "medium"
+    }
+  ],
+  "missing_components": [
+    "hero proof bar",
+    "before/after gallery",
+    "service inclusions grid",
+    "local suburbs chips",
+    "testimonial slider",
+    "FAQ (spring-specific)",
+    "sticky quote CTA",
+    "Service JSON-LD"
+  ],
+  "ready_blocks": [
+    {
+      "id": "hero_sub",
+      "markdown": "Experience a fresh start this spring with our professional cleaning services tailored for your home."
+    },
+    {
+      "id": "inclusions",
+      "markdown": "- Bathrooms: Thorough cleaning of all surfaces, sanitising toilets and showers, and mopping floors.\n- Kitchen: Deep clean of all appliances, countertops, and floors."
+    },
+    {
+      "id": "cta_panel",
+      "markdown": "**Get a Quote** — Fixed-price spring clean in Ipswich. Police-checked, insured, 7-day re-clean."
+    },
+    {
+      "id": "meta",
+      "title": "Spring Cleaning Ipswich & Brisbane | One N Done",
+      "description": "Top-to-bottom spring cleaning — kitchens, bathrooms, fans & tracks. Police-checked, insured, 7-day re-clean. Get a fast quote today."
+    },
+    {
+      "id": "faqs_spring",
+      "markdown": "Q: What’s included in a spring clean?\nA: Our spring clean includes a thorough cleaning of kitchens, bathrooms, and living areas.\n\nQ: How long does it take?\nA: Typically, a spring clean takes between 3 to 5 hours depending on the size of your home.\n\nQ: Do you bring supplies?\nA: Yes, we provide all necessary cleaning supplies and equipment."
+    }
+  ]
+}

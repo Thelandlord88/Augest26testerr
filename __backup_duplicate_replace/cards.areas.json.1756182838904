@@ -1,0 +1,9 @@
+{
+  "title": "Popular areas we service",
+  "cards": [
+    { "title": "Ipswich", "desc": "Local bond cleaning with fast schedules.", "href": "/areas/ipswich/", "icon": "map" },
+    { "title": "Springfield Lakes", "desc": "End-of-lease cleans that pass first time.", "href": "/services/bond-cleaning/springfield-lakes/", "icon": "map" },
+    { "title": "Forest Lake", "desc": "Fixed quotes and 7-day re-clean support.", "href": "/services/bond-cleaning/forest-lake/", "icon": "map" },
+    { "title": "Brookwater", "desc": "Agent-aligned scope, zero stress.", "href": "/services/bond-cleaning/brookwater/", "icon": "map" }
+  ]
+}

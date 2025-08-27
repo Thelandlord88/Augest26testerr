@@ -1,0 +1,46 @@
+---
+const { faqs = [], faqData = [] } = Astro.props;
+const data = faqs.length ? faqs : faqData;
+---
+
+<!-- Liquid-metal FAQ backdrop with frosted-glass panel -->
+<section class="faq-backdrop py-16">
+  <div class="max-w-4xl mx-auto px-4">
+    <div class="faq-lux">
+      <h2 class="text-lg font-bold mb-4">Frequently Asked Questions</h2>
+      {data.map(({ q, a, question, answer }, i) => (
+        <details key={i} class="bg-gray-50 p-4 rounded faq-polish">
+          <summary class="font-medium cursor-pointer flex items-center justify-between">
+            <span>{q || question}</span>
+            <svg class="chevron ml-2 w-5 h-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+          </summary>
+          <div class="answer mt-2 text-gray-700" set:html={a || answer} />
+        </details>
+      ))}
+    </div>
+  </div>
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": data.map(faq => ({
+      "@type": "Question",
+      "name": faq.q || faq.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.a || faq.answer
+      }
+    }))
+  })}/>
+</section>
+
+<!-- Micro-glow JS for open state lift -->
+<script>
+  document.querySelectorAll('.faq-polish').forEach(d => {
+    d.addEventListener('toggle', () => {
+      if (d.open) d.style.transform = 'translateY(-2px)';
+      else d.style.transform = '';
+    });
+  });
+</script>

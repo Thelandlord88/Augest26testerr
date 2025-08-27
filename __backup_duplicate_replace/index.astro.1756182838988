@@ -1,0 +1,99 @@
+---
+// src/pages/index.astro
+
+// --- LAYOUT ---
+import MainLayout from '~/layouts/MainLayout.astro';
+
+// --- COMPONENTS ---
+import HeroSection from '~/components/sections/HeroSection.astro';
+import AboutSection from '~/components/sections/AboutSection.astro';
+import DifferenceSection from '~/components/sections/DifferenceSection.astro';
+import FAQ from '~/components/FAQ.astro';
+import FaqBlock from '~/components/FaqBlock.astro';
+import FeatureCardGrid from '~/components/FeatureCardGrid.astro';
+import cardsHome from '~/content/cards.home.json';
+import QuoteForm from '~/components/QuoteForm.astro';
+import ContactSection from '~/components/sections/ContactSection.astro';
+import Polaroids from '~/components/Polaroid.astro';
+import SparkleWipeDivider from '~/components/SparkleWipeDivider.astro';
+import slugify from '~/utils/slugify.js';
+import ReviewSection from '~/components/ReviewSection.astro';
+// import ReviewCard from '~/components/ReviewCard.astro';
+
+// --- DATA & UTILITIES ---
+import staticSuburbs from '~/data/suburbs.json';
+import { getReviews } from '~/server/reviews.js';
+
+// --- PAGE LOGIC ---
+const pageTitle = "One N Done | Expert Bond Cleaning in Ipswich & Surrounding Suburbs";
+const pageDescription = "Professional bond cleaning services for Redbank Plains, Springfield Lakes, Ipswich, and more. Get your bond back guaranteed.";
+
+const homepageSuburb = staticSuburbs.find(s => s.name === "Redbank Plains") || staticSuburbs[0];
+
+// --- AMMUNITION FOR THE FAQ COMPONENT ---
+const homePageFAQs = [
+  { 
+    q: "What is your 100% Bond Back Guarantee?", 
+    a: "It's our commitment to you. If your real estate agent finds any issue with our clean related to our checklist, we will return to rectify it free of charge within 72 hours. We work with you to ensure your bond is returned." 
+  },
+  { 
+    q: "Is the price on my quote final?", 
+    a: "Yes, the price is fixed for the details you provide. The only time a price may change is if the property's condition is significantly different from described (e.g., more rooms, extreme soiling). We will ALWAYS discuss and confirm any changes with you before starting extra work." 
+  },
+  {
+    q: "Do you service areas outside of Ipswich?",
+    a: "Absolutely. While we are based in the Ipswich region, we proudly service many surrounding areas, including Springfield Lakes, Brisbane's western suburbs, and more. Check our service area list or contact us to confirm your location."
+  },
+  {
+    q: "What's included in a standard bond clean?",
+    a: "A standard bond clean is a comprehensive, top-to-bottom clean of the entire property, following a detailed checklist approved by real estate agencies. This includes everything from ovens and light fittings to skirting boards and windows. We also offer carpet cleaning and pest control as separate services."
+  }
+];
+---
+
+<MainLayout title={pageTitle} description={pageDescription}>
+  
+  <Fragment slot="head">
+    <link rel="canonical" href="https://onendonebondclean.com.au/" />
+  </Fragment>
+
+  <div class="text-gray-warm-800">
+    
+    <HeroSection />
+  <section class="relative bg-gradient-to-b from-fresh-sky to-deep-navy pb-0">
+    <AboutSection suburb={homepageSuburb} />
+</section>
+  <Polaroids />
+    <DifferenceSection />
+
+    <section class="py-16 bg-light-gray" id="service-areas">
+      <div class="container mx-auto px-6">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl md:text-4xl font-bold text-deep-navy">Proudly Serving Your Suburb</h2>
+          <p class="text-lg text-gray-warm-700 mt-2 max-w-2xl mx-auto">We provide top-tier bond cleaning services across Ipswich, Brisbane, and surrounding areas.</p>
+        </div>
+        <ul class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 text-center max-w-4xl mx-auto">
+      {staticSuburbs.map((suburb) => (
+            <li class="bg-white p-3 rounded-lg shadow-sm border border-gray-warm-200 hover:shadow-lg hover:border-fresh-sky transition-all duration-300">
+        <a href={`/services/bond-cleaning/${slugify(suburb.name)}/`} class="font-semibold text-deep-navy hover:text-fresh-sky block w-full h-full">
+                {suburb.name}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>    
+  <FeatureCardGrid title={cardsHome.title} subtitle={cardsHome.subtitle} cards={cardsHome.cards} cols={3} />
+  <FAQ faqs={homePageFAQs} />
+  <!-- Customer Reviews Section -->
+  {(() => {
+    const raw = getReviews({ service: 'bond-cleaning', suburb: slugify(homepageSuburb.name) });
+    const shaped = raw.map(r => ({ author: r.author, text: r.body, rating: Number(r.stars) || 0, date: r.date }));
+    return <ReviewSection reviews={shaped} />;
+  })()}
+    <ContactSection />
+    <QuoteForm />
+
+  </div>
+  
+</MainLayout>

@@ -1,0 +1,31 @@
+# Skip for merge commits (optional)
+git rev-parse -q --verify MERGE_HEAD >/dev/null && exit 0
+
+# Env escape hatch
+[ "$SKIP_HOOKS" = "1" ] && echo "[pre-commit] SKIP_HOOKS=1 — skipping" && exit 0
+
+# Gather staged files (add/delete/rename excluded from checks by default)
+CHANGED="$(git diff --cached --name-only --diff-filter=ACMR)"
+
+# What should trigger the fast blog checks?
+NEEDS_BLOG_CHECK="$(printf "%s\n" "$CHANGED" | grep -E \
+'^(src/.*\.(astro|ts|mts|js|mjs)|src/config/siteConfig\.ts|src/lib/paths\.ts|scripts/(codemod|verify)-blog-base.*\.mjs|package\.json|src/data/(topics|cards\.home|cards\.areas)\.json)$' \
+|| true)"
+
+if [ -n "$NEEDS_BLOG_CHECK" ]; then
+	echo "[pre-commit] blog-base guard running…"
+	npm run ai:blog:verify || exit 1
+	npm run ai:blog:codemod:ci || exit 1
+else
+	echo "[pre-commit] skipped blog-base guard (no relevant changes)"
+fi
+
+# Quick unit tests when path builders or config changed
+if printf "%s\n" "$CHANGED" | grep -Eq '^src/lib/paths\.ts$|^src/config/siteConfig\.ts$'; then
+	echo "[pre-commit] running unit tests for path helpers…"
+	npm run test:unit || exit 1
+else
+	echo "[pre-commit] skipped unit tests (no path helper/config changes)"
+fi
+
+exit 0

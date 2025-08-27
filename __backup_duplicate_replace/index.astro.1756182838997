@@ -1,0 +1,9 @@
+---
+import MainLayout from '~/layouts/MainLayout.astro';
+export const prerender = true;
+const title = 'Eco Bond Cleaning - Ipswich';
+---
+<MainLayout title={title} description="Eco-friendly bond cleaning tips">
+  <h1>{title}</h1>
+  <p>Eco cleaning placeholder.</p>
+</MainLayout>

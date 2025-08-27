@@ -1,0 +1,32 @@
+import { test, expect } from '@playwright/test';
+
+const BLOG_BASE = (process.env.BLOG_BASE ?? '/blog/').toString();
+const baseSeg = BLOG_BASE.replace(/^\/+|\/+$/g, '');
+
+test.describe('Cross-service internal links', () => {
+  test('bond clean suburb includes spring and bathroom links for same suburb, plus blog cluster', async ({ page, request }) => {
+    const suburb = 'redbank-plains';
+    await page.goto(`/services/bond-cleaning/${suburb}/`, { waitUntil: 'domcontentloaded' });
+
+    // Within the new nav
+    const nav = page.locator('[data-relservices]');
+    await expect(nav).toBeVisible();
+
+    // Exact-suburb cross-service links
+    const springHref = `/services/spring-cleaning/${suburb}/`;
+    const bathHref = `/services/bathroom-deep-clean/${suburb}/`;
+    await expect(nav.locator(`a[href="${springHref}"]`)).toHaveCount(1);
+    await expect(nav.locator(`a[href="${bathHref}"]`)).toHaveCount(1);
+
+    // They should resolve 200
+    for (const href of [springHref, bathHref]) {
+      const res = await request.get(new URL(href, page.url()).toString());
+      expect(res.status(), href).toBe(200);
+    }
+
+    // Blog link to the ipswich cluster (redbank-plains belongs to ipswich)
+    const rx = new RegExp(`^/${baseSeg}/ipswich/?$`);
+    const blogLink = await nav.locator('a').filter({ hasText: 'Local guides' }).getAttribute('href');
+    expect(blogLink || '').toMatch(rx);
+  });
+});

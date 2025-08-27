@@ -1,5 +1,6 @@
 ---
-import logoImg from '~/assets/images/logo.svg';
+// Use a public image to avoid image pipeline issues in the dev container
+const logoImg = { src: '/assets/images/logo.svg' };
 import services from '~/data/services.json';
 import coverage from '~/data/serviceCoverage.json' assert { type: 'json' };
 import suburbs from '~/data/suburbs.json';

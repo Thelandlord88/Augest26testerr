@@ -1,0 +1,6 @@
+<nav class="related-links" aria-label="Suggested links">
+  <ul>
+    <li><a href="/services/bond-cleaning/" class="text-blue-700 underline hover:no-underline">Bond Cleaning</a></li>
+    <li><a href="/areas/" class="text-blue-700 underline hover:no-underline">Service Areas</a></li>
+  </ul>
+</nav>

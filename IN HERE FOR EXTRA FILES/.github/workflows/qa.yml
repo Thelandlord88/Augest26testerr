@@ -1,0 +1,38 @@
+name: QA
+
+on:
+  push:
+    branches: [ main, feat/**, fix/**, chore/** ]
+  pull_request:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Verify workflow YAML whitespace
+        run: node scripts/verify-no-tabs.mjs
+      - run: npm ci
+      - name: Build (static)
+        run: npm run build --silent
+      - name: Install Playwright (Chromium only)
+        run: npx playwright install --with-deps chromium
+      - name: Run Playwright (webServer in config starts static server)
+        env:
+          PORT: 4322
+          BASE_URL: http://localhost:4322
+        run: npx playwright test --reporter=line,github
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore

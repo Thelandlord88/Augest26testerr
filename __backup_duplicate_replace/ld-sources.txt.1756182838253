@@ -1,0 +1,49 @@
+# Schema.org/JSON-LD Source Inventory — 2025-08-24T00:10:06.853Z
+
+## 🧩 Generators & helpers (4)
+- src/lib/seoSchema.js
+- src/utils/schema.js
+- src/utils/schemaGraph.js
+- src/utils/schemamanager.js
+
+## 🌐 Layouts & global injectors (1)
+- src/layouts/MainLayout.astro
+
+## 🧱 Components (6)
+- src/components/FAQ.astro
+- src/components/FaqBlock.astro
+- src/components/Schema.astro
+- src/components/SchemaGraph.astro
+- src/components/sections/AboutSection.astro
+- src/components/sections/DifferenceSection.astro
+
+## 📄 Pages emitting schema (8)
+- src/pages/areas/[cluster]/index.astro
+- src/pages/areas/index.astro
+- src/pages/blog/[cluster]/[slug].astro
+- src/pages/blog/[cluster]/category/[category].astro
+- src/pages/blog/[cluster]/index.astro
+- src/pages/blog/index.astro
+- src/pages/bond-cleaning/[suburb]/index.astro
+- src/pages/services/[service]/[suburb].astro
+
+## ⚠️ Legacy / notusing (4)
+- src/components/FAQItem.notusing.astro
+- src/components/FAQSection.notusing.astro
+- src/pages/bond-cleaning/[suburb]/checklist.notusing.astro
+- src/pages/bond-cleaning/[suburb]/index.notusing.astro
+
+## 📋 Reports & tooling (4)
+- scripts/assert-ld-health.mjs
+- scripts/report-ld-sources.mjs
+- scripts/report-ld.mjs
+- scripts/validate-schema.js
+
+## 📊 Totals
+- Generators/helpers: 4
+- Layouts: 1
+- Components: 6
+- Pages: 8
+- Legacy: 4
+- Tooling: 4
+- **Total**: 27

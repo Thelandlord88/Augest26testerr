@@ -1,0 +1,25 @@
+{
+  "bond-cleaning": [
+    "redbank-plains",
+    "springfield-lakes",
+    "brookwater",
+    "forest-lake",
+    "indooroopilly",
+    "kenmore",
+    "springwood",
+    "browns-plains"
+  ],
+  "spring-cleaning": [
+    "redbank-plains",
+    "springfield-lakes",
+    "forest-lake",
+    "indooroopilly",
+    "kenmore"
+  ],
+  "bathroom-deep-clean": [
+    "redbank-plains",
+    "springfield-lakes",
+    "brookwater",
+    "forest-lake"
+  ]
+}

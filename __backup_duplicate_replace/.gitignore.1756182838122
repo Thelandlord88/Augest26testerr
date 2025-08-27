@@ -1,0 +1,63 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# Dependencies
+/node_modules
+
+# Build artifacts
+/dist
+/.astro
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Caches and temporary files
+.vite/
+.vercel/
+.cache/
+
+# Environment variables
+# Never commit your environment variables.
+.env
+.env.*
+!.env.example
+
+# IDE and editor specific files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Test reports and coverage
+/coverage
+/cypress/videos/
+/cypress/screenshots/
+
+# Netlify specific files
+# Your netlify.toml should be committed, but ignore any local state.
+.netlify
+
+# TypeScript build output
+*.tsbuildinfo
+
+# Playwright artifacts
+playwright-report/
+blob-report/
+trace.zip
+test-results/
+
+# AI and analysis reports
+sarif/
+ 
+# Local temp artifacts
+tmp/
+reports/

@@ -1,0 +1,15 @@
+---
+import { getRelatedServiceLinks } from '~/utils/internalLinks.js';
+import { prioritiseByGrid } from '~/utils/prioritiseByGrid.js';
+
+const { service = 'bond-cleaning', suburbSlug = '', count = 3, includeSelf = false } = Astro.props;
+const links = getRelatedServiceLinks({ service, suburbSlug, count, includeSelf, prioritiseByGrid });
+---
+
+<nav class="related-links mt-6" data-relblock>
+  <ul class="space-y-2">
+    {links.map((l) => (
+      <li><a href={l.href} class="text-blue-700 underline hover:no-underline">{l.label}</a></li>
+    ))}
+  </ul>
+</nav>

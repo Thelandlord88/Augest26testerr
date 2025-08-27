@@ -1,0 +1,6 @@
+{
+  "_groups": {
+    "ipswich-region": ["ipswich", "springfield-lakes"]
+  },
+  "bond-cleaning": ["@ipswich-region", "redbank-plains"]
+}

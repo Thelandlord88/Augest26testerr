@@ -1,0 +1,40 @@
+name: Verify JSON-LD Graph Hygiene
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  verify-graph:
+    name: Build and Audit Graph
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Verify single-graph JSON-LD and no alias URLs
+        run: npm run ci:verify-graph
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            dist/**
+            build.log
+            tmp/**
+            sarif/**
+            scripts/**
+          if-no-files-found: ignore

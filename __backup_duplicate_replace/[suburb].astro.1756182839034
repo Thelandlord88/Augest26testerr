@@ -1,0 +1,84 @@
+---
+import slugify from '~/utils/slugify.js';
+import services from '~/data/services.json';
+import suburbs from '~/data/suburbs.json';
+import coverage from '~/data/serviceCoverage.json' assert { type: 'json' };
+import ServiceLayout from '~/layouts/ServiceLayout.astro';
+import ServiceNav from '~/components/ServiceNav.astro';
+import { getCrossServiceLinks } from '~/lib/crossService';
+import { toServiceCards, toPopularSuburbs } from '~/lib/serviceNav.adapter';
+import { resolveClusterSlug } from '~/utils/geoHandler';
+import Schema from '~/components/Schema.astro';
+import { suburbServiceGraph, aggregateRatingNode, reviewNodes, titleCase } from '~/lib/seoSchema.js';
+import { getReviews } from '~/server/reviews.js';
+
+export async function getStaticPaths() {
+  const covered = new Map(Object.entries(coverage));
+  const subBySlug = new Map(suburbs.map(s => [s.slug, s]));
+  const paths = [];
+  for (const svc of services) {
+    // Coverage entries are suburb slugs; fall back to all suburb slugs if not configured
+    const list = covered.get(svc.slug) || suburbs.map(s => s.slug);
+    for (const subSlug of list) {
+      let sub = subBySlug.get(subSlug);
+      // Synthesize minimal suburb object when not present in suburbs.json
+      if (!sub) {
+        sub = { slug: subSlug, name: titleCase(String(subSlug).replace(/-/g, ' ')) } as any;
+      }
+      paths.push({
+        params: { service: svc.slug, suburb: slugify(sub.name) },
+        props: { suburb: sub, service: svc }
+      });
+    }
+  }
+  return paths;
+}
+
+const { service, suburb } = Astro.props;
+// Handle legacy URLs with cluster segment: /services/:service/:cluster/:suburb
+const parts = (Astro.url?.pathname || '').split('/').filter(Boolean);
+if (parts.length >= 4) {
+  const maybeCluster = parts[2];
+  if (resolveClusterSlug(maybeCluster)) {
+  return Astro.redirect(`/services/${service.slug}/${suburb.slug}/`, 301);
+  }
+}
+
+// Compose page JSON-LD graph (single @graph)
+const suburbName = titleCase(suburb.slug.replace(/-/g, ' '));
+const reviews = await getReviews({ service: service.slug, suburb: suburb.slug });
+const graph = suburbServiceGraph({
+  service: service.slug,
+  suburb: suburbName,
+  faq: [],
+  priceFrom: undefined,
+});
+const agg = aggregateRatingNode({ service: service.slug, suburb: suburbName, reviews });
+if (agg) graph.push(agg);
+graph.push(...reviewNodes({ service: service.slug, suburb: suburbName, reviews }));
+
+// Static cross-service & popular suburbs (sync) (keep inside frontmatter)
+const { crossServices, localGuides } = getCrossServiceLinks({ suburbSlug: suburb.slug, currentService: service.slug });
+import areasClusters from '~/content/areas.clusters.json' assert { type: 'json' };
+const clusterOf = (s: string) => {
+  const cl = (areasClusters as any).clusters || [];
+  for (const c of cl) {
+    if ((c.suburbs || []).map((x: string) => x.toLowerCase().replace(/\s+/g,'-')).includes(s)) return c.slug;
+  }
+  return null;
+};
+const servicesCards = toServiceCards(crossServices, { currentSuburb: suburb.slug });
+const popularSuburbs = toPopularSuburbs(coverage as any, service.slug, suburb.slug, { clusterOf });
+---
+
+<ServiceLayout
+  title={`${service.title} in ${suburb.name} – 100 % Bond-Back Guarantee`}
+  service={service}
+  suburb={suburb}
+>
+  <Fragment slot="head" />
+  <ServiceNav slot="cross" services={servicesCards} suburbs={popularSuburbs} currentSuburb={suburb.slug} localGuidesHref={localGuides} />
+</ServiceLayout>
+
+<!-- One JSON-LD script per page -->
+<Schema graph={graph} />

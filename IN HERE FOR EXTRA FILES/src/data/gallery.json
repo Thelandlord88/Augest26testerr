@@ -1,0 +1,22 @@
+{
+  "default": [
+    {
+      "before": "/src/assets/images/oven.jpg",
+      "after": "/src/assets/images/og.jpg",
+      "alt": "Oven",
+      "caption": "Oven clean: The difference a deep clean makes."
+    },
+    {
+      "before": "/src/assets/images/bath.jpg",
+      "after": "/src/assets/images/nans.png",
+      "alt": "Bathroom",
+      "caption": "Bathroom transformation: We bring the sparkle back!"
+    },
+    {
+      "before": "/src/assets/images/tap.jpg",
+      "after": "/src/assets/images/nans.png",
+      "alt": "Tap/Tracks",
+      "caption": "Details matter: Clean, polished, and guest-ready."
+    }
+  ]
+}

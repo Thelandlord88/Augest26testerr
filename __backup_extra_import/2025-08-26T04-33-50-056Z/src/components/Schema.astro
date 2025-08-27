@@ -1,0 +1,25 @@
+---
+/** SSR-only JSON-LD emitter.
+ * Pass a single object via `data` or an array via `graph`.
+ * Automatically wraps with @context and (if array) @graph.
+ */
+export interface Props {
+  data?: Record<string, any> | Record<string, any>[];
+  graph?: Record<string, any>[];
+  context?: string;
+}
+
+const ctx = Astro.props.context ?? 'https://schema.org';
+
+let payload: any = null;
+if (Astro.props.graph) {
+  payload = { '@context': ctx, '@graph': Astro.props.graph };
+} else if (Astro.props.data) {
+  const d = Astro.props.data as any;
+  payload = Array.isArray(d) ? { '@context': ctx, '@graph': d } : { '@context': ctx, ...d };
+}
+
+const json = payload ? JSON.stringify(payload) : null;
+---
+
+{json && <script type="application/ld+json">{json}</script>}

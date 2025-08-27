@@ -1,0 +1,6 @@
+
+> ondlive-main@1.0.0 dev
+> astro dev --port 4322
+
+01:19:23 [WARN] [config] This project contains server-rendered routes, but no adapter is installed. This is fine for development, but an adapter will be required to build your site for production.
+01:19:23 [types] Generated 1ms

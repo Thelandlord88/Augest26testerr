@@ -1,0 +1,30 @@
+---
+import { getRelatedServiceLinks } from '~/utils/internalLinks';
+import { prioritiseByGrid } from '~/utils/prioritiseByGrid.js';
+
+const { service = 'bond-cleaning', suburbSlug = '', count = 5, includeSelf = false, title = 'Nearby areas' } = Astro.props;
+let links = getRelatedServiceLinks({ service, suburbSlug, count, includeSelf, prioritiseByGrid });
+if (links.length < count) {
+  const filled = getRelatedServiceLinks({ service, suburbSlug, count, includeSelf: true, prioritiseByGrid });
+  const seen = new Set();
+  links = [...links, ...filled].filter((l) => {
+    const key = l.href;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, count);
+}
+---
+
+<section class="related-grid my-10" data-relgrid>
+  <h2 class="text-xl font-semibold mb-4">{title}</h2>
+  <ul class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3">
+    {links.map((l) => (
+      <li>
+        <a href={l.href} class="block rounded-lg border border-slate-200 p-4 hover:border-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400">
+          <div class="text-slate-900 font-medium">{l.label}</div>
+        </a>
+      </li>
+    ))}
+  </ul>
+</section>

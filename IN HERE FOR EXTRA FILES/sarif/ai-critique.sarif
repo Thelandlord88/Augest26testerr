@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "AI Visual UX Reviewer",
+          "rules": [
+            {
+              "id": "visual-qa",
+              "name": "Visual UX review",
+              "shortDescription": {
+                "text": "Visual UX review"
+              },
+              "help": {
+                "text": "Visual UX review"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "visual-qa",
+          "level": "note",
+          "message": {
+            "text": "Checklist: check contrast, overlaps, alignment, and responsiveness on this screen."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "/workspaces/July22/tests/visual.spec.ts-snapshots/-areas-desktop-chromium-linux.png"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "visual-qa",
+          "level": "note",
+          "message": {
+            "text": "Checklist: check contrast, overlaps, alignment, and responsiveness on this screen."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "/workspaces/July22/tests/visual.spec.ts-snapshots/-areas-mobile-chromium-linux.png"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "visual-qa",
+          "level": "note",
+          "message": {
+            "text": "Checklist: check contrast, overlaps, alignment, and responsiveness on this screen."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "/workspaces/July22/tests/visual.spec.ts-snapshots/-blog-desktop-chromium-linux.png"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "visual-qa",
+          "level": "note",
+          "message": {
+            "text": "Checklist: check contrast, overlaps, alignment, and responsiveness on this screen."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "/workspaces/July22/tests/visual.spec.ts-snapshots/-blog-mobile-chromium-linux.png"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "visual-qa",
+          "level": "note",
+          "message": {
+            "text": "Checklist: check contrast, overlaps, alignment, and responsiveness on this screen."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "/workspaces/July22/tests/visual.spec.ts-snapshots/-desktop-chromium-linux.png"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "visual-qa",
+          "level": "note",
+          "message": {
+            "text": "Checklist: check contrast, overlaps, alignment, and responsiveness on this screen."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "/workspaces/July22/tests/visual.spec.ts-snapshots/-mobile-chromium-linux.png"
+                },
+                "region": {
+                  "startLine": 1,
+                  "startColumn": 1
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

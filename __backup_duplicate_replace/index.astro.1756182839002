@@ -1,0 +1,11 @@
+---
+import MainLayout from '~/layouts/MainLayout.astro';
+const title = 'End of Lease Cleaning';
+const description = 'End of lease cleaning - placeholder page.';
+---
+<MainLayout title={title} description={description}>
+  <article class="max-w-3xl mx-auto py-12 px-4">
+    <h1 class="text-3xl font-bold">End of Lease Cleaning</h1>
+    <p class="mt-4">Placeholder content.</p>
+  </article>
+</MainLayout>

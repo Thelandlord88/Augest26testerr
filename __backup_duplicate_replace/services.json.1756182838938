@@ -1,0 +1,20 @@
+[
+  {
+    "slug": "bond-cleaning",
+    "title": "Bond Cleaning",
+    "description": "End-of-lease cleaning that guarantees your bond back.",
+  "checklist": ["Kitchen deep clean", "Bathroom sanitisation", "Windows"]
+  },
+  {
+    "slug": "spring-cleaning",
+    "title": "Spring Cleaning",
+    "description": "Top-to-bottom refresh for the new season.",
+    "checklist": ["Dusting", "Floor mopping", "Window cleaning", "Cobweb removal"]
+  },
+  {
+    "slug": "bathroom-deep-clean",
+    "title": "Bathroom Deep Clean",
+    "description": "Mould, grime and soap-scum annihilation.",
+    "checklist": ["Tile scrub", "Grout whitening", "Mirror polish", "Toilet sanitisation"]
+  }
+]

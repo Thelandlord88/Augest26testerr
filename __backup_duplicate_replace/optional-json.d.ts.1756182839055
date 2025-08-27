@@ -1,0 +1,2 @@
+declare module '~/data/cluster_map.json' { const v: Record<string,string>; export default v; }
+declare module '~/data/adjacency.json' { const v: Record<string, { adjacent_suburbs: string[]; nearest_nonsiblings?: string[] }>; export default v; }

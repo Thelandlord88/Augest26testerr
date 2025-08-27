@@ -1,0 +1,8 @@
+/* Disable animations/transitions for deterministic screenshots */
+*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }
+
+/* Neutralize sticky jitter */
+[style*="position: sticky"] { position: static !important; }
+
+/* Hide progress indicators that can flicker */
+[role="progressbar"], [aria-busy="true"] { visibility: hidden !important; }

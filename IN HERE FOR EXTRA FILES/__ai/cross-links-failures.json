@@ -1,0 +1,12 @@
+{
+  "failures": [
+    {
+      "route": "/services/bond-cleaning/redbank-plains/",
+      "reason": "Missing nav[data-relservices]"
+    },
+    {
+      "route": "/services/bond-cleaning/springfield-lakes/",
+      "reason": "Missing nav[data-relservices]"
+    }
+  ]
+}

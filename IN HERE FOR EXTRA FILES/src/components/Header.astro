@@ -1,0 +1,314 @@
+---
+import { paths } from "~/lib/paths";
+
+export interface Props {
+  currentSuburb?: string; // optional override
+  suburbs?: Array<{ name: string; slug: string }>; // passed from MainLayout
+}
+const { currentSuburb = "Redbank Plains", suburbs = [] } = Astro.props;
+// Only show suburb selector on service pages to avoid site‑wide ticker noise
+const onServicePage = (Astro.url?.pathname || '').startsWith('/services/');
+
+// Resolve the built asset URL for the logo import (works in dev & prod)
+// Use public asset fallback to avoid module resolution issues for images
+const logoSrc = '/assets/images/logo.svg';
+---
+
+<!-- No JSON-LD here; page schema is consolidated server-side -->
+
+<!-- ==========  MARKUP  ========== -->
+<header
+  id="main-header"
+  class="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-700/50 transition-colors duration-300"
+>
+  <nav class="container mx-auto px-4 sm:px-6 py-3 flex items-center justify-between" aria-label="Primary navigation">
+    <!-- Logo -->
+    <a
+      href="/"
+      class="flex items-center gap-2 group"
+      aria-label="One N Done Bond Clean Home"
+    >
+      <img
+        src={logoSrc}
+        alt="One N Done Bond Clean Logo"
+        class="w-12 h-12 md:w-14 md:h-14 rounded-full shadow group-hover:shadow-xl transition-shadow"
+        width={56}
+        height={56}
+        loading="eager"
+        fetchpriority="high"
+      />
+      <span class="sr-only md:not-sr-only font-extrabold text-xl text-slate-900 dark:text-white">
+        One N Done
+      </span>
+    </a>
+
+  <!-- Desktop Nav -->
+    <div class="hidden lg:flex items-center gap-6">
+      <!-- Location Pill -->
+  {onServicePage && (
+  <div data-suburb-ticker class="relative flex items-center gap-2 bg-slate-100 dark:bg-slate-800/80 px-3 py-1.5 rounded-full text-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50">
+        <svg class="w-4 h-4 link-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+        <select
+          id="suburb-selector-desktop"
+          class="bg-transparent appearance-none focus:outline-none cursor-pointer text-slate-900 dark:text-white focus:ring-2 focus:ring-brand rounded px-1 pr-6"
+          aria-label="Choose your suburb"
+        >
+          {suburbs.map((s) => (
+            <option value={s.slug} data-name={s.name} selected={s.name === currentSuburb}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+        <!-- Chevron icon -->
+        <svg aria-hidden="true" class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+  </div>
+  )}
+
+      <!-- Links -->
+      {[
+        { label: "Home", href: paths.home() },
+        { label: "Services", href: paths.service('bond-cleaning') },
+        { label: "Areas", href: paths.areaCluster('brisbane') },
+        { label: "Blog", href: paths.blogCluster('brisbane') },
+        { label: "Gallery", href: paths.legal.gallery },
+        { label: "Quote", href: paths.legal.quote },
+      ].map((link) => (
+        <a
+          href={link.href}
+          class="text-slate-700 dark:text-slate-300 hover:link-brand focus:link-brand relative after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 hover:after:w-full after:bg-brand-soft0 after:transition-all"
+        >
+          {link.label}
+        </a>
+      ))}
+
+      <!-- Dark mode toggle -->
+      <button id="theme-toggle" type="button" class="relative inline-flex items-center justify-center w-10 h-10 rounded-full border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+        aria-label="Toggle dark mode">
+        <span class="sun block">☀️</span>
+        <span class="moon hidden">🌙</span>
+      </button>
+      <!-- CTA -->
+    <a
+        href="#quote"
+        data-cta="header-cta-desktop"
+        class="hover: font-bold px-4 py-2 rounded-full shadow hover:shadow-lg transition-all transform hover:scale-105 btn-brand"
+      >
+        Get a Quote
+      </a>
+    </div>
+
+    <!-- Mobile Toggle -->
+    <button
+      id="mobile-toggle"
+      class="lg:hidden p-2 rounded-md text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+      aria-expanded="false"
+      aria-controls="mobile-menu"
+      aria-label="Toggle navigation"
+    >
+      <svg class="w-6 h-6 menu-open" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+      <svg class="w-6 h-6 menu-close hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </nav>
+
+  <!-- Mobile Drawer -->
+  <div id="mobile-menu" class="lg:hidden hidden">
+    <div class="px-4 py-4 space-y-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700">
+      {onServicePage && (
+  <div data-suburb-ticker class="relative">
+        <select
+          id="suburb-selector-mobile"
+          class="w-full p-2 pr-8 rounded-md bg-slate-100 dark:bg-slate-800 appearance-none text-slate-900 dark:text-white focus:ring-2 focus:ring-brand"
+        >
+          {suburbs.map((s) => (
+            <option value={s.slug} data-name={s.name} selected={s.name === currentSuburb}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+        <!-- Chevron icon -->
+        <svg aria-hidden="true" class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-600 dark:text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </div>
+      )}
+      {[
+        { label: "Home", href: paths.home() },
+        { label: "Services", href: paths.service('bond-cleaning') },
+        { label: "Areas", href: paths.areaCluster('brisbane') },
+        { label: "Blog", href: paths.blogCluster('brisbane') },
+        { label: "Gallery", href: paths.legal.gallery },
+        { label: "Quote", href: paths.legal.quote },
+      ].map((link) => (
+        <a
+          href={link.href}
+          class="block py-2 text-slate-700 dark:text-slate-300"
+        >
+          {link.label}
+        </a>
+      ))}
+      <a
+        href="#quote"
+        data-cta="header-cta-mobile"
+        class="block bg-brand-soft0 text-white text-center font-bold py-2 rounded-full"
+      >
+        Get a Quote
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- ==========  MICRO JS  ========== -->
+<script>
+  // Theme already initialized early in MainLayout; just sync icons now.
+
+  const themeBtn = document.getElementById('theme-toggle');
+  function syncThemeIcon(){
+    const isDark = document.documentElement.classList.contains('dark');
+    themeBtn?.querySelector('.sun')?.classList.toggle('hidden', isDark);
+    themeBtn?.querySelector('.moon')?.classList.toggle('hidden', !isDark);
+  }
+  themeBtn?.addEventListener('click', () => {
+    const root = document.documentElement;
+    root.classList.add('no-transition');
+    const nowDark = !root.classList.contains('dark');
+    root.classList.toggle('dark', nowDark);
+    localStorage.setItem('theme', nowDark ? 'dark' : 'light');
+    syncThemeIcon();
+    requestAnimationFrame(()=>root.classList.remove('no-transition'));
+  });
+  syncThemeIcon();
+  // Mobile drawer toggle
+  const btn = document.getElementById('mobile-toggle');
+  const menu = document.getElementById('mobile-menu');
+  const open = btn?.querySelector('.menu-open');
+  const close = btn?.querySelector('.menu-close');
+
+  btn?.addEventListener('click', () => {
+    const isHidden = menu.classList.toggle('hidden');
+    btn.setAttribute('aria-expanded', String(!isHidden));
+    open?.classList.toggle('hidden', !isHidden);
+    close?.classList.toggle('hidden', isHidden);
+    document.body.classList.toggle('overflow-hidden', !isHidden);
+  });
+
+  // Suburb navigation wiring -> /services/{service}/{slug}/
+  const desktop = document.getElementById('suburb-selector-desktop');
+  const mobile  = document.getElementById('suburb-selector-mobile');
+
+  function sync(val) {
+    if (desktop) desktop.value = val;
+    if (mobile)  mobile.value  = val;
+  }
+
+  function navigateToSuburb(slug) {
+    const m = window.location.pathname.match(/^\/services\/([^/]+)/);
+    const service = m ? m[1] : 'bond-cleaning';
+    const targetPath = `/services/${service}/${slug}/`;
+    const targetUrl  = `${targetPath}#quote`;
+    if (window.location.pathname === targetPath) {
+      // Already on the page: just jump to quote smoothly
+      if (window.location.hash !== '#quote') window.location.hash = '#quote';
+      smoothJumpToQuote();
+    } else {
+      window.location.href = targetUrl;
+    }
+  }
+
+  function onChange(e) {
+    const slug = e.target.value; // option value is suburb slug
+    sync(slug);
+    localStorage.setItem('selectedSuburb', slug);
+    const opt = e.target.selectedOptions?.[0];
+    const name = opt?.dataset?.name || opt?.textContent || slug;
+    // Analytics: suburb change attribution
+    const src = (e.currentTarget?.id || '').includes('desktop') ? 'header-desktop' : 'header-mobile';
+    const serviceForEvent = (window.location.pathname.match(/^\/services\/([^/]+)/) || [null,'bond-cleaning'])[1];
+    tryGtagEvent('suburb_change', {
+      suburb_slug: slug,
+      suburb_name: name,
+      service: serviceForEvent,
+      source: src,
+      path: window.location.pathname
+    });
+    window.dispatchEvent(new CustomEvent('suburbChanged', { detail: { slug, name } }));
+    navigateToSuburb(slug);
+  }
+
+  [desktop, mobile].forEach((sel) => sel?.addEventListener('change', onChange));
+
+  // Initial hydration: prefer URL slug, then localStorage, else keep SSR default
+  (function hydrateSelection() {
+    // try to parse current suburb slug from URL
+    const u = window.location.pathname.match(/^\/services\/[^/]+\/([^/]+)/);
+    const slugFromUrl = u ? u[1] : null;
+    // support legacy saved values (could be slug or name)
+    const saved = localStorage.getItem('selectedSuburb');
+
+    // Helper to find a matching option value
+    function findMatch(val) {
+      if (!val) return null;
+      // prefer matching by value (slug)
+      if (desktop?.querySelector(`option[value="${val}"]`) || mobile?.querySelector(`option[value="${val}"]`)) {
+        return val;
+      }
+      // fallback: try to match by visible name
+      const fromName = desktop?.querySelector(`option[data-name="${val}"]`) || mobile?.querySelector(`option[data-name="${val}"]`);
+      return fromName?.value || null;
+    }
+
+    const chosen = findMatch(slugFromUrl) || findMatch(saved);
+    if (chosen) {
+      sync(chosen);
+    }
+  })();
+
+  // Smooth scroll helper to account for sticky header
+  function smoothJumpToQuote() {
+    const target = document.getElementById('quote');
+    if (!target) return false;
+    const header = document.getElementById('main-header');
+    const offset = (header?.offsetHeight ?? 0) + 8; // small breathing space
+    const top = target.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top, behavior: 'smooth' });
+    return true;
+  }
+
+  // Enhance in-header CTA links to smooth-scroll when already on page
+  Array.from(document.querySelectorAll('a[href="#quote"]'))
+    .forEach((a) => a.addEventListener('click', (e) => {
+      // If this is an in-page anchor (no navigation), smooth it
+      const isSamePage = a.getAttribute('href') === '#quote';
+      if (isSamePage && smoothJumpToQuote()) {
+        // Analytics: header CTA
+        const m = window.location.pathname.match(/^\/services\/([^/]+)/);
+        tryGtagEvent('cta_click_quote', {
+          source: a.getAttribute('data-cta') || 'header-cta',
+          service: m ? m[1] : 'home',
+          path: window.location.pathname
+        });
+        e.preventDefault();
+      }
+    }));
+
+  // Lightweight wrapper for GA events with graceful fallback
+  function tryGtagEvent(name, params = {}) {
+    try {
+      if (typeof window.gtag === 'function') {
+        window.gtag('event', name, { ...params, transport_type: 'beacon' });
+      } else if (Array.isArray(window.dataLayer)) {
+        window.dataLayer.push({ event: name, ...params });
+      }
+    } catch (_) {}
+  }
+</script>

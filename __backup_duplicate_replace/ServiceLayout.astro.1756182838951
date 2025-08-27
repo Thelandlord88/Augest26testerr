@@ -1,0 +1,116 @@
+---
+import slugify from '~/utils/slugify.js';
+
+import MainLayout from '~/layouts/MainLayout.astro';
+import QuoteForm from '~/components/QuoteForm.astro';
+import FAQ from '~/components/FAQ.astro';
+import ReviewSection from '~/components/ReviewSection.astro';
+import Polaroid from '~/components/Polaroid.astro';
+import { getReviews } from '~/server/reviews.js';
+import gallery from '~/data/gallery.json';
+import FaqBlock from '~/components/FaqBlock.astro';
+import faqSpringfield from '~/content/faq.suburb.springfield-lakes.json';
+import AcceptanceSlice from '~/components/AcceptanceSlice.astro';
+import RelatedLinks from '~/components/RelatedLinks.astro';
+import RelatedGrid from '~/components/RelatedGrid.astro';
+// Legacy CrossServiceLinks removed in favour of new static ServiceNav rendered by page.
+import QuoteCTA from '~/components/QuoteCTA.astro';
+import faqBond from '~/content/faq.service-bond.json';
+import faqSpring from '~/content/faq.service-spring.json';
+import faqBathroom from '~/content/faq.service-bathroom.json';
+
+const { title, service, suburb } = Astro.props;
+const suburbSlug = slugify(suburb.name);
+import { absoluteUrl } from '~/lib/url';
+const canonical = absoluteUrl(`/services/${service.slug}/${suburbSlug}/`);
+
+// Centralized data lookups with fallback chain
+// Enforce per-service FAQ sets to avoid cross-service leakage
+const serviceFaqItems = service.slug === 'bond-cleaning'
+  ? (faqBond as any).items
+  : service.slug === 'spring-cleaning'
+    ? (faqSpring as any).items
+    : (faqBathroom as any).items;
+const faqs = serviceFaqItems || [];
+// SSR reviews: sanitized, mode-driven (seed/live/merge)
+const testimonialList = getReviews({ service: service.slug, suburb: suburbSlug });
+const galleryImages = gallery[service.slug]?.[suburbSlug] || gallery[service.slug]?.default || [];
+
+// Derived description (keeps original for OG + adds suburb context for UX)
+const pageDescription = `${service.description} Servicing ${suburb.name} and nearby areas – 100% Bond Back Guarantee.`;
+
+---
+
+<MainLayout title={title} description={pageDescription} canonical={canonical}>
+  <Fragment slot="head" />
+  <slot name="cross" />
+
+  <section class="max-w-6xl mx-auto px-4 py-12">
+    <header class="mb-10">
+      <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-deep-navy drop-shadow-sm vt-title">
+  {service.title} <span class="link-brand">in {suburb.name}</span>
+      </h1>
+      <p class="mt-4 text-lg md:text-xl text-gray-warm-700 max-w-3xl leading-relaxed">
+        {service.description}
+      </p>
+      <div class="mt-8 flex flex-wrap gap-4 items-center">
+        <a
+          href="#quote"
+          class="cta-glow-pulse cta-shine inline-flex items-center gap-3 font-bold py-4 px-8 rounded-full shadow-lg hover: focus-visible:ring-4 ring-brand transition-all text-lg btn-brand"
+        >
+          <span>{service.slug === 'spring-cleaning' ? 'Get a Spring Clean Quote' : service.slug === 'bathroom-deep-clean' ? 'Book a Bathroom Deep Clean' : 'Get a Bond Clean Quote'}</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+        </a>
+      </div>
+    </header>
+
+  <!-- What's Included -->
+    <section aria-labelledby="whats-included" class="mb-14">
+      <h2 id="whats-included" class="text-2xl md:text-3xl font-bold text-deep-navy mb-6 flex items-center gap-3">
+        <span class="inline-block w-10 h-10 rounded-xl bg-gradient-to-br from-fresh-sky to-deep-navy text-white grid place-items-center shadow-md">✓</span>
+        What’s Included
+      </h2>
+      <ul class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {service.checklist?.map(item => (
+          <li class="group relative bg-white p-4 rounded-2xl shadow-sm border border-gray-warm-200 hover:shadow-xl hover:border-fresh-sky/60 transition-all duration-300">
+            <span class="text-deep-navy font-medium">{item}</span>
+            <span class="absolute inset-0 rounded-2xl pointer-events-none ring-0 group-hover:ring-2 group-hover:ring-fresh-sky/40 transition" />
+          </li>
+        ))}
+      </ul>
+    </section>
+
+  <!-- Cross-service links removed; provided by ServiceNav at page level only (no legacy duplicate) -->
+
+  <!-- Related areas (curated grid) -->
+  <RelatedGrid service={service.slug} suburbSlug={suburb.slug} title="Other nearby areas" />
+
+    <!-- FAQ -->
+  {faqs.length > 0 && <FAQ faqs={faqs} />}
+
+    <!-- JSON-driven suburb FAQ (example for Springfield Lakes) -->
+    {suburb.slug === 'springfield-lakes' && (
+      <section class="mt-10">
+        <FaqBlock items={faqSpringfield.items} headline={`FAQs for ${suburb.name}`} />
+      </section>
+    )}
+
+    <!-- Reviews -->
+    {testimonialList.length > 0 && <ReviewSection reviews={testimonialList} />}
+
+    <!-- Gallery -->
+  {galleryImages.length > 0 && <Polaroid images={galleryImages} />}
+
+  <!-- Quote CTA + Form -->
+  <div class="max-w-6xl mx-auto px-4 mb-6">
+    <QuoteCTA label="Get a fast quote" href="#quote" />
+  </div>
+  <QuoteForm />
+  </section>
+
+  <!-- Acceptance criteria and related services -->
+  <section class="max-w-6xl mx-auto px-4">
+  <AcceptanceSlice suburbName={suburb.name} />
+  <RelatedLinks service={service.slug} suburbSlug={suburb.slug} title="Related services" count={3} />
+  </section>
+</MainLayout>

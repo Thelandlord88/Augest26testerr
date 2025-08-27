@@ -1,0 +1,40 @@
+# Schema.org/JSON-LD Source Inventory — 2025-08-26T04:31:01.342Z
+
+## 🧩 Generators & helpers (3)
+- src/lib/seoSchema.js
+- src/utils/schema.js
+- src/utils/schemaGraph.js
+
+## 🌐 Layouts & global injectors (1)
+- src/layouts/MainLayout.astro
+
+## 🧱 Components (6)
+- src/components/FAQ.astro
+- src/components/FaqBlock.astro
+- src/components/Schema.astro
+- src/components/SchemaGraph.astro
+- src/components/sections/AboutSection.astro
+- src/components/sections/DifferenceSection.astro
+
+## 📄 Pages emitting schema (0)
+_none_
+
+## ⚠️ Legacy / notusing (2)
+- src/components/FAQItem.notusing.astro
+- src/components/FAQSection.notusing.astro
+
+## 📋 Reports & tooling (5)
+- scripts/assert-ld-health.mjs
+- scripts/report-ld-sources.mjs
+- scripts/report-ld.mjs
+- scripts/test-schema-hash.mjs
+- scripts/validate-schema.js
+
+## 📊 Totals
+- Generators/helpers: 3
+- Layouts: 1
+- Components: 6
+- Pages: 0
+- Legacy: 2
+- Tooling: 5
+- **Total**: 17

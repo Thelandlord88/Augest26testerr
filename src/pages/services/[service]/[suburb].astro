@@ -1,0 +1,9 @@
+---
+export const prerender = false;
+import { resolveClusterSlug } from '~/utils/geoHandler';
+const { cluster, suburb } = Astro.params;
+if (resolveClusterSlug(cluster)) {
+  return Astro.redirect(`/services/bond-cleaning/${suburb}/`, 301);
+}
+return Astro.redirect(`/services/bond-cleaning/${suburb}/`, 301);
+---

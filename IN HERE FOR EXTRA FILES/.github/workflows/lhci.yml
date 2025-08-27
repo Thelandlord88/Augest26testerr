@@ -1,0 +1,37 @@
+name: Lighthouse CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lhci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lhci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build site
+        run: npm run build --silent
+
+      # Uses staticDistDir from lighthouserc.js; no HTTP server needed
+      - name: Run Lighthouse CI
+        run: npx --yes @lhci/cli@0.13.x autorun --config=lighthouserc.js

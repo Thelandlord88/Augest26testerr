@@ -1,0 +1,44 @@
+{
+  "blog/ipswich/bond-cleaning-checklist/index.html": {
+    "totalOutbound": 25,
+    "uniqueTargets": 15,
+    "targets": [
+      "/",
+      "/blog/",
+      "/blog/ipswich/",
+      "/blog/ipswich/bond-cleaning-checklist/",
+      "/blog/ipswich/client-stories/",
+      "/blog/ipswich/eco-bond-cleaning/",
+      "/blog/ipswich/what-agents-want/",
+      "/gallery/",
+      "/privacy/",
+      "/quote/",
+      "/services/bathroom-deep-clean/",
+      "/services/bond-cleaning/",
+      "/services/spring-cleaning/",
+      "/sitemap.xml",
+      "/terms/"
+    ]
+  },
+  "blog/ipswich/what-agents-want/index.html": {
+    "totalOutbound": 23,
+    "uniqueTargets": 15,
+    "targets": [
+      "/",
+      "/blog/",
+      "/blog/ipswich/",
+      "/blog/ipswich/bond-cleaning-checklist/",
+      "/blog/ipswich/client-stories/",
+      "/blog/ipswich/eco-bond-cleaning/",
+      "/blog/ipswich/what-agents-want/",
+      "/gallery/",
+      "/privacy/",
+      "/quote/",
+      "/services/bathroom-deep-clean/",
+      "/services/bond-cleaning/",
+      "/services/spring-cleaning/",
+      "/sitemap.xml",
+      "/terms/"
+    ]
+  }
+}

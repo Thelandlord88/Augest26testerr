@@ -1,0 +1,106 @@
+[
+  {
+    "question": "Google for Developers\r +1\r \r Which should you pick?",
+    "answer": "Want fastest “open & tweak”? → geojson."
+  },
+  {
+    "question": "What is NAP Consistency?",
+    "answer": "How Does NAP Affect Local SEO? | CallRail, accessed August 21, 2025, https://www."
+  },
+  {
+    "question": "Analytics API”?",
+    "answer": "Netlify’s official docs highlight Scheduled Functions and Image CDN."
+  },
+  {
+    "question": "JSON blocks, or\r Produce a single JSON file exporting:\r services: list with slug and official name\r clusters: list with slug, name\r suburbs: list of {name, slug, clusterSlug, clusterName}\r aliases: mapping (aliasSlug → canonicalSlug)\r top20: the above 20-suburb bias list And include a short explanation of where each item came from?",
+    "answer": "If you want the latter, I’ll generate the JSON and attach precise citations to each field."
+  },
+  {
+    "question": "If so, how are breadcrumbs currently structured (visible and schema)?",
+    "answer": "Are there any sections or parameterised pages (e."
+  },
+  {
+    "question": "Do you have analytics or crawl data on average click-depth and known orphaned pages?",
+    "answer": "Do you have a preferred anchor style (e."
+  },
+  {
+    "question": "What are your top 20 target suburbs or regions we should bias the internal linking around?",
+    "answer": "Once I have these details, I’ll start the global site sampling and build the full internal linking playbook."
+  },
+  {
+    "question": "Analytics or crawl data on average click-depth and known orphaned pages\r \r Do we have analytics/crawl data in the current uploads?",
+    "answer": "The docs describe deployment-time tests (sitemap generation, canonical checks, redirects) and a data-driven approach to coverage (dataset."
+  },
+  {
+    "question": "Intro (60–80 words)\r Moving out in Ipswich?",
+    "answer": "This practical bond cleaning checklist shows exactly what to clean, room-by-room, so your place meets agent expectations."
+  },
+  {
+    "question": "How long does a bond clean take?",
+    "answer": "For a typical unit or small house in the Ipswich region, allow 3–6 hours, depending on size, condition, and add-ons (e."
+  },
+  {
+    "question": "FAQs (snippet-optimised: 40–60 words each)\r What is bond cleaning?",
+    "answer": "Bond cleaning (end-of-lease cleaning) is a full property clean that returns your rental to its original condition so you can recover your rental bond."
+  },
+  {
+    "question": "Do I need professional bond cleaners to get my bond back?",
+    "answer": "Not always—but professionals save time and meet agent standards in one visit, especially for ovens, bathrooms, windows, and grout."
+  },
+  {
+    "question": "How long will my clean take?",
+    "answer": "Most smaller Ipswich rentals take 3–6 hours; larger/older homes or heavy wear add time."
+  },
+  {
+    "question": "What if something’s missed?",
+    "answer": "Ask for a re-clean guarantee window."
+  },
+  {
+    "question": "Short version:\r \r Who writes websites (and blogs)?",
+    "answer": "Conversion Copywriter – turns visitors into leads/customers."
+  },
+  {
+    "question": "Canonical?",
+    "answer": "Blog inventory with: Category → Slug (lowercased) → H1 → Word count → Last modified (if available) → Internal links out/in → Notes (e."
+  },
+  {
+    "question": "Want me to turn any of the above into a PR targeting your repo structure (file paths, imports, and component names you’re using)?",
+    "answer": "I can prep the exact diffs next."
+  },
+  {
+    "question": "Bond Cleaning Checklist (Ipswich Region)\r \r B) FAQ expansions (snippet-ready, ≤60 words each)\r Use on your Checklist post:\r \r What is a bond clean?",
+    "answer": "A top-to-bottom end-of-lease clean that returns the property to entry condition."
+  },
+  {
+    "question": "How long does a bond clean take?",
+    "answer": "Small units: ~3–6 hours."
+  },
+  {
+    "question": "Do I need professionals to get my bond back?",
+    "answer": "Not always, but pros save time and meet agent standards in one visit—especially for ovens, tracks and grout."
+  },
+  {
+    "question": "What do agents check most?",
+    "answer": "Ovens and trays/door glass, shower glass and grout, window tracks/sills, wall marks and skirtings, and flooring edges."
+  },
+  {
+    "question": "What if the agent finds issues?",
+    "answer": "Ask for a re-clean window."
+  },
+  {
+    "question": "Get my free quote</a>\r     <a class=\"btn btn-ghost\" href=\"/blog/ipswich-region/bond-cleaning-checklist\">See the checklist</a>\r   </div>\r </section>\r Related links (internal signals)\r <nav aria-label=\"Related links\" class=\"my-10 rounded-2xl border p-5 bg-white/60 backdrop-blur\">\r   <h3 class=\"text-lg font-semibold\">Related</h3>\r   <ul class=\"mt-2 grid gap-2 sm:grid-cols-2\">\r     <li><a class=\"underline hover:no-underline\" href=\"/services/bond-cleaning/\">Bond Cleaning Service</a></li>\r     <li><a class=\"underline hover:no-underline\" href=\"/services/oven-cleaning/\">Professional Oven Cleaning</a></li>\r     <li><a class=\"underline hover:no-underline\" href=\"/areas/ipswich/\">Bond Cleaning – Ipswich</a></li>\r     <li><a class=\"underline hover:no-underline\" href=\"/areas/springfield-lakes/\">Bond Cleaning – Springfield Lakes</a></li>\r   </ul>\r </nav>\r FAQ upgrades (snippet-ready, ≤60 words)\r What is a bond clean?",
+    "answer": "A top-to-bottom end-of-lease clean returning the property to entry condition."
+  },
+  {
+    "question": "How long does it take?",
+    "answer": "Small units: ~3–6 hours."
+  },
+  {
+    "question": "Do I need professionals to get my bond back?",
+    "answer": "Not always, but pros save time and meet agent standards—especially for ovens, tracks and grout."
+  },
+  {
+    "question": "What do agents check most?",
+    "answer": "Ovens and trays/door glass, shower glass and grout, window tracks/sills, wall marks/skirtings, and floor edges."
+  }
+]

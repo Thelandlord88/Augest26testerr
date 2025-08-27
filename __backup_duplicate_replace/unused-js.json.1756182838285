@@ -1,0 +1,183 @@
+{
+  "generatedAt": "2025-08-22T09:43:23.104Z",
+  "repoRoot": "/workspaces/July22",
+  "count": 22,
+  "items": [
+    {
+      "file": "cypress.config.js",
+      "confidence": 3,
+      "reasons": [
+        "not a config/page/server entrypoint",
+        "no inbound imports detected"
+      ]
+    },
+    {
+      "file": "cypress/e2e/faq-section.cypress.js",
+      "confidence": 3,
+      "reasons": [
+        "not a config/page/server entrypoint",
+        "no inbound imports detected"
+      ]
+    },
+    {
+      "file": "cypress/e2e/quote-form.cypress.js",
+      "confidence": 3,
+      "reasons": [
+        "not a config/page/server entrypoint",
+        "no inbound imports detected"
+      ]
+    },
+    {
+      "file": "cypress/support/e2e.js",
+      "confidence": 3,
+      "reasons": [
+        "not a config/page/server entrypoint",
+        "no inbound imports detected"
+      ]
+    },
+    {
+      "file": "js/__tests__/quote-form.cypress.js",
+      "confidence": 3,
+      "reasons": [
+        "not a config/page/server entrypoint",
+        "no inbound imports detected"
+      ]
+    },
+    {
+      "file": "js/script.js",
+      "confidence": 3,
+      "reasons": [
+        "not a config/page/server entrypoint",
+        "no inbound imports detected"
+      ]
+    },
+    {
+      "file": "linking and suburbs aug16/audit-related-links.mjs",
+      "confidence": 3,
+      "reasons": [
+        "not a config/page/server entrypoint",
+        "no inbound imports detected"
+      ]
+    },
+    {
+      "file": "linking and suburbs aug16/expand-coverage.mjs",
+      "confidence": 3,
+      "reasons": [
+        "not a config/page/server entrypoint",
+        "no inbound imports detected"
+      ]
+    },
+    {
+      "file": "linking and suburbs aug16/internalLinks.js",
+      "confidence": 3,
+      "reasons": [
+        "not a config/page/server entrypoint",
+        "no inbound imports detected"
+      ]
+    },
+    {
+      "file": "linking and suburbs aug16/prioritiseByGrid.js",
+      "confidence": 3,
+      "reasons": [
+        "not a config/page/server entrypoint",
+        "no inbound imports detected"
+      ]
+    },
+    {
+      "file": "scripts/ai-report.mjs",
+      "confidence": 3,
+      "reasons": [
+        "not a config/page/server entrypoint",
+        "no inbound imports detected"
+      ]
+    },
+    {
+      "file": "scripts/crawl-audit.mjs",
+      "confidence": 3,
+      "reasons": [
+        "not a config/page/server entrypoint",
+        "no inbound imports detected"
+      ]
+    },
+    {
+      "file": "scripts/diff-coverage-whitelist.mjs",
+      "confidence": 3,
+      "reasons": [
+        "not a config/page/server entrypoint",
+        "no inbound imports detected"
+      ]
+    },
+    {
+      "file": "scripts/find-anchors.mjs",
+      "confidence": 3,
+      "reasons": [
+        "not a config/page/server entrypoint",
+        "no inbound imports detected"
+      ]
+    },
+    {
+      "file": "scripts/fix-legacy-service-shape.mjs",
+      "confidence": 3,
+      "reasons": [
+        "not a config/page/server entrypoint",
+        "no inbound imports detected"
+      ]
+    },
+    {
+      "file": "scripts/validate-footer.js",
+      "confidence": 3,
+      "reasons": [
+        "not a config/page/server entrypoint",
+        "no inbound imports detected"
+      ]
+    },
+    {
+      "file": "scripts/validate-suburb-pages.js",
+      "confidence": 3,
+      "reasons": [
+        "not a config/page/server entrypoint",
+        "no inbound imports detected"
+      ]
+    },
+    {
+      "file": "src/data/faqmap.js",
+      "confidence": 3,
+      "reasons": [
+        "not a config/page/server entrypoint",
+        "no inbound imports detected"
+      ]
+    },
+    {
+      "file": "src/lib/schema.js",
+      "confidence": 3,
+      "reasons": [
+        "not a config/page/server entrypoint",
+        "no inbound imports detected"
+      ]
+    },
+    {
+      "file": "src/utils/math.js",
+      "confidence": 3,
+      "reasons": [
+        "not a config/page/server entrypoint",
+        "no inbound imports detected"
+      ]
+    },
+    {
+      "file": "src/utils/relatedSuburbs.js",
+      "confidence": 3,
+      "reasons": [
+        "not a config/page/server entrypoint",
+        "no inbound imports detected"
+      ]
+    },
+    {
+      "file": "src/utils/schemamanager.js",
+      "confidence": 3,
+      "reasons": [
+        "not a config/page/server entrypoint",
+        "no inbound imports detected"
+      ]
+    }
+  ]
+}

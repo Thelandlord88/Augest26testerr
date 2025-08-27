@@ -1,0 +1,77 @@
+---
+// src/pages/bond-cleaning/[suburb]/checklist.astro
+
+// --- LAYOUTS & COMPONENTS ---
+// CORRECT: Use the Astro alias `~` for robust imports from the `src` directory.
+import MainLayout from '~/layouts/MainLayout.astro';
+
+// --- DATA & UTILITIES ---
+// CORRECT: Directly import the static `suburbs` array. No function call is needed.
+import { findSuburbBySlug as suburbFinder } from '~/utils/geoHandler';
+// We don't need the schema on a checklist page, but you could import it if you did.
+
+// --- SERVER-SIDE LOGIC ---
+
+// CORRECT: There is only ONE `getStaticPaths` function.
+// Disabled: legacy route superseded by /services/bond-cleaning/[suburb]
+export function getStaticPaths() {
+  return [];
+}
+
+// CORRECT: There is only ONE destructuring of Astro.props.
+const { suburb } = Astro.props;
+
+const pageTitle = `The Ultimate Bond Cleaning Checklist for ${suburb.name}`;
+const pageDescription = `Our agent-approved checklist for renters in ${suburb.name} (${suburb.postcode}). Ensure you get your full bond back.`;
+---
+
+<!-- The MainLayout already includes the Header and Footer, so we don't call them again here. -->
+<MainLayout title={pageTitle} description={pageDescription}>
+  
+  <Fragment slot="head">
+    <!-- Add a canonical URL for SEO -->
+    <link rel="canonical" href={`https://onendonebondclean.com.au/bond-cleaning/${suburb.slug}/checklist/`} />
+  </Fragment>
+
+  <!-- The content below is passed into the default <slot /> of the MainLayout -->
+  <section class="bg-light-gray py-16">
+      <div class="container mx-auto px-6 max-w-4xl text-center">
+          <h1 class="text-4xl font-extrabold text-deep-navy">The Ultimate {suburb.name} Bond Cleaning Checklist</h1>
+          <p class="mt-4 text-lg text-gray-warm-700">
+              Use this agent-approved checklist to ensure nothing is missed for your move-out.
+          </p>
+          <div class="mt-6 text-base text-slate-600">
+            <ul class="list-disc list-inside text-left inline-block">
+              <li>Double-check all rooms for forgotten items.</li>
+              <li>Take before/after photos for your records.</li>
+              <li>Ask your agent for any suburb-specific requirements.</li>
+            </ul>
+          </div>
+      </div>
+  </section>
+  
+  <section class="py-16">
+      <div class="container mx-auto px-6 max-w-3xl prose lg:prose-xl">
+          <p>
+              This checklist is tailored to meet the standards of property managers overseeing rentals near landmarks like <strong>{suburb.landmarks[0]}</strong> and <strong>{suburb.landmarks[1]}</strong>.
+          </p>
+          <div class="my-6 p-4 bg-sky-50 border-l-4 border-sky-400 rounded">
+            <strong>Need help?</strong> Get a free quote for professional cleaning in {suburb.name}. <a href="/quote" class="text-sky-600 underline">Request a quote</a> today!
+          </div>
+          
+          <h3>General / All Rooms</h3>
+          <ul>
+              <li>Walls spot cleaned</li>
+              <li>Light switches and power points wiped</li>
+              <li>Ceiling fans and light fittings dusted</li>
+          </ul>
+
+          <h3 class="mt-8">Kitchen</h3>
+          <ul>
+              <li>Oven completely degreased</li>
+              <li>Stovetop and rangehood cleaned</li>
+          </ul>
+      </div>
+  </section>
+
+</MainLayout>

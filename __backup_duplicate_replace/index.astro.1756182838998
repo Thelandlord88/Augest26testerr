@@ -1,0 +1,14 @@
+---
+import MainLayout from '~/layouts/MainLayout.astro';
+import CrossServiceLinks from '~/components/CrossServiceLinks.astro';
+export const prerender = true;
+const title = 'Bond Cleaning - Redbank Plains';
+---
+<MainLayout title={title} description="Bond cleaning in Redbank Plains">
+  <h1>{title}</h1>
+  <p>Service page placeholder.</p>
+  
+  <nav data-relservices aria-label="Related services">
+    <CrossServiceLinks suburbSlug="redbank-plains" />
+  </nav>
+</MainLayout>

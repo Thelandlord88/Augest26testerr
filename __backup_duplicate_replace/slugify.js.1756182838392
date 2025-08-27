@@ -1,0 +1,16 @@
+// Minimal slugify utility used across the project.
+// Policy: strip diacritics, '&' -> 'and', non-alphanumeric -> '-', collapse dashes, trim, lowercase.
+export default function slugify(input) {
+  if (!input) return '';
+  // Normalize unicode and remove diacritics
+  let s = String(input).normalize('NFKD').replace(/\p{Diacritic}/gu, '');
+  // Replace ampersand with 'and'
+  s = s.replace(/&/g, 'and');
+  // Replace non-alphanumeric characters with hyphens
+  s = s.replace(/[^\p{L}\p{N}]+/gu, '-');
+  // Collapse multiple hyphens
+  s = s.replace(/-+/g, '-');
+  // Trim hyphens
+  s = s.replace(/^-|-$/g, '');
+  return s.toLowerCase();
+}

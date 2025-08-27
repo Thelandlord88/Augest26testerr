@@ -1,0 +1,260 @@
+{
+  "taringa": [
+    "indooroopilly",
+    "toowong",
+    "st-lucia"
+  ],
+  "indooroopilly": [
+    "taringa",
+    "st-lucia",
+    "toowong",
+    "fig-tree-pocket",
+    "chelmer"
+  ],
+  "st-lucia": [
+    "taringa",
+    "toowong",
+    "indooroopilly"
+  ],
+  "toowong": [
+    "taringa",
+    "auchenflower",
+    "st-lucia",
+    "paddington"
+  ],
+  "auchenflower": [
+    "toowong",
+    "paddington",
+    "milton"
+  ],
+  "paddington": [
+    "auchenflower",
+    "red-hill",
+    "bardon"
+  ],
+  "red-hill": [
+    "paddington",
+    "ashgrove",
+    "bardon"
+  ],
+  "ashgrove": [
+    "the-gap",
+    "bardon",
+    "red-hill"
+  ],
+  "bardon": [
+    "ashgrove",
+    "paddington",
+    "auchenflower",
+    "the-gap"
+  ],
+  "milton": [
+    "auchenflower",
+    "paddington",
+    "toowong"
+  ],
+  "jindalee": [
+    "sinnamon-park",
+    "seventeen-mile-rocks",
+    "mount-ommaney",
+    "riverhills"
+  ],
+  "mount-ommaney": [
+    "jindalee",
+    "westlake",
+    "middle-park"
+  ],
+  "middle-park": [
+    "jamboree-heights",
+    "riverhills",
+    "mount-ommaney"
+  ],
+  "jamboree-heights": [
+    "jindalee",
+    "middle-park",
+    "mount-ommaney"
+  ],
+  "riverhills": [
+    "westlake",
+    "middle-park",
+    "jindalee"
+  ],
+  "westlake": [
+    "riverhills",
+    "mount-ommaney",
+    "middle-park"
+  ],
+  "sinnamon-park": [
+    "jindalee",
+    "seventeen-mile-rocks",
+    "oxley"
+  ],
+  "seventeen-mile-rocks": [
+    "jindalee",
+    "sinnamon-park",
+    "sumner",
+    "darra"
+  ],
+  "sumner": [
+    "seventeen-mile-rocks",
+    "darra",
+    "jamboree-heights"
+  ],
+  "darra": [
+    "seventeen-mile-rocks",
+    "oxley",
+    "sumner",
+    "richlands"
+  ],
+  "oxley": [
+    "corinda",
+    "rocklea",
+    "sinnamon-park",
+    "darra"
+  ],
+  "rocklea": [
+    "oxley"
+  ],
+  "richlands": [
+    "darra",
+    "inala",
+    "wacol"
+  ],
+  "inala": [
+    "doolandella",
+    "durack",
+    "richlands",
+    "ellen-grove"
+  ],
+  "durack": [
+    "inala",
+    "doolandella",
+    "oxley"
+  ],
+  "doolandella": [
+    "inala",
+    "durack",
+    "forest-lake"
+  ],
+  "ellen-grove": [
+    "forest-lake",
+    "wacol",
+    "inala"
+  ],
+  "wacol": [
+    "ellen-grove",
+    "richlands",
+    "sumner"
+  ],
+  "kenmore": [
+    "chapel-hill",
+    "kenmore-hills",
+    "brookfield",
+    "indooroopilly"
+  ],
+  "chapel-hill": [
+    "kenmore",
+    "fig-tree-pocket",
+    "indooroopilly",
+    "taringa"
+  ],
+  "kenmore-hills": [
+    "kenmore",
+    "brookfield",
+    "upper-brookfield"
+  ],
+  "brookfield": [
+    "upper-brookfield",
+    "kenmore-hills",
+    "kenmore"
+  ],
+  "upper-brookfield": [
+    "brookfield",
+    "kenmore-hills"
+  ],
+  "fig-tree-pocket": [
+    "indooroopilly",
+    "chapel-hill",
+    "kenmore"
+  ],
+  "bellbowrie": [
+    "moggill",
+    "anstead"
+  ],
+  "moggill": [
+    "bellbowrie",
+    "anstead"
+  ],
+  "anstead": [
+    "moggill",
+    "bellbowrie",
+    "pinjarra-hills"
+  ],
+  "pinjarra-hills": [
+    "pullenvale",
+    "anstead",
+    "moggill"
+  ],
+  "pullenvale": [
+    "pinjarra-hills",
+    "kenmore-hills",
+    "brookfield"
+  ],
+  "karana-downs": [
+    "mount-crosby",
+    "kholo"
+  ],
+  "mount-crosby": [
+    "karana-downs",
+    "kholo",
+    "lake-manchester"
+  ],
+  "kholo": [
+    "mount-crosby",
+    "lake-manchester"
+  ],
+  "lake-manchester": [
+    "kholo",
+    "mount-crosby"
+  ],
+  "forest-lake": [
+    "ellen-grove",
+    "heathwood",
+    "doolandella",
+    "richlands"
+  ],
+  "heathwood": [
+    "forest-lake",
+    "larapinta"
+  ],
+  "larapinta": [
+    "heathwood"
+  ],
+  "corinda": [
+    "oxley",
+    "sherwood",
+    "graceville"
+  ],
+  "sherwood": [
+    "corinda",
+    "graceville",
+    "chelmer"
+  ],
+  "graceville": [
+    "sherwood",
+    "chelmer",
+    "corinda"
+  ],
+  "chelmer": [
+    "graceville",
+    "indooroopilly",
+    "taringa"
+  ],
+  "the-gap": [
+    "ashgrove",
+    "upper-kedron"
+  ],
+  "upper-kedron": [
+    "the-gap"
+  ]
+}

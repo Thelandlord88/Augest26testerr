@@ -34,7 +34,7 @@
 
   <!-- Foreground Content -->
   <div class="content-slot">
-    <slot />
+  {Astro.slots.default ? Astro.slots.default() : ''}
   </div>
 </div>
 

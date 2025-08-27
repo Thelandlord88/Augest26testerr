@@ -1,0 +1,25 @@
+{
+  "ci": {
+    "collect": {
+      "staticDistDir": "dist",
+      "url": ["/", "/services/bond-cleaning/springfield-lakes", "/areas/", "/blog/"],
+      "numberOfRuns": 1
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["error", {"minScore": 0.90}],
+        "largest-contentful-paint": ["error", {"maxNumericValue": 2500}],
+        "first-contentful-paint": ["warn", {"maxNumericValue": 2000}],
+        "total-blocking-time": ["error", {"maxNumericValue": 200}],
+        "cumulative-layout-shift": ["error", {"maxNumericValue": 0.10}],
+        "resource-summary:image:bytes": ["warn", {"maxNumericValue": 350000}],
+        "resource-summary:font:bytes": ["warn", {"maxNumericValue": 120000}],
+        "resource-summary:script:bytes": ["warn", {"maxNumericValue": 150000}],
+        "unused-javascript": ["warn", {"maxNumericValue": 0}],
+        "uses-responsive-images": "warn",
+        "uses-webp-images": "warn"
+      }
+    },
+    "upload": { "target": "temporary-public-storage" }
+  }
+}

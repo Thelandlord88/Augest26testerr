@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -eu
+
+# Lightweight pre-push (omit pipefail to avoid shells that reject it in some hosted git environments)
+if [ "${SKIP_HOOKS:-0}" = "1" ]; then
+	echo "pre-push: SKIP_HOOKS=1 (skipping)"
+	exit 0
+fi
+
+echo "pre-push: lint + typecheck + unit tests"
+if npm run lint --silent; then echo "lint ok"; else echo "lint failed"; exit 1; fi
+if npm run typecheck --silent 2>/dev/null; then echo "typecheck ok"; else echo "(typecheck failed)"; exit 1; fi
+if npm run test:unit --silent; then echo "unit tests ok"; else echo "unit tests failed"; exit 1; fi
+
+echo "pre-push: done"

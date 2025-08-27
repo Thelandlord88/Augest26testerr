@@ -1,0 +1,72 @@
+---
+const { title = "Featured", subtitle = "", cards = [], cols = 3 } = Astro.props;
+import { BLOG_BASE } from "~/config/siteConfig";
+import { rel, paths } from "~/lib/paths";
+
+function iconSvg(name) {
+  const common = 'w-6 h-6';
+  switch (name) {
+    case 'shield':
+      return `<svg class="${common}" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l7 3v6c0 5-3.5 9-7 11-3.5-2-7-6-7-11V5l7-3z"/></svg>`;
+    case 'checklist':
+      return `<svg class="${common}" viewBox="0 0 24 24"><path d="M7 7h10M7 12h10M7 17h6"/><path d="M4 4h16v16H4z" fill="none" /></svg>`;
+    case 'search':
+      return `<svg class="${common}" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/></svg>`;
+    case 'map':
+      return `<svg class="${common}" viewBox="0 0 24 24"><path d="M9 3l-6 3v15l6-3 6 3 6-3V3l-6 3-6-3z"/></svg>`;
+    default:
+      return `<svg class="${common}" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>`;
+  }
+}
+
+const gridCols = cols === 4 ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3";
+---
+<section class="my-12">
+  <header class="mb-6">
+    <h2 class="text-2xl font-semibold">{title}</h2>
+    {subtitle && <p class="text-gray-600 mt-1">{subtitle}</p>}
+  </header>
+
+  <div class={`grid gap-4 ${gridCols}`}>
+    {cards.map((c) => {
+      // Back-compat: if legacy href is present, use it (mapping /blog/ to BLOG_BASE)
+      let href = typeof c.href === 'string' ? (c.href.startsWith('/blog/') ? c.href.replace('/blog/', BLOG_BASE) : c.href) : '';
+      // v2 route support
+      if (!href && c?.route?.kind) {
+        const r = c.route;
+        switch (r.kind) {
+          case 'service':
+            href = rel.service(r.service);
+            break;
+          case 'suburbService':
+            href = rel.suburbService(r.service, r.suburb);
+            break;
+          case 'blogPost':
+            href = rel.blogPost(r.cluster, r.slug);
+            break;
+          case 'blogCluster':
+            href = rel.blogCluster(r.cluster);
+            break;
+          case 'blogCategory':
+            href = rel.blogCategory(r.cluster, r.category);
+            break;
+          default:
+            href = '#';
+        }
+      }
+      return (
+      <a href={href} class="group relative rounded-2xl border bg-white/70 backdrop-blur p-5 hover:shadow-lg transition" aria-label={c.ariaLabel ?? `${c.title} — ${c.desc}`}> 
+        <div class="flex items-start gap-3">
+          <div class="shrink-0 rounded-xl border p-2 bg-white">
+            <div set:html={iconSvg(c.icon)} />
+          </div>
+          <div>
+            <h3 class="text-lg font-semibold group-hover:underline">{c.title}</h3>
+            <p class="mt-1 text-gray-700">{c.desc}</p>
+            {c.cta && <span class="mt-3 inline-block text-sm underline">{c.cta}</span>}
+          </div>
+        </div>
+      </a>
+    );})}
+  </div>
+</section>

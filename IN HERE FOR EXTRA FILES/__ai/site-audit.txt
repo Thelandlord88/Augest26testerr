@@ -1,0 +1,35 @@
+# Site config & absolute URL audit — 2025-08-19T01:06:27.264Z
+Root: /workspaces/July22
+
+Astro config file: astro.config.mjs
+Configured site:   https://onendonebondclean.com.au
+✅ 'site' is set to a valid absolute URL.
+
+Usage summary:
+- import.meta.env.SITE usage: 16  e.g. src/components/Header.astro, src/components/sections/AboutSection.astro, src/layouts/MainLayout.astro, src/lib/seoSchema.js, src/lib/url.ts, src/pages/blog/[cluster]/[slug].astro
+- new URL(…, import.meta.env.SITE) usage: 1  e.g. src/pages/blog/[cluster]/index.astro
+- String concatenation with import.meta.env.SITE: 0
+- Astro.site / Astro.site.origin usage: 0
+
+JSON-LD helper files scanned:
+- src/components/Schema.astro
+- src/components/SchemaGraph.astro
+- src/lib/schema.js
+- src/lib/seoSchema.js
+- src/utils/schema.js
+- src/utils/schemaGraph.js
+- src/utils/schemamanager.js
+→ helpers using import.meta.env.SITE: 2
+→ helpers using Astro.site: 0
+
+Canonical/Sitemap/SEO files scanned:
+- src/lib/seoSchema.js
+- src/pages/sitemap.xml.ts
+→ files using import.meta.env.SITE: 2
+
+✅ No suspicious hard-coded origins found.
+
+Recommended actions:
+- (Optional) Add helper: src/lib/url.ts with absoluteUrl(). Run this script with --add-helper to create it.
+
+✅ Audit passed. Configuration and usage look healthy.

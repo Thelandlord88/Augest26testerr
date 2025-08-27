@@ -1,0 +1,36 @@
+---
+import MainLayout from '~/layouts/MainLayout.astro';
+import { absoluteUrl } from '~/lib/url';
+import { resolveClusterSlug as getCanonicalCluster, listSuburbsForCluster } from '~/utils/geoHandler';
+import { getAreaSuburbPaths } from '~/utils/areaIndex';
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+  return getAreaSuburbPaths().map(p => ({ params: p }));
+}
+
+const { cluster, suburb } = Astro.params;
+const canonicalCluster = getCanonicalCluster(cluster) || cluster;
+const slug = String(suburb);
+const suburbName = slug.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+const clusterTitle = canonicalCluster.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+const title = `${suburbName}, ${clusterTitle} – Service Area`;
+const canonical = absoluteUrl(`/areas/${canonicalCluster}/${slug}/`);
+const known = listSuburbsForCluster(canonicalCluster).some(s => (typeof s === 'string' ? s : (s as any)?.slug) === slug);
+---
+<MainLayout title={title} description={`Professional cleaning services in ${suburbName}, ${clusterTitle}.`} canonical={canonical}>
+  {known ? (
+    <section class="max-w-3xl mx-auto px-4 py-12 prose">
+      <h1>{suburbName} – {clusterTitle}</h1>
+      <p>We service {suburbName} and surrounding suburbs across the {clusterTitle} region. Get a fast, fair quote on bond cleaning, spring cleaning and more.</p>
+      <p><a href="/quote/" class="inline-block bg-fresh-sky text-white px-5 py-3 rounded-lg shadow hover:bg-fresh-sky/90">Get a Quote</a></p>
+      <p class="text-sm text-gray-500">This lightweight area page is auto‑generated from cluster data.</p>
+    </section>
+  ) : (
+    <section class="max-w-3xl mx-auto px-4 py-16">
+      <h1 class="text-2xl font-bold mb-2">Area not found</h1>
+      <p>We couldn't find that suburb in {clusterTitle}.</p>
+    </section>
+  )}
+</MainLayout>

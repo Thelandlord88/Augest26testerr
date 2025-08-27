@@ -1,0 +1,19 @@
+{
+  "clusters": [
+    {
+      "canonical": "brisbane",
+      "label": "Brisbane West",
+      "aliases": ["brisbane-west", "brisbane_west", "brisbane%20west"]
+    },
+    {
+      "canonical": "ipswich",
+      "label": "Ipswich Region",
+      "aliases": ["ipswich-region", "ipswich_region", "ipswich%20region"]
+    }
+  ],
+  "bases": {
+    "blog": "blog",
+    "areas": "areas",
+    "services": "services"
+  }
+}

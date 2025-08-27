@@ -1,0 +1,52 @@
+{
+  "priority_actions": [
+    {
+      "title": "Add H1 Tag",
+      "why": "The H1 tag is essential for SEO and user experience, helping visitors understand the page's focus.",
+      "impact": "high"
+    },
+    {
+      "title": "Increase Word Count",
+      "why": "A higher word count with relevant content improves SEO and provides more information to potential customers.",
+      "impact": "high"
+    },
+    {
+      "title": "Implement Schema Markup",
+      "why": "Adding Service JSON-LD helps search engines understand the content better, improving visibility in search results.",
+      "impact": "high"
+    }
+  ],
+  "missing_components": [
+    "hero proof bar",
+    "before/after gallery",
+    "service inclusions grid",
+    "local suburbs chips",
+    "testimonial slider",
+    "FAQ (spring-specific)",
+    "sticky quote CTA",
+    "Service JSON-LD"
+  ],
+  "ready_blocks": [
+    {
+      "id": "hero_sub",
+      "markdown": "Experience a fresh start with our professional spring cleaning services tailored for your home."
+    },
+    {
+      "id": "inclusions",
+      "markdown": "- Bathrooms: Thorough cleaning of sinks, toilets, showers, and mirrors.\n- Kitchen: Deep cleaning of all surfaces, appliances, and floors."
+    },
+    {
+      "id": "cta_panel",
+      "markdown": "**Get a Quote** — Fixed-price spring clean in Ipswich. Police-checked, insured, 7-day re-clean."
+    },
+    {
+      "id": "meta",
+      "title": "Spring Cleaning Ipswich & Brisbane | One N Done",
+      "description": "Top-to-bottom spring cleaning — kitchens, bathrooms, fans & tracks. Police-checked, insured, 7-day re-clean. Get a fast quote today."
+    },
+    {
+      "id": "faqs_spring",
+      "markdown": "Q: What’s included in a spring clean?\nA: Our spring clean covers all areas of your home, ensuring a thorough clean.\n\nQ: How long does it take?\nA: The duration depends on the size of your home, typically ranging from 3 to 6 hours.\n\nQ: Do you bring supplies?\nA: Yes, we provide all necessary cleaning supplies and equipment."
+    }
+  ]
+}

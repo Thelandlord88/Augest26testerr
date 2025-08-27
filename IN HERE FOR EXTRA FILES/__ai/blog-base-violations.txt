@@ -1,0 +1,4 @@
+# BLOG_BASE extended verify — 2025-08-22T22:47:09.887Z
+BLOG_BASE: /guides/
+
+✅ No non-allowlisted hard-coded "/blog/" strings found.

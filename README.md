@@ -498,7 +498,7 @@ Key npm scripts (see `package.json`):
 ### Vanilla helpers
 
 - `js/` — Small progressive enhancement scripts and unit tests (`js/__tests__`). Why: ship minimal JS where needed.
-`css/` — Built or hand-authored CSS. Why: quick overrides or debugging styles outside Tailwind when necessary.
+- `css/` — Built or hand-authored CSS like `output.css`. Why: quick overrides or debugging styles outside Tailwind when necessary.
 
 ### Redirects
 

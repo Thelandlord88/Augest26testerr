@@ -1,0 +1,56 @@
+// cypress/e2e/quote-form.cypress.js
+// E2E flow for the scoped QuoteForm (q-* selectors)
+
+describe('Quote Form E2E', () => {
+  const svc = 'bond-cleaning';
+  const suburb = 'springfield-lakes';
+  const url = `/services/${svc}/${suburb}/`;
+
+  beforeEach(() => {
+    cy.visit(url);
+    cy.contains('section#quote', 'Pass Your Bond Inspection').should('exist');
+  });
+
+  it('progresses through steps and submits successfully (mock)', () => {
+    // Step 1
+    cy.get('#q-step-1').should('be.visible');
+    cy.get('#property-type').select('House');
+    cy.get('#bedrooms').select('2');
+    cy.get('#bathrooms').select('1');
+  cy.get('button.q-next').contains('Next').click({ force: true });
+
+    // Step 2 - pick a couple of add-ons
+    cy.get('#q-step-2').should('be.visible');
+    cy.contains('#addons label.q-addon', 'Carpet Steam Clean').find('input[type="checkbox"]').check({ force: true });
+    cy.contains('#addons label.q-addon', 'Dishwasher Clean').find('input[type="checkbox"]').check({ force: true });
+  cy.get('button.q-next').contains('Next').click({ force: true });
+
+    // Step 3 - user info
+    cy.get('#q-step-3').should('be.visible');
+    cy.get('#full-name').type('Jane Doe');
+    cy.get('#phone').type('0405779420');
+    cy.get('#email').type('jane@example.com');
+    cy.get('#property-address').type('123 Main St, Springfield Lakes');
+    // Pick date via calendar popup
+    cy.get('#service-date-display').click();
+    cy.get('.q-cal').should('be.visible');
+    // pick first enabled day
+    cy.get('.q-cal-day').not('[disabled]').first().click();
+  cy.get('button.q-next').contains('Next').click({ force: true });
+
+    // Step 4 - review & submit
+    cy.get('#q-step-4').should('be.visible');
+    cy.get('#rv-prop').should('contain', '2 Bed, 1 Bath House');
+    cy.get('#rv-svcs').should('contain.text', 'Carpet Steam Clean').and('contain.text', 'Dishwasher Clean');
+
+    // Intercept form submit and fake success
+    cy.intercept('POST', '/', (req) => {
+      req.reply({ statusCode: 200, body: 'ok' });
+    });
+
+    cy.get('#q-submit').click();
+
+    cy.get('#q-success').should('be.visible');
+    cy.get('#q-success').should('contain.text', 'Request received');
+  });
+});

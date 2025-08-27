@@ -1,13 +1,13 @@
 {
-  "timestamp": "2025-08-24T00:10:06.853Z",
+  "timestamp": "2025-08-26T07:34:50.946Z",
   "counts": {
     "generators": 4,
     "layouts": 1,
     "components": 6,
-    "pages": 8,
+    "pages": 2,
     "legacy": 4,
-    "tooling": 4,
-    "total": 27
+    "tooling": 5,
+    "total": 22
   },
   "files": {
     "generators": [
@@ -28,14 +28,8 @@
       "src/components/sections/DifferenceSection.astro"
     ],
     "pages": [
-      "src/pages/areas/[cluster]/index.astro",
-      "src/pages/areas/index.astro",
       "src/pages/blog/[cluster]/[slug].astro",
-      "src/pages/blog/[cluster]/category/[category].astro",
-      "src/pages/blog/[cluster]/index.astro",
-      "src/pages/blog/index.astro",
-      "src/pages/bond-cleaning/[suburb]/index.astro",
-      "src/pages/services/[service]/[suburb].astro"
+      "src/pages/blog/[cluster]/category/[category].astro"
     ],
     "legacy": [
       "src/components/FAQItem.notusing.astro",
@@ -47,6 +41,7 @@
       "scripts/assert-ld-health.mjs",
       "scripts/report-ld-sources.mjs",
       "scripts/report-ld.mjs",
+      "scripts/test-schema-hash.mjs",
       "scripts/validate-schema.js"
     ]
   }

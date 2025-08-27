@@ -1,0 +1,470 @@
+/* Liquid-metal FAQ backdrop: navy to sky gradient with radial sheen */
+.faq-backdrop {
+  background: linear-gradient(135deg, #0f172a 0%, #0ea5e9 100%);
+  position: relative;
+  overflow: hidden;
+}
+.faq-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at top, rgba(255,255,255,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+/* Generic Lux-Grade Silver-to-White Gradient for section backgrounds */
+.lux-bg {
+  background: linear-gradient(135deg, #e2e8f0 0%, #fff 70%);
+}
+/* Subtle Silver-to-White Gradient for FAQ section wrapper */
+.faq-lux-bg {
+  background: linear-gradient(135deg, #e2e8f0 0%, #fff 70%);
+}
+/* Lux-Grade FAQ palette and styles */
+:root {
+  --sky: #0ea5e9;
+  --navy: #0f172a;
+  --white: #ffffff;
+  --black: #111827;
+  --silver: #e2e8f0;
+  --gold: #c0a062;
+  --glass: rgba(255,255,255,0.05);
+}
+
+.faq-lux {
+  max-width: 48rem;
+  margin: 4rem auto;
+  padding: 0 1rem;
+}
+
+.faq-lux h2 {
+  text-align: center;
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--sky), var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 3rem;
+}
+
+.faq-lux details {
+  margin-bottom: 1rem;
+  background: linear-gradient(145deg, var(--white), var(--silver));
+  border: 1px solid rgba(14,165,233,.15);
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,.05);
+  overflow: hidden;
+  transition: all .4s cubic-bezier(.4,0,.2,1);
+}
+
+.faq-lux details[open] {
+  box-shadow: 0 8px 32px rgba(14,165,233,.25);
+  border-color: var(--sky);
+}
+
+.faq-lux summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2rem;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--navy);
+  position: relative;
+}
+
+/* chrome highlight */
+.faq-lux summary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 60%, var(--sky) 100%);
+  opacity: 0;
+  transition: opacity .3s;
+}
+.faq-lux details[open] summary::after { opacity: .06; }
+
+/* chevron chrome */
+.faq-lux .chevron {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--sky);
+  filter: drop-shadow(0 0 3px var(--sky));
+  transition: transform .4s;
+}
+.faq-lux details[open] .chevron { transform: rotate(180deg); }
+
+.faq-lux .answer {
+  padding: 0 2rem 1.5rem;
+  color: var(--black);
+  line-height: 1.7;
+  background: var(--glass);
+}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --- Base Layer: Global resets & root variables --- */
+@layer base {
+  :root {
+    color-scheme: light dark;
+    --gold: #c0a062;
+    --onyx: #0f0f0f;
+    --pearl: #faf9f7;
+    --glass: rgba(255,255,255,0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+    }
+  }
+  body {
+    @apply font-sans bg-light-gray text-gray-800 antialiased;
+  }
+  /* Enable default view transitions with a subtle duration */
+  :root { --vt-duration: 220ms; }
+  @view-transition { navigation: auto; }
+  body.menu-open {
+    @apply overflow-hidden overscroll-contain;
+    position: fixed;    /* Prevents scroll jump on iOS */
+    width: 100%;        /* Avoids layout shift */
+    touch-action: none; /* Prevents mobile rubber-banding */
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
+}
+
+/* --- Ultra-gloss FAQ facelift --- */
+.faq-polish details {
+  background: linear-gradient(145deg, var(--pearl), #f4f3f1);
+  border: 1px solid rgba(192,160,98,0.2);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  margin-bottom: 1rem;
+  overflow: hidden;
+  transition: all 0.35s cubic-bezier(.4,.1,.2,1);
+}
+.faq-polish details[open] {
+  box-shadow: 0 8px 30px rgba(192,160,98,0.15);
+  border-color: var(--gold);
+}
+.faq-polish summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  color: var(--onyx);
+  position: relative;
+}
+.faq-polish summary:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(135deg, transparent 30%, var(--gold) 100%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.faq-polish details[open] summary:after {
+  opacity: 0.07;
+}
+.faq-polish .chevron {
+  width: 20px;
+  height: 20px;
+  color: var(--gold);
+  filter: drop-shadow(0 0 2px var(--gold));
+  transition: transform 0.4s;
+}
+.faq-polish details[open] .chevron {
+  transform: rotate(180deg);
+}
+.faq-polish .answer {
+  padding: 0 1.5rem 1.5rem;
+  line-height: 1.7;
+  color: #444;
+}
+
+/* --- Components Layer: Reusable blocks & accessibility --- */
+@layer components {
+  /* View Transition named elements */
+  .vt-title { view-transition-name: page-title; }
+  .vt-main  { view-transition-name: main; }
+  ::view-transition-old(page-title),
+  ::view-transition-new(page-title) {
+    animation-duration: var(--vt-duration);
+    animation-timing-function: ease;
+  }
+  ::view-transition-old(main),
+  ::view-transition-new(main) {
+    animation: vt-fade var(--vt-duration) ease both;
+  }
+  /* Focus states for accessibility */
+  *:focus-visible {
+    @apply outline-2 outline-blue-500 outline-offset-2;
+  }
+  a, button {
+    @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400;
+  }
+
+  /* FAQ Accordion with grid+max-height fallback for animation */
+  .faq-item > .animate-sweep {
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out, grid-template-rows 0.3s;
+    max-height: 0;
+  }
+  .faq-item[open] > .animate-sweep {
+    max-height: 100vh; /* fallback for older browsers */
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .faq-answer-wrapper { transition: none; }
+  }
+  @supports (grid-template-rows: subgrid) {
+    .faq-item > .animate-sweep {
+      display: grid;
+      grid-template-rows: 0fr;
+      max-height: none;
+    }
+    .faq-item[open] > .animate-sweep {
+      grid-template-rows: 1fr;
+    }
+    .faq-item > .animate-sweep > * {
+      min-height: 0;
+    }
+  }
+
+  /* Fade-in for details accordion answers */
+  details[open] .animate-sweep {
+    animation: fadeIn 0.3s ease-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes vt-fade { from { opacity: .92 } to { opacity: 1 } }
+
+  /* Step Indicator (horizontal progress with overflow and accessibility) */
+  .step-indicator {
+    @apply relative flex justify-center gap-2 sm:gap-4 mb-8 overflow-x-auto pb-2;
+    scrollbar-width: none;
+    mask: linear-gradient(90deg, transparent, black 20px, black calc(100% - 20px), transparent);
+  }
+
+  .step {
+    @apply flex items-center px-4 py-2 text-slate-600 flex-grow justify-center;
+  }
+
+  .step .step-label {
+    @apply bg-white px-1 hidden md:inline-block ml-3 font-medium;
+  }
+
+  .step .step-number {
+    @apply bg-white inline-flex items-center justify-center w-8 h-8 rounded-full border-2 font-bold transition-all;
+    border-color: #d1d5db;
+  }
+
+  .step.active .step-number {
+    @apply bg-sky-500 border-sky-500 text-white;
+  }
+
+  .step.active {
+    @apply text-deep-navy font-bold;
+  }
+
+  .step.completed .step-number {
+    @apply bg-green-600 border-green-600 text-white;
+  }
+  /* removed stray closing brace and invalid contain property */
+  .step-indicator::-webkit-scrollbar {
+    display: none;
+  }
+  .step-indicator::before {
+    content: '';
+    @apply absolute top-1/2 left-4 right-4 h-0.5 bg-gray-300 -translate-y-1/2 z-0;
+    inset-inline: 1rem; /* Logical property for RTL */
+  }
+  
+  /* Thumbnail images - aspect ratio, performance, and CLS */
+  .thumbnail-item {
+    contain: layout paint style;
+  }
+  .thumbnail-item img {
+    @apply aspect-[4/3] object-cover w-full;
+    content-visibility: auto; /* Performance boost */
+    /* NOTE: Add width & height in HTML for CLS prevention */
+  }
+
+  /* Reusable Chrome/Glass utilities */
+  .chrome-shell {
+    border-radius: 1rem;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,255,255,.84) 60%, rgba(246,248,252,.9)) padding-box,
+      linear-gradient(135deg, rgba(255,255,255,.85), rgba(15,23,42,.08)) border-box;
+    border: 1px solid transparent;
+    background-clip: padding-box, border-box;
+    box-shadow: 0 16px 48px rgba(2,6,23,.12), inset 0 1px 0 rgba(255,255,255,.4);
+    backdrop-filter: saturate(1.08) blur(8px);
+    -webkit-backdrop-filter: saturate(1.08) blur(8px);
+  }
+  .glass-card {
+    border-radius: 1rem;
+    padding: 1rem;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,255,255,.84) 60%, rgba(246,248,252,.9)) padding-box,
+      linear-gradient(135deg, rgba(255,255,255,.85), rgba(15,23,42,.08)) border-box;
+    border: 1px solid transparent;
+    background-clip: padding-box, border-box;
+    box-shadow: 0 8px 28px rgba(2,6,23,.08);
+    backdrop-filter: saturate(1.08) blur(6px);
+    -webkit-backdrop-filter: saturate(1.08) blur(6px);
+  }
+}
+
+/* --- Utilities Layer: Special-case styles and CTA effects --- */
+@layer utilities {
+  /* Focus state for forced-colors mode (high contrast) */
+  @media (forced-colors: active) {
+    .form-checkbox-label.selected:focus-visible {
+      outline: 2px solid CanvasText;
+      outline-offset: 2px;
+    }
+    /* Expand for other controls as needed */
+  }
+
+  /* --- Advanced CTA Pulse Effects --- */
+
+  /* 1. Soft Glowing Animated Ring Pulse */
+  .cta-pulse {
+    position: relative;
+    z-index: 1;
+    overflow: visible;
+  }
+  .cta-pulse::before {
+    content: '';
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 120%; height: 120%;
+    border-radius: 9999px;
+    background: rgba(14, 165, 233, 0.16);
+    z-index: -1;
+    opacity: 0.9;
+    animation: ring-pulse 1.8s cubic-bezier(0.4,0,0.6,1) infinite;
+    pointer-events: none;
+  }
+  @keyframes ring-pulse {
+    0% {
+      opacity: 0.6;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    60% {
+      opacity: 0.0;
+      transform: translate(-50%, -50%) scale(1.32);
+    }
+    100% {
+      opacity: 0.0;
+      transform: translate(-50%, -50%) scale(1.5);
+    }
+  }
+
+  /* 2. Inner Glow + Outer Pulse Hybrid */
+  .cta-glow-pulse {
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 0 12px 2px rgba(14,165,233,0.25), 0 2px 8px rgba(12,47,90,0.13);
+    transition: box-shadow 0.2s;
+  }
+  .cta-glow-pulse::before {
+    content: '';
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 120%; height: 120%;
+    border-radius: 9999px;
+    background: rgba(14, 165, 233, 0.16);
+    z-index: -1;
+    opacity: 0.9;
+    animation: ring-pulse 1.7s cubic-bezier(0.4,0,0.6,1) infinite;
+    pointer-events: none;
+  }
+  /* Uses the same ring-pulse keyframes as above */
+
+  /* 3. Animated Gradient Shine */
+  .cta-shine {
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-shine::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -75%;
+    width: 50%; height: 100%;
+    background: linear-gradient(120deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 70%);
+    animation: shine-slide 2.5s infinite;
+    z-index: 1;
+    pointer-events: none;
+  }
+  @keyframes shine-slide {
+    0% { left: -75%; }
+    80% { left: 110%; }
+    100% { left: 110%; }
+  }
+
+  /* --- Reviews Section (BEM) --- */
+  .reviews-section {
+    background: linear-gradient(to bottom, #f5f5f4, #ffffff, #fafaf9); /* stone-100 → white → stone-50 */
+    padding: 4rem 1rem; /* py-16 px-4 */
+  }
+  .reviews-container {
+    max-width: 72rem; /* max-w-6xl */
+    margin-inline: auto; /* mx-auto */
+  }
+  .reviews-title {
+    font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif; /* font-serif */
+    font-size: 1.875rem; /* text-3xl */
+    line-height: 2.25rem;
+    color: #064e3b; /* emerald-900 */
+    text-align: center;
+    margin-bottom: 2.5rem; /* mb-10 */
+  }
+  .reviews-scroller { overflow-x: auto; padding-bottom: 1.5rem; }
+  .reviews-track {
+    display: flex; gap: 1.5rem; padding-inline: .5rem; /* space-x-6 px-2 */
+    scroll-snap-type: x mandatory; /* snap-x snap-mandatory */
+  }
+  .review-card {
+    flex-shrink: 0; width: 85vw; scroll-snap-align: center; /* mobile width and snapping */
+    background: #fafaf9; /* stone-50 */
+    border-radius: .75rem; padding: 1.5rem; /* rounded-xl p-6 */
+    box-shadow: 0 1px 2px 0 rgba(0,0,0,.05); /* shadow-sm */
+    transition: all .3s ease; /* transition-all duration-300 */
+  }
+  @media (min-width: 640px) { /* sm */
+    .review-card { width: 20rem; }
+  }
+  .review-card:hover {
+    /* hover:shadow-lg + hover:shadow-stone-400/20 approximation */
+    box-shadow: 0 10px 15px -3px rgba(148,163,184,.2), 0 4px 6px -4px rgba(148,163,184,.2);
+  }
+  .review-stars { margin-bottom: .75rem; }
+  .review-stars span { color: #f59e0b; font-size: 1.125rem; } /* amber-500 text-lg */
+  .review-quote {
+    color: #1f2937; /* stone-800 */
+    margin-bottom: .75rem; /* mb-3 */
+    display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; /* line-clamp-4 */
+  }
+  .review-divider { width: 3rem; border-top: 1px solid #fbbf24; margin-bottom: .5rem; }
+  .review-footer { font-weight: 600; color: #44403c; } /* stone-700 */
+  .review-date { font-size: .75rem; letter-spacing: .05em; text-transform: uppercase; margin-left: .5rem; }
+  .reviews-note { text-align: center; font-size: .75rem; color: #6b7280; margin-top: 2rem; }
+}
+
+/* Accessibility: respect reduced motion for view transitions */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) { animation: none !important; }
+}

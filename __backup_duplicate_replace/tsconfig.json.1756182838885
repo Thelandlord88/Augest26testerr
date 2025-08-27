@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+  "baseUrl": ".",
+  "module": "es2020",
+    "paths": {
+      "~/*": ["src/*"]
+    },
+  "types": ["@playwright/test"],
+  "moduleResolution": "Bundler",
+  "resolveJsonModule": true,
+  "allowJs": true
+  },
+  "include": [
+    "src",
+    "tests",
+    "scripts",
+    "js"
+  ]
+}

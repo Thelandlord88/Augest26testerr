@@ -1,0 +1,8 @@
+---
+export interface Props { title?: string; children?: any }
+const { title = '' } = Astro.props;
+---
+<article class="p-4 border rounded-md shadow-sm bg-white">
+  {title && <h3 class="font-semibold mb-2">{title}</h3>}
+  <div>{typeof Astro.slots.default === 'function' ? Astro.slots.default() : (Astro.slots.default ?? '')}</div>
+</article>

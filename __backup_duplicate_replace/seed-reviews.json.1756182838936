@@ -1,0 +1,46 @@
+{
+  "bond-cleaning:redbank-plains": [
+    {
+      "stars": 5,
+      "author": "Sarah M.",
+      "title": "Absolutely thrilled",
+      "body": "Every surface gleamed and the carpets looked brand new. Highly recommend!",
+      "date": "2024-09-14"
+    },
+    {
+      "stars": 4,
+      "author": "James L.",
+      "title": "Great value",
+      "body": "Team arrived on time and left the place spotless. A couple of minor scuffs missed, but overall 4 stars.",
+      "date": "2024-05-05"
+    },
+    {
+      "stars": 5,
+      "author": "Emily R.",
+      "title": "Five stars all the way",
+      "body": "Professional, fast, and the oven has never looked better!",
+      "date": "2024-02-22"
+    },
+    {
+      "stars": 4,
+      "author": "Daniel K.",
+      "title": "No dramas",
+      "body": "Clean completed smoothly and on schedule.",
+      "date": "2024-11-11"
+    },
+    {
+      "stars": 5,
+      "author": "Olivia P.",
+      "title": "Transformed our flat",
+      "body": "Sparkling bathrooms and fresh-smelling carpets. Definitely 5 stars!",
+      "date": "2025-01-03"
+    },
+    {
+      "stars": 5,
+      "author": "Mark T.",
+      "title": "Bond back in full",
+      "body": "I'm sure the people moving in after us will be happy.",
+      "date": "2025-06-17"
+    }
+  ]
+}

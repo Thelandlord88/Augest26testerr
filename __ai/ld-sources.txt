@@ -1,4 +1,4 @@
-# Schema.org/JSON-LD Source Inventory — 2025-08-24T00:10:06.853Z
+# Schema.org/JSON-LD Source Inventory — 2025-08-26T07:34:50.947Z
 
 ## 🧩 Generators & helpers (4)
 - src/lib/seoSchema.js
@@ -17,15 +17,9 @@
 - src/components/sections/AboutSection.astro
 - src/components/sections/DifferenceSection.astro
 
-## 📄 Pages emitting schema (8)
-- src/pages/areas/[cluster]/index.astro
-- src/pages/areas/index.astro
+## 📄 Pages emitting schema (2)
 - src/pages/blog/[cluster]/[slug].astro
 - src/pages/blog/[cluster]/category/[category].astro
-- src/pages/blog/[cluster]/index.astro
-- src/pages/blog/index.astro
-- src/pages/bond-cleaning/[suburb]/index.astro
-- src/pages/services/[service]/[suburb].astro
 
 ## ⚠️ Legacy / notusing (4)
 - src/components/FAQItem.notusing.astro
@@ -33,17 +27,18 @@
 - src/pages/bond-cleaning/[suburb]/checklist.notusing.astro
 - src/pages/bond-cleaning/[suburb]/index.notusing.astro
 
-## 📋 Reports & tooling (4)
+## 📋 Reports & tooling (5)
 - scripts/assert-ld-health.mjs
 - scripts/report-ld-sources.mjs
 - scripts/report-ld.mjs
+- scripts/test-schema-hash.mjs
 - scripts/validate-schema.js
 
 ## 📊 Totals
 - Generators/helpers: 4
 - Layouts: 1
 - Components: 6
-- Pages: 8
+- Pages: 2
 - Legacy: 4
-- Tooling: 4
-- **Total**: 27
+- Tooling: 5
+- **Total**: 22

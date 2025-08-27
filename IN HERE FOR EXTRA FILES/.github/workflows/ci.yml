@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, feat/**, chore/**, fix/** ]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+      - name: Prebuild
+        run: npm run prebuild --silent
+      - name: Unit tests
+        run: npm run test:unit --silent
+      - name: Build site
+        run: npm run build --silent
+      - name: E2E tests
+        env:
+          PORT: 4322
+          BASE_URL: http://localhost:4322
+        run: npm run test:e2e --silent
+      - name: Upload artifacts (test results)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            test-results/
+            playwright-report/
+            vitest-report.xml
+          if-no-files-found: ignore
