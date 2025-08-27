@@ -2,13 +2,15 @@
 import Layout from '~/layouts/MainLayout.astro';
 import topics from '~/data/topics.json';
 import { paths, rel, toCanonicalCluster } from '~/lib/paths';
+import { CANONICAL_CLUSTERS } from '~/lib/clusters';
 import { titleCase } from '~/lib/seoSchema.js';
 
 // Generate static paths for canonical clusters and all categories
 export async function getStaticPaths() {
   const cats = Array.from(new Set(topics.map((t) => t.category)));
-  const clusters = Array.from(new Set(['brisbane', 'ipswich', 'logan']));
-  return clusters.flatMap((cluster) => cats.map((category) => ({ params: { cluster, category } })));
+  return CANONICAL_CLUSTERS.flatMap((cluster) =>
+    cats.map((category) => ({ params: { cluster, category } }))
+  );
 }
 
 const clusterRaw = Astro.params.cluster || '';
