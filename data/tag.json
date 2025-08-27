@@ -1,0 +1,19 @@
+{
+  "entities": {
+    "service:bond-cleaning": { "type": "service", "slug": "bond-cleaning", "title": "Bond Cleaning" },
+    "service:spring-cleaning": { "type": "service", "slug": "spring-cleaning", "title": "Spring Cleaning" },
+
+    "suburb:ipswich": { "type": "suburb", "slug": "ipswich", "name": "Ipswich", "postcode": "4305", "state": "QLD" },
+    "suburb:springfield-lakes": { "type": "suburb", "slug": "springfield-lakes", "name": "Springfield Lakes", "postcode": "4300", "state": "QLD" },
+
+    "topic:agent-standards": { "type": "topic", "slug": "agent-standards", "title": "What Agents Expect" },
+    "topic:bond-checklist": { "type": "topic", "slug": "bond-checklist", "title": "Bond Cleaning Checklist" }
+  },
+  "edges": [
+    ["service:bond-cleaning", "suburb:ipswich", "covers"],
+    ["service:bond-cleaning", "suburb:springfield-lakes", "covers"],
+    ["service:bond-cleaning", "topic:bond-checklist", "explains"],
+    ["topic:agent-standards", "service:bond-cleaning", "applies-to"],
+    ["suburb:ipswich", "suburb:springfield-lakes", "nearby"]
+  ]
+}

@@ -136,6 +136,7 @@
   "@astrojs/netlify": "^6.4.1",
     "playwright": "^1.55.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "haversine-distance": "^1.2.1"
   }
 }

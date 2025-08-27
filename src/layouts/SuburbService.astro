@@ -1,0 +1,6 @@
+---
+import ServiceLayout from './ServiceLayout.astro';
+const { service, suburb } = Astro.props;
+const title = `${service.title} in ${suburb.name}`;
+---
+<ServiceLayout {service} {suburb} title={title} />

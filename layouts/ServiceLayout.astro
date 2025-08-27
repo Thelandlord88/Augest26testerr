@@ -111,6 +111,6 @@ const pageDescription = `${service.description} Servicing ${suburb.name} and nea
   <!-- Acceptance criteria and related services -->
   <section class="max-w-6xl mx-auto px-4">
   <AcceptanceSlice suburbName={suburb.name} />
-  <RelatedLinks service={service.slug} suburbSlug={suburb.slug} title="Related services" count={3} />
+  <RelatedLinks {service} {suburb} />
   </section>
 </MainLayout>

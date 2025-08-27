@@ -1,33 +1,15 @@
 ---
-import { getRelatedServiceLinks } from '~/utils/internalLinks';
-import { prioritiseByGrid } from '~/utils/prioritiseByGrid.js';
-const {
-  service = 'bond-cleaning',
-  suburbSlug = '',
-  count = 3,           // align to helper default
-  includeSelf = false, // keep OFF for "related" blocks
-  title = 'Related'
-} = Astro.props;
-
-let links = getRelatedServiceLinks({ service, suburbSlug, count, includeSelf, prioritiseByGrid });
-if (links.length < count) {
-  // As a fallback, include the current suburb at the end to meet the cap.
-  const filled = getRelatedServiceLinks({ service, suburbSlug, count, includeSelf: true, prioritiseByGrid });
-  // keep unique order but prefer the original ordering
-  const seen = new Set();
-  links = [...links, ...filled].filter((l) => {
-    const key = l.href;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  }).slice(0, count);
-}
+import links from "../data/related-links.json";
+const { suburb, service } = Astro.props;
+const n = links[suburb.slug] ?? [];
 ---
-<section role="region" class="related-links mt-6" data-relblock aria-label={`${title} navigation`}>
-  <h2 id="related-links-title" class="text-lg font-semibold mb-2">{title}</h2>
-  <ul class="space-y-2">
-    {links.map((l) => (
-      <li><a href={l.href} class="text-blue-700 underline hover:no-underline">{l.label}</a></li>
-    ))}
-  </ul>
-</section>
+{n.length ? (
+  <aside aria-label="Related links" class="mt-10">
+    <h2 class="text-lg font-semibold">Nearby suburbs we serve</h2>
+    <ul class="mt-3 grid grid-cols-2 gap-2">
+      {n.map(slug => (
+        <li><a class="text-fresh-sky underline" href={`/services/${service.slug}/${slug}/`}>{slug.replaceAll("-", " ")}</a></li>
+      ))}
+    </ul>
+  </aside>
+) : null}
