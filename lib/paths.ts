@@ -1,15 +1,6 @@
 import { absoluteUrl } from "~/lib/url";
 import { BLOG_BASE } from "~/config/siteConfig";
-
-// Canonical cluster aliases (match your redirects)
-export const CANON = new Map<string, string>([
-  ["brisbane_west", "brisbane"],
-  ["brisbane-west", "brisbane"],
-  ["brisbane%20west", "brisbane"],
-  ["ipswich-region", "ipswich"],
-]);
-
-export const toCanonicalCluster = (s = ""): string => CANON.get(String(s)) || String(s);
+import { toCanonicalCluster } from "~/lib/clusters";
 
 // Ensure trailing slash for site paths (not for files like .xml)
 export const withSlash = (p = "/"): string => (/\.([a-z0-9]+)$/i.test(p) ? p : p.replace(/\/?$/, "/"));

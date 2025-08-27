@@ -3,9 +3,6 @@ import fs from "node:fs";
 
 const BASE = process.env.PREVIEW_URL || "http://localhost:4322";
 const CHECKS = [
-  ["/blog/ipswich-region/", "/blog/ipswich/"],
-  ["/blog/brisbane-west/category/checklist/", "/blog/brisbane/category/checklist/"],
-  ["/areas/brisbane%20west/forest-lake/", "/areas/brisbane/forest-lake/"],
   ["/bond-cleaners/springfield/", "/services/bond-cleaning/springfield/"],
   ["/services/bond-cleaning/brisbane/springfield/", "/services/bond-cleaning/springfield/"],
 ];

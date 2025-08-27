@@ -1,7 +1,6 @@
 import type { APIContext, MiddlewareNext } from 'astro';
 import { resolveClusterSlug, findSuburbBySlug } from '~/utils/geoHandler';
 import { BLOG_BASE, BLOG_BASE_NO_TRAIL } from '~/config/siteConfig';
-import { aliasToCanonical } from '~/config/aliases';
 
 // 301 builder that preserves query; fragments are browser-only and not relied on here
 function redirect(url: URL, toPath: string, status: number = 301) {
@@ -21,8 +20,6 @@ const serviceSynonyms: Record<string, string> = {
   'house-cleaning': 'spring-cleaning',
   'shower-screen-restoration': 'bathroom-deep-clean',
 };
-
-// aliasToCanonical is now sourced from '~/config/aliases'
 
 export async function onRequest(context: APIContext, next: MiddlewareNext) {
   const url = new URL(context.request.url);
@@ -48,8 +45,7 @@ export async function onRequest(context: APIContext, next: MiddlewareNext) {
   const baseSeg = BLOG_BASE.replace(/^\/+|\/+$/g, ''); // 'blog' or 'guides'
   if (segs[0] === baseSeg && segs[1]) {
     const s1 = segs[1];
-    const canonicalByMap = aliasToCanonical[s1];
-    const canonical = canonicalByMap ?? resolveClusterSlug(s1);
+    const canonical = resolveClusterSlug(s1);
     if (canonical && canonical !== s1) {
       const rest = segs.slice(2).join('/');
       return redirect(url, `/${baseSeg}/${canonical}/${rest ? rest + '/' : ''}`);

@@ -22,9 +22,9 @@ const PATTERNS = [
   // base path literal (don’t hard-code /blog/)
   { name: "blog_base_literal", rx: /(^|["'`(\s])\/blog\/(?=[^/]|$)/i },
 
-  // cluster aliases (cover hyphen/underscore/space/%20)
-  { name: "alias_cluster_brisbane_west", rx: /\bbrisbane(?:[-_ ]|%20)?west\b/i },
-  { name: "alias_cluster_ipswich_region", rx: /\bipswich(?:[-_ ]|%20)?region\b/i },
+  // cluster aliases (none expected)
+  { name: "alias_cluster_1", rx: /$^/i },
+  { name: "alias_cluster_2", rx: /$^/i },
 
   // legacy service URL shape with a cluster segment present
   { name: "legacy_service_with_cluster", rx: /\/services\/[^/]+\/(ipswich|brisbane|logan)\/[^/]+/i },

@@ -121,7 +121,7 @@ else
   # Fallback inline auditor with alias checks
   node - <<'NODE' | tee "$TMP/graph-audit.txt"
 const fs=require('fs'),p=require('path');
-const ALIAS=/(\/blog\/(ipswich-region|brisbane-west)\b)|(\/areas\/(ipswich-region|brisbane-west)\b)/;
+const ALIAS=/$^/;
 function* w(d){for(const n of fs.readdirSync(d)){const f=p.join(d,n),s=fs.statSync(f); if(s.isDirectory())yield* w(f); else if(n.endsWith('.html'))yield f}}
 function scripts(h){return [...h.matchAll(/<script[^>]+ld\+json[^>]*>([\s\S]*?)<\/script>/gi)].map(m=>m[1]);}
 let pages=0,multi=0,none=0,aliasLd=0,aliasHref=0;

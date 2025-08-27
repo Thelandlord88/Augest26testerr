@@ -69,10 +69,7 @@ function loadClusterMap() {
 }
 // Canonicalize cluster aliases
 function resolveClusterSlug(s) {
-  const x = String(s || '').toLowerCase();
-  if (x === 'ipswich-region') return 'ipswich';
-  if (x === 'brisbane-west' || x === 'brisbane_west') return 'brisbane';
-  return x;
+  return String(s || '').toLowerCase();
 }
 
 // Suggest internal links per route

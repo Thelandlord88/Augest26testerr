@@ -15,8 +15,8 @@ vi.mock('~/data/serviceCoverage.json', () => ({
 vi.mock('~/content/areas.clusters.json', () => ({
   default: {
     clusters: [
-      { slug: 'ipswich-region', suburbs: ['Redbank Plains', 'Springfield Lakes', 'Goodna'] },
-      { slug: 'brisbane-west', suburbs: ['Oxley', 'Ashgrove'] },
+      { slug: 'ipswich', suburbs: ['Redbank Plains', 'Springfield Lakes', 'Goodna'] },
+      { slug: 'brisbane', suburbs: ['Oxley', 'Ashgrove'] },
       { slug: 'logan', suburbs: ['Loganholme'] }
     ]
   }
@@ -32,10 +32,10 @@ vi.mock('~/data/suburbs.json', () => ({ default: [
 ] }));
 
 vi.mock('~/utils/slugify', () => ({ default: (s: string) => String(s).trim().toLowerCase().replace(/\s+/g, '-') }));
-vi.mock('~/utils/geoHandler', () => ({ resolveClusterSlug: (s: string) => (s === 'ipswich-region' ? 'ipswich' : (s === 'brisbane-west' || s === 'brisbane_west') ? 'brisbane' : s) }));
+vi.mock('~/utils/geoHandler', () => ({ resolveClusterSlug: (s: string) => s }));
 
 vi.mock('~/data/geo.neighbors.ipswich.json', () => ({ default: { 'redbank-plains': ['springfield-lakes', 'goodna'] } }));
-vi.mock('~/data/geo.neighbors.brisbane-west.json', () => ({ default: { 'oxley': ['sherwood', 'corinda'] } }));
+vi.mock('~/data/geo.neighbors.brisbane.json', () => ({ default: { 'oxley': ['sherwood', 'corinda'] } }));
 vi.mock('~/data/geo.neighbors.logan.json', () => ({ default: {} }));
 
 async function fresh() {
@@ -68,7 +68,7 @@ describe('internalLinks helpers', () => {
   it('uses cluster_map.json when present (even if areas list omits it)', async () => {
   vi.resetModules();
   vi.doMock('~/data/cluster_map.json', () => ({ default: { 'new-suburb': 'ipswich' } }));
-  vi.doMock('~/content/areas.clusters.json', () => ({ default: { clusters: [{ slug: 'ipswich-region', suburbs: [] }] } }));
+  vi.doMock('~/content/areas.clusters.json', () => ({ default: { clusters: [{ slug: 'ipswich', suburbs: [] }] } }));
   const mod = await import('~/utils/internalLinks');
     expect(mod.getLocalBlogLink('new-suburb')).toBe('/guides/ipswich/');
   });

@@ -7,12 +7,7 @@ const DIST = 'dist';
 // Rewrites: split into safe HTML-level rewrites and JSON-only rewrites.
 // The 3-segment services rewrite must NOT be run on raw HTML because it can span
 // across attribute boundaries and corrupt markup. Keep it JSON-only.
-const REWRITES_HTML = [
-  [/\/blog\/ipswich-region\b/g, '/blog/ipswich'],
-  [/\/blog\/brisbane-west\b/g, '/blog/brisbane'],
-  [/\/areas\/ipswich-region\b/g, '/areas/ipswich'],
-  [/\/areas\/brisbane-west\b/g, '/areas/brisbane'],
-];
+const REWRITES_HTML = [];
 
 const REWRITES_JSON = [
   ...REWRITES_HTML,

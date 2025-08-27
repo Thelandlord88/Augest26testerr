@@ -63,14 +63,12 @@ Production front‑end built with Astro 5 + Tailwind, deployed on Netlify. Canon
 - Blog
    - Cluster hub: `/blog/[cluster]/`
    - Category: `/blog/[cluster]/category/[category]/`
-   - Posts: `/blog/[cluster]/[slug]/` (alias cluster slugs 301 to canonical)
+   - Posts: `/blog/[cluster]/[slug]/`
 - Static utility pages: `/privacy`, `/terms`, `/gallery`, `/quote`
 - Sitemap: `/sitemap.xml` via `src/pages/sitemap.xml.ts` (Cache‑Control: 300s)
 
  Netlify redirects (selected) are in `public/_redirects` (edge redirects) and sometimes `netlify.toml`:
 
-- Blog alias clusters → canonical (e.g., `/blog/ipswich-region → /blog/ipswich 301`)
-- Areas cluster rename (e.g., `/areas/ipswich-region/* → /areas/ipswich/:splat 301`)
 - Legacy service path with cluster → canonical suburb-only (`/services/:service/:cluster/:suburb/* → /services/:service/:suburb 301`)
 
 ## Synonym redirect endpoints (SSR)
@@ -502,9 +500,7 @@ Key npm scripts (see `package.json`):
 
 ### Redirects
 
-- `public/_redirects` — Netlify edge redirects for cluster renames and canonicalization, e.g.:
-   - `/blog/ipswich-region → /blog/ipswich 301`
-   - `/areas/ipswich-region/* → /areas/ipswich/:splat 301`
+- `public/_redirects` — Netlify edge redirects for service synonyms and canonicalization, e.g.:
    - `/services/:service/:cluster/:suburb/* → /services/:service/:suburb 301`
    Why: enforce canonical URLs and preserve SEO during structure changes.
 

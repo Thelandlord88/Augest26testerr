@@ -24,16 +24,6 @@
   ALLOW_LOCALBUSINESS_RATINGS = "1"
 
 [[redirects]]
-  from = "/blog/Ipswich%20Region/*"
-  to = "/blog/ipswich-region/:splat"
-  status = 301
-
-[[redirects]]
-  from = "/blog/Brisbane%20West/*"
-  to = "/blog/brisbane-west/:splat"
-  status = 301
-
-[[redirects]]
   from = "/blog/Logan/*"
   to = "/blog/logan/:splat"
   status = 301

@@ -19,7 +19,7 @@ function walk(dir) {
   return out;
 }
 function slugify(s){return String(s).trim().toLowerCase().replace(/\s+/g,'-');}
-function resolveClusterSlug(s){const x=String(s||'').toLowerCase(); if(x==='ipswich-region')return'ipswich'; if(x==='brisbane-west'||x==='brisbane_west')return'brisbane'; return x;}
+function resolveClusterSlug(s){return String(s||'').toLowerCase();}
 function loadClusterMap(){const map=new Map(); try{const raw=JSON.parse(fs.readFileSync('content/areas.clusters.json','utf8')); const clusters=Array.isArray(raw?.clusters)?raw.clusters:[]; for(const c of clusters){const clusterSlug=resolveClusterSlug(c.slug); for(const sub of (c.suburbs||[])) map.set(slugify(sub), clusterSlug);} }catch{} return map;}
 function extractNav(html){const m=html.match(/<nav[^>]*data-relservices[^>]*>([\s\S]*?)<\/nav>/i); return m?m[1]:'';}
 

@@ -14,7 +14,7 @@ import staticSuburbs from '~/data/suburbs.json' assert { type: 'json' };
 import slugify from '~/utils/slugify';
 import { resolveClusterSlug } from '~/utils/geoHandler';
 import nIpswich from '~/data/geo.neighbors.ipswich.json' assert { type: 'json' };
-import nBrisWest from '~/data/geo.neighbors.brisbane-west.json' assert { type: 'json' };
+import nBrisbane from '~/data/geo.neighbors.brisbane.json' assert { type: 'json' };
 import nLogan from '~/data/geo.neighbors.logan.json' assert { type: 'json' };
 
 export type ServiceId =
@@ -142,7 +142,7 @@ const ALLOWED_BY_SVC: Record<string, Set<string>> = (() => {
 // Curated neighbor tables by canonical cluster (readonly)
 const NEIGHBORS = {
   ipswich: (nIpswich as any) || {},
-  brisbane: (nBrisWest as any) || {},
+  brisbane: (nBrisbane as any) || {},
   logan: (nLogan as any) || {},
 } as const satisfies Record<string, Record<string, readonly string[]>>;
 

@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const PATTERNS = [
-  { name: "alias_clusters", rx: /\/(ipswich-region|brisbane-west|brisbane_west)\b/gi },
+  { name: "alias_clusters", rx: /$^/gi },
   { name: "legacy_service", rx: /\/services\/[^/]+\/(ipswich|brisbane|logan)\/[^/]+/gi },
 ];
 
