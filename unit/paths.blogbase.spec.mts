@@ -12,7 +12,7 @@ vi.mock('~/config/siteConfig', async (orig) => {
 
 // Helper to load fresh instances after changing the mock
 async function loadPaths() {
-  const mod = await import('../../src/lib/paths');
+  const mod = await import('~/lib/paths');
   return mod;
 }
 

@@ -1,19 +1,19 @@
 import { describe, it, expect, vi } from 'vitest';
 
-vi.mock('../../src/content/areas.clusters.json', () => ({
+vi.mock('~/content/areas.clusters.json', () => ({
   default: [
     { slug: 'ipswich', suburbs: ['ipswich', 'a', 'b'], adjacency: { ipswich: ['a', 'b'], a: ['ipswich'] } },
     { slug: 'brisbane', suburbs: ['x', 'y'] }
   ]
 }));
 
-vi.mock('../../src/data/serviceCoverage.json', () => ({
+vi.mock('~/data/serviceCoverage.json', () => ({
   default: {
     'spring-cleaning': ['y']
   }
 }));
 
-import { repSuburbSync } from '../../src/utils/repSuburb.sync';
+import { repSuburbSync } from '~/utils/repSuburb.sync';
 
 describe('repSuburbSync', () => {
   it('prefers highest adjacency degree when no service specified', () => {

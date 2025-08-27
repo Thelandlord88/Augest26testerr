@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 
 // Mock cluster + coverage datasets (independent of real repo data)
-vi.mock('../../src/content/areas.clusters.json', () => ({
+vi.mock('~/content/areas.clusters.json', () => ({
   default: {
     clusters: {
       ipswich: {
@@ -13,14 +13,14 @@ vi.mock('../../src/content/areas.clusters.json', () => ({
   }
 }));
 
-vi.mock('../../src/data/serviceCoverage.json', () => ({
+vi.mock('~/data/serviceCoverage.json', () => ({
   default: {
     'spring-cleaning': ['a', 'y'],
     'bathroom-deep-clean': { b: true }
   }
 }));
 
-import { nearbyCoveredSingle } from '../../src/utils/nearbyCovered.single';
+import { nearbyCoveredSingle } from '~/utils/nearbyCovered.single';
 
 describe('nearbyCoveredSingle', () => {
   it('returns the same suburb when covered', () => {

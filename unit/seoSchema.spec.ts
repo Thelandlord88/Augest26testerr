@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { suburbServiceGraph } from '../../src/lib/seoSchema.js';
+import { suburbServiceGraph } from '~/lib/seoSchema.js';
 
 describe('seoSchema suburbServiceGraph', () => {
   it('produces unique @id values', () => {

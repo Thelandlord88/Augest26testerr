@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { aliasToCanonical, canonicalClusters } from '../../src/config/aliases';
+import { aliasToCanonical, canonicalClusters } from '~/config/aliases';
 
 describe('aliasToCanonical map', () => {
   const canonSet = new Set<string>(canonicalClusters as readonly string[]);

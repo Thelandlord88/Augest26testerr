@@ -7,6 +7,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   test: {
     include: [
+      'unit/**/*.{test,spec}.?(c|m)[jt]s?(x)',
       'tests/unit/**/*.{test,spec}.?(c|m)[jt]s?(x)'
     ],
     environment: 'node',
@@ -16,7 +17,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '~': resolve(__dirname, 'src'),
+      '~': resolve(__dirname, '.'),
     },
   },
 });

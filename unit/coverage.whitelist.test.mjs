@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import areas from '../../src/content/areas.clusters.json' assert { type: 'json' };
-import coverage from '../../src/data/serviceCoverage.json' assert { type: 'json' };
-import slugify from '../../src/utils/slugify.js';
+import areas from '~/content/areas.clusters.json' assert { type: 'json' };
+import coverage from '~/data/serviceCoverage.json' assert { type: 'json' };
+import slugify from '~/utils/slugify.js';
 
 const dumpOnFail = process.env.DUMP_WHITELIST_DIFF === '1';
 
