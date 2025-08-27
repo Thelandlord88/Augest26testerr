@@ -1,0 +1,4 @@
+/tiles/*
+  Content-Type: application/x-protobuf
+  Content-Encoding: gzip
+  Cache-Control: public, max-age=31536000, immutable
