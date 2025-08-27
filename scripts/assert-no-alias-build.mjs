@@ -78,4 +78,4 @@ if (fs.existsSync(sitemap)) {
   }
 }
 
-console.log("✅ No alias-built pages in dist/ and no alias URLs in sitemap.xml");
+console.log('No alias-built pages in dist/ and no alias URLs in sitemap.xml');
