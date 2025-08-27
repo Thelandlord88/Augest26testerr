@@ -1,7 +1,7 @@
 // scripts/refactor-whatif.mjs (universal)
 // Validates redirects for ANY rename on a preview:
 //   --base=blog:articles --base=areas:locations --base=services:cleaning-services
-//   --cluster=brisbane-west:brisbane --cluster=ipswich-region:ipswich
+//   --cluster=old-slug:new-slug
 //   --service=bond-cleaning:end-of-lease-cleaning
 //   --page=quote:get-quote
 //   --sample-slug=... --sample-suburb=... --preview=https://<preview>.netlify.app
@@ -25,7 +25,7 @@ function parsePairs(flag) {
     .map(([from,to]) => ({ from, to }));
 }
 const basePairs    = parsePairs("base");    // e.g. blog:example, areas:locations, services:cleaning-services
-const clusterPairs = parsePairs("cluster"); // e.g. brisbane-west:brisbane
+const clusterPairs = parsePairs("cluster"); // e.g. old:new
 const servicePairs = parsePairs("service"); // e.g. bond-cleaning:end-of-lease-cleaning
 const pagePairs    = parsePairs("page");    // e.g. quote:get-quote
 

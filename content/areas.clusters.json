@@ -3,7 +3,6 @@
     {
       "slug": "ipswich",
       "name": "Ipswich",
-      "aliases": { "ipswich-region": "Ipswich" },
       "suburbs": [
   "Ipswich","Springfield Lakes","Springfield","Brookwater","Augustine Heights",
   "Redbank Plains","Goodna","Bellbird Park","Camira","Collingwood Park",
@@ -16,11 +15,6 @@
     {
       "slug": "brisbane",
       "name": "Brisbane",
-      "aliases": {
-        "brisbane-west": "Brisbane",
-        "brisbane%20west": "Brisbane",
-        "brisbane_west": "Brisbane"
-      },
       "suburbs": [
   "Indooroopilly","Taringa","Toowong","St Lucia","Auchenflower","Milton",
         "Chapel Hill","Kenmore","Kenmore Hills","Fig Tree Pocket","Jindalee",

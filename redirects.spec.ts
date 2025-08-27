@@ -1,15 +1,10 @@
 import { test, expect } from '@playwright/test';
 
 const redirects: [string, string][] = [
-  ['/areas/brisbane-west/', '/areas/brisbane/'],
-  ['/areas/ipswich-region/', '/areas/ipswich/'],
-  ['/blog/brisbane-west/checklist/', '/blog/brisbane/checklist/'],
-  ['/blog/ipswich-region/local/', '/blog/ipswich/local/'],
   ['/bond-cleaners/redbank-plains/', '/services/bond-cleaning/redbank-plains/'],
   ['/end-of-lease-cleaning/kenmore/', '/services/bond-cleaning/kenmore/'],
   ['/house-cleaning/indooroopilly/', '/services/spring-cleaning/indooroopilly/'],
   ['/shower-screen-restoration/brookwater/', '/services/bathroom-deep-clean/brookwater/'],
-  ['/services/bond-cleaning/brisbane-west/indooroopilly/', '/services/bond-cleaning/indooroopilly/'],
 ];
 
 for (const [from, to] of redirects) {

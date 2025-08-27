@@ -1,5 +1,5 @@
 /* Canonical geo helpers
- * - resolveClusterSlug: alias → canonical cluster
+ * - resolveClusterSlug: normalize cluster slug
  * - listSuburbsForCluster: cluster → suburb slug list
  * - findSuburbBySlug: suburb slug → { slug, cluster }
  * Prefers fast suburb->cluster map when available.
@@ -9,15 +9,8 @@ let CLUSTER_MAP: Record<string, string> | null = null;
 
 const norm = (s: unknown) => decodeURIComponent(String(s ?? '').trim()).toLowerCase();
 
-const ALIAS_TO_CANONICAL: Record<string, string> = {
-	'ipswich-region': 'ipswich',
-	'brisbane-west': 'brisbane',
-	'brisbane_west': 'brisbane'
-};
-
 export function resolveClusterSlug(input: string): string {
-	const s = norm(input);
-	return ALIAS_TO_CANONICAL[s] || s;
+        return norm(input);
 }
 
 function loadClusterMap(): Record<string, string> {

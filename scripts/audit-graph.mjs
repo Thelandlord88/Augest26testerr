@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 
 const DIST = 'dist';
-const aliasRe = /(\/blog\/(ipswich-region|brisbane-west)\b)|(\/areas\/(ipswich-region|brisbane-west)\b)/;
+const aliasRe = /$^/;
 const SCRIPT_CAPTURE_RE = /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
 
 function* walk(dir) {

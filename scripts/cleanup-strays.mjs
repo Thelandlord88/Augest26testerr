@@ -7,9 +7,6 @@ const victims = [
   'src/pages/blog/[cluster]/[slug].astro.bak',
   'src/middleware.js',
   // legacy alias routes/endpoints that must not exist
-  'src/pages/blog/ipswich-region/index.astro',
-  'src/pages/blog/brisbane-west/index.astro',
-  'src/pages/blog/brisbane_west/index.astro',
   'src/pages/blog/[...alias].ts',
 ];
 

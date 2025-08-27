@@ -3,7 +3,7 @@
 // Examples:
 //   node scripts/rename-rehearse.mjs --preview=https://<preview>.netlify.app --base=blog:articles
 //   node scripts/rename-rehearse.mjs --preview=https://<preview>.netlify.app \
-//        --base=blog:articles --cluster=brisbane-west:brisbane --cluster=ipswich-region:ipswich \
+//        --base=blog:articles --cluster=old-slug:new-slug \
 //        --service=bond-cleaning:end-of-lease-cleaning --page=quote:get-quote \
 //        --sample-slug=my-post --sample-suburb=forest-lake
 

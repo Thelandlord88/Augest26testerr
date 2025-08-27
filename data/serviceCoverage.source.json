@@ -33,7 +33,7 @@
       "one-mile",
       "sadliers-crossing"
     ],
-    "brisbane_west_core": [
+    "brisbane_core": [
       "taringa",
       "indooroopilly",
       "st-lucia",
@@ -131,12 +131,12 @@
   "bond-cleaning": [
     "@ipswich_p1",
     "@ipswich_p2",
-    "@brisbane_west_core",
+    "@brisbane_core",
     "@logan_core"
   ],
   "spring-cleaning": [
     "@ipswich_p1",
-    "@brisbane_west_core"
+    "@brisbane_core"
   ],
   "bathroom-deep-clean": [
     "@ipswich_p1"

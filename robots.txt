@@ -1,15 +1,6 @@
 User-agent: *
 Allow: /
 
-# Disallow legacy alias paths to avoid duplicate crawling
-Disallow: /areas/brisbane-west/
-Disallow: /areas/ipswich-region/
-Disallow: /areas/brisbane_west/
-Disallow: /areas/brisbane%20west/
-Disallow: /blog/brisbane-west/
-Disallow: /blog/ipswich-region/
-Disallow: /blog/brisbane_west/
-Disallow: /blog/brisbane%20west/
 Disallow: /bond-cleaners/
 Disallow: /end-of-lease-cleaning/
 Disallow: /house-cleaning/

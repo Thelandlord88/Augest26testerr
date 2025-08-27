@@ -1,0 +1,10 @@
+# BEGIN: auto-synonym-redirects (managed)
+/bond-cleaners/:suburb              /services/bond-cleaning/:suburb/        301!
+/end-of-lease-cleaning/:suburb      /services/bond-cleaning/:suburb/        301!
+/vacate-clean/:suburb               /services/bond-cleaning/:suburb/        301!
+/house-cleaning/:suburb             /services/spring-cleaning/:suburb/      301!
+/deep-cleaning/:suburb              /services/spring-cleaning/:suburb/      301!
+/bathroom-cleaning/:suburb          /services/bathroom-deep-clean/:suburb/  301!
+/shower-screen-restoration/:suburb  /services/bathroom-deep-clean/:suburb/  301!
+# END: auto-synonym-redirects
+
