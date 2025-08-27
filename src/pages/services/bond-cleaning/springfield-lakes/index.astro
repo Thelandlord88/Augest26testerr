@@ -22,7 +22,7 @@ const service = (Astro.props && Astro.props.service)
     : { slug: '', title: 'Services', description: 'Service information' });
 const title = service.slug === 'spring-cleaning'
   ? 'Spring Cleaning Ipswich & Brisbane | One N Done'
-  : `${service.title} – Professional ${service.title} in Brisbane, Logan & Ipswich`;
+  : `${service.title || service.name} – Professional ${service.title || service.name} in Brisbane, Logan & Ipswich`;
 const description = service.slug === 'spring-cleaning'
   ? 'Top-to-bottom spring cleaning — kitchens, bathrooms, fans & tracks. Police-checked, insured, 7-day re-clean. Get a fast quote today.'
   : service.description;
@@ -58,7 +58,7 @@ const breadcrumb = {
     )}
   </Fragment>
   <section class="max-w-6xl mx-auto px-4 py-12">
-    <h1 class="text-4xl font-extrabold text-deep-navy">{service.title}</h1>
+    <h1 class="text-4xl font-extrabold text-deep-navy">{service.title || service.name}</h1>
     <p class="mt-3 text-lg text-gray-warm-700 max-w-3xl">{service.description}</p>
 
     {/* Service-specific CTA */}
@@ -104,6 +104,6 @@ const breadcrumb = {
     </ul>
   </section>
   <section class="max-w-6xl mx-auto px-4 py-6">
-    <FaqBlock items={(service.slug === 'bond-cleaning' ? faqBond.items : service.slug === 'spring-cleaning' ? faqSpring.items : faqBathroom.items)} headline={`${service.title} FAQs`} />
+    <FaqBlock items={(service.slug === 'bond-cleaning' ? faqBond.items : service.slug === 'spring-cleaning' ? faqSpring.items : faqBathroom.items)} headline={`${service.title || service.name} FAQs`} />
   </section>
 </MainLayout>

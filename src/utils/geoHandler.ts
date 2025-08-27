@@ -4,7 +4,7 @@
  * - findSuburbBySlug: suburb slug → { slug, cluster }
  * Prefers fast suburb->cluster map when available.
  */
-import areas from '~/content/areas.clusters.json' assert { type: 'json' };
+import areas from '~/content/areas.clusters.json' with { type: 'json' };
 let CLUSTER_MAP: Record<string, string> | null = null;
 
 const norm = (s: unknown) => decodeURIComponent(String(s ?? '').trim()).toLowerCase();

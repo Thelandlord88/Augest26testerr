@@ -1,5 +1,5 @@
 // Static synchronous accessor for precomputed cross-service map.
-import crossServiceMap from '~/data/crossServiceMap.json' assert { type: 'json' };
+import crossServiceMap from '~/data/crossServiceMap.json' with { type: 'json' };
 import { getLocalBlogLink } from '~/utils/internalLinks';
 
 export type CrossService = 'spring-cleaning' | 'bathroom-deep-clean';

@@ -1,5 +1,5 @@
 /* Typed service coverage helpers */
-import coverageJson from '~/data/serviceCoverage.json' assert { type: 'json' };
+import coverageJson from '~/data/serviceCoverage.json' with { type: 'json' };
 import { listSuburbsForCluster } from '~/utils/geoHandler';
 
 type CoverageMap = Record<string, string[]>;

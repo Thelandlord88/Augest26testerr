@@ -8,14 +8,14 @@
  */
 
 import { BLOG_BASE } from '~/config/siteConfig';
-import areas from '~/content/areas.clusters.json' assert { type: 'json' };
-import coverage from '~/data/serviceCoverage.json' assert { type: 'json' };
-import staticSuburbs from '~/data/suburbs.json' assert { type: 'json' };
+import areas from '~/content/areas.clusters.json' with { type: 'json' };
+import coverage from '~/data/serviceCoverage.json' with { type: 'json' };
+import staticSuburbs from '~/data/suburbs.json' with { type: 'json' };
 import slugify from '~/utils/slugify';
 import { resolveClusterSlug } from '~/utils/geoHandler';
-import nIpswich from '~/data/geo.neighbors.ipswich.json' assert { type: 'json' };
-import nBrisWest from '~/data/geo.neighbors.brisbane-west.json' assert { type: 'json' };
-import nLogan from '~/data/geo.neighbors.logan.json' assert { type: 'json' };
+import nIpswich from '~/data/geo.neighbors.ipswich.json' with { type: 'json' };
+import nBrisWest from '~/data/geo.neighbors.brisbane-west.json' with { type: 'json' };
+import nLogan from '~/data/geo.neighbors.logan.json' with { type: 'json' };
 
 export type ServiceId =
   | 'bond-cleaning'

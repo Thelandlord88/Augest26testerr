@@ -21,8 +21,8 @@ const service = (Astro.props && Astro.props.service)
     : { slug: '', title: 'Services', description: 'Service information' });
 
 const suburb = { name: 'Forest Lake', slug: 'forest-lake' };
-const title = `${service.title} in ${suburb.name} — One N Done`;
-const description = `Professional ${service.title} in ${suburb.name}. Agent-ready cleaning and full re-clean support.`;
+const title = `${service.title || service.name} in ${suburb.name} — One N Done`;
+const description = `Professional ${service.title || service.name} in ${suburb.name}. Agent-ready cleaning and full re-clean support.`;
 import { absoluteUrl } from '~/lib/url';
 const canonical = absoluteUrl(`/services/${service.slug}/${suburb.slug}/`);
 const covered = Array.isArray((coverage as any)[service.slug]) ? (coverage as any)[service.slug] : [];
@@ -40,7 +40,7 @@ const breadcrumb = {
 
 <MainLayout title={title} description={description} canonical={canonical} breadcrumb={breadcrumb}>
   <section class="max-w-6xl mx-auto px-4 py-12">
-    <h1 class="text-4xl font-extrabold text-deep-navy">{service.title} — {suburb.name}</h1>
+    <h1 class="text-4xl font-extrabold text-deep-navy">{service.title || service.name} — {suburb.name}</h1>
     <p class="mt-3 text-lg text-gray-warm-700 max-w-3xl">{description}</p>
 
     <div class="mt-6">
@@ -70,6 +70,6 @@ const breadcrumb = {
   })()}
 
   <section class="max-w-6xl mx-auto px-4 py-6">
-    <FaqBlock items={faqBond.items} headline={`${service.title} FAQs`} />
+    <FaqBlock items={faqBond.items} headline={`${service.title || service.name} FAQs`} />
   </section>
 </MainLayout>
